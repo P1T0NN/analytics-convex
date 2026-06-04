@@ -45,6 +45,56 @@ The `writeTrack` mutation returns immediately after scheduling. The actual DB in
 
 ---
 
+### Package structure
+
+Most users only need the public exports, but contributors and LLM agents should
+respect the internal file boundaries:
+
+| Path | Purpose |
+|---|---|
+| `src/component/schema.ts` | Convex component tables, validators, and indexes. Add table/index changes here. |
+| `src/component/lib.ts` | Public component export surface used as `components.analytics.lib.*`. New component functions must be exported here. |
+| `src/component/mutations/` | Public component mutations such as configuration, tracking, and batch tracking. |
+| `src/component/queries/` | Public dashboard/query functions such as time series, summaries, breakdowns, and comparisons. |
+| `src/component/helpers/` | Shared component-side implementation helpers and internal mutations. |
+| `src/component/validations/` | Configuration, event input, and hard-limit validation helpers. |
+| `src/component/utils/` | Pure utility functions for dates, scopes, sharding, ranking, and metric behavior. |
+| `src/component/crons/` | Maintenance jobs for high-volume processing and raw event retention. |
+| `src/client/` | Package API used by app-side Convex projects: `createAnalyticsApi`, server helpers, crons, schemas, and types. |
+| `src/shared/` | Constants shared by the component and client packages, including `ANALYTICS_LIMITS`. |
+
+When adding new behavior, keep it in the matching folder instead of putting
+everything into one file. Regenerate the Convex API after component export
+changes with `bun run build:codegen`.
+
+### LLM integration prompt
+
+When asking an LLM to install this package into another Convex project, you can
+use this prompt:
+
+```text
+Use this README to integrate @piton/analytics-convex into my Convex app.
+
+This analytics component is for in-product, database-backed analytics such as
+feature usage, usage counters, revenue totals, credits consumed, org/resource
+activity, summaries, time series, and breakdowns. Do not use it for marketing
+page-view analytics; Umami or another web analytics tool handles that separately.
+
+Follow the documented project structure and public API. Register the component
+in convex.config.ts, define product events and metrics in convex/analytics.ts,
+export createAnalyticsApi(components.analytics, { events, metrics, authorize }),
+run writeConfiguration after deploys or config changes, register
+registerAnalyticsCrons in convex/crons.ts, and track events from server
+mutations using writeTrack or writeTrackBatch.
+
+Use mediumVolume by default, highVolume for noisy metrics, batch ingestion for
+buffered/firehose-style tracking, and monitor Convex Insights before production.
+Respect the documented hard limits, scopes, authorization model, and traffic
+mode recommendations.
+```
+
+---
+
 ## Installation
 
 ```bash
