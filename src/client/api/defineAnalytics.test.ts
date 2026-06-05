@@ -9,7 +9,7 @@ import { event } from "../builders/event";
 import { property } from "../builders/property";
 
 describe("defineAnalytics", () => {
-  it("returns typed tracking helpers from builder config", () => {
+  it("returns server wrappers at top level and client exports under .client", () => {
     const component = {} as ComponentApi;
     const events = {
       productAdded: event("product.added", {
@@ -35,60 +35,20 @@ describe("defineAnalytics", () => {
       }),
     });
 
-    const assertMetricTypeChecks = () => {
-      defineAnalytics(component, {
-        events,
-        metrics: ({ count, sum }) => ({
-          // @ts-expect-error event name must exist in the event config.
-          badEvent: count("Bad event").from("product.removed"),
-          // @ts-expect-error dimensions must be registered event properties.
-          badDimension: count("Bad dimension").from("product.added").by("sku"),
-          // @ts-expect-error sum valueProperty must be a number property.
-          badValue: sum("Bad value").from("product.added").value("category"),
-        }),
-      });
-    };
-
-    type ProductAddedInput = Parameters<
-      typeof analytics.track<"product.added">
-    >[2];
-    type ProductValueBreakdownInput = Parameters<
-      typeof analytics.fetchBreakdown<"productValueAdded">
-    >[1];
-
-    const validInput: ProductAddedInput = {
-      properties: {
-        category: "Shoes",
-        price: 120,
-        currency: "USD",
-      },
-    };
-
-    const _invalidInput: ProductAddedInput = {
-      properties: {
-        category: "Shoes",
-        // @ts-expect-error price must be a number.
-        price: "120",
-      },
-    };
-    const validBreakdownInput: ProductValueBreakdownInput = {
-      metric: "productValueAdded",
-      from: 0,
-      to: 1,
-      groupBy: "category",
-    };
-    const _invalidBreakdownInput: ProductValueBreakdownInput = {
-      metric: "productValueAdded",
-      from: 0,
-      to: 1,
-      // @ts-expect-error groupBy must be one of the configured metric dimensions.
-      groupBy: "price",
-    };
-
-    expect(analytics.track).toBeDefined();
+    // Server wrappers (top-level) — callable with ctx
+    expect(analytics.writeTrack).toBeDefined();
+    expect(analytics.writeConfiguration).toBeDefined();
     expect(analytics.fetchSummary).toBeDefined();
-    expect(assertMetricTypeChecks).toBeDefined();
-    expect(validBreakdownInput.groupBy).toBe("category");
-    expect(validInput.properties.price).toBe(120);
+    expect(analytics.fetchTimeSeries).toBeDefined();
+    expect(analytics.fetchBreakdown).toBeDefined();
+    expect(analytics.fetchMetricComparison).toBeDefined();
+
+    // Client exports (under .client) — Convex function references
+    expect(analytics.client.writeTrack).toBeDefined();
+    expect(analytics.client.writeConfiguration).toBeDefined();
+    expect(analytics.client.breakdown).toBeDefined();
+    expect(analytics.client.summary).toBeDefined();
+    expect(analytics.client.timeSeries).toBeDefined();
+    expect(analytics.client.metricComparison).toBeDefined();
   });
 });

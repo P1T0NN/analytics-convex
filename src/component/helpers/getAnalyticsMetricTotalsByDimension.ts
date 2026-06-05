@@ -8,7 +8,6 @@ import { DAY_MS } from "../constants";
 import { startOfUtcDay } from "../utils/common/dateUtils";
 
 // TYPES
-import type { GenericDatabaseReader } from "convex/server";
 import type { typesAnalyticsScopeType } from "../types/types";
 
 const DEFAULT_TOTAL_DAYS = 30;
@@ -30,7 +29,7 @@ const DEFAULT_MAX_TOTAL_ROWS = 20_000;
  * });
  */
 export async function getAnalyticsMetricTotalsByDimension(
-    ctx: { db: GenericDatabaseReader<any> },
+    ctx: any,
     args: {
         metric: string;
         scopeType: typesAnalyticsScopeType;
@@ -61,7 +60,7 @@ export async function getAnalyticsMetricTotalsByDimension(
     
     const rows = await ctx.db
         .query("analyticsDailyMetrics")
-        .withIndex("by_metric_scope_dimension_bucket", (q) =>
+        .withIndex("by_metric_scope_dimension_bucket", (q: any) =>
         q
             .eq("metric", args.metric)
             .eq("scopeType", args.scopeType)

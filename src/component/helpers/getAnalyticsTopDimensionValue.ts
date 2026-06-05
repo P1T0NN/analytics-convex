@@ -5,7 +5,6 @@ import { getAnalyticsMetricTotalsByDimension } from "./getAnalyticsMetricTotalsB
 import { getAnalyticsRanking } from "../utils/getAnalyticsRanking";
 
 // TYPES
-import type { GenericDatabaseReader } from "convex/server";
 import type { typesAnalyticsScopeType } from "../types/types";
 
 /**
@@ -23,7 +22,7 @@ import type { typesAnalyticsScopeType } from "../types/types";
  * });
  */
 export async function getAnalyticsTopDimensionValue(
-    ctx: { db: GenericDatabaseReader<any> },
+    ctx: any,
     args: {
         metric: string;
         scopeType: typesAnalyticsScopeType;

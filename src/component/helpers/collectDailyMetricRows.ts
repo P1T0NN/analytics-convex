@@ -5,11 +5,10 @@ import { ConvexError } from "convex/values";
 import { startOfUtcDay } from "../utils/common/dateUtils";
 
 // TYPES
-import type { GenericDatabaseReader } from "convex/server";
 import type { typesAnalyticsScope, typesAnalyticsSettings } from "../types/types";
 
 export async function collectDailyMetricRows(
-    ctx: { db: GenericDatabaseReader<any> },
+    ctx: any,
     args: {
         metric: string;
         scope: typesAnalyticsScope;
@@ -21,7 +20,7 @@ export async function collectDailyMetricRows(
 ) {
     const rows = await ctx.db
         .query("analyticsDailyMetrics")
-        .withIndex("by_metric_scope_dimension_bucket", (q) =>
+        .withIndex("by_metric_scope_dimension_bucket", (q: any) =>
         q
             .eq("metric", args.metric)
             .eq("scopeType", args.scope.type)
