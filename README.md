@@ -88,7 +88,7 @@ When asking an LLM to install this package into another Convex project, you can
 use this prompt:
 
 ```text
-Use this README to integrate @piton/analytics-convex into my Convex app.
+Use this README to integrate @piton-/analytics-convex into my Convex app.
 
 This analytics component is for in-product, database-backed analytics such as
 feature usage, usage counters, revenue totals, credits consumed, org/resource
@@ -114,13 +114,13 @@ mode recommendations.
 ## Installation
 
 ```bash
-npm install @piton/analytics-convex
+npm install @piton-/analytics-convex
 ```
 
 ```ts
 // convex/convex.config.ts
 import { defineApp } from "convex/server";
-import analytics from "@piton/analytics-convex/convex.config.js";
+import analytics from "@piton-/analytics-convex/convex.config.js";
 
 const app = defineApp();
 app.use(analytics);
@@ -139,7 +139,7 @@ Run `npx convex dev` to regenerate the generated API.
 ```ts
 // convex/analytics.ts
 import { components } from "./_generated/api";
-import { defineAnalytics, event, property } from "@piton/analytics-convex";
+import { defineAnalytics, event, property } from "@piton-/analytics-convex";
 
 export const analytics = defineAnalytics(components.analytics, {
   events: {
@@ -282,7 +282,7 @@ Convex functions that already have their own auth.
 // convex/crons.ts
 import { cronJobs } from "convex/server";
 import { components } from "./_generated/api";
-import { registerAnalyticsCrons } from "@piton/analytics-convex";
+import { registerAnalyticsCrons } from "@piton-/analytics-convex";
 
 const crons = cronJobs();
 
@@ -709,7 +709,7 @@ const top = await ctx.runQuery(
 Pure function for sorting items by score with optional tie-breakers:
 
 ```ts
-import { getAnalyticsRanking } from "@piton/analytics-convex";
+import { getAnalyticsRanking } from "@piton-/analytics-convex";
 
 const top5 = getAnalyticsRanking({
   items: [...totals.entries()],
@@ -758,7 +758,7 @@ const top5 = getAnalyticsRanking({
 | `processPendingHighVolumeAnalyticsEvents` | Batch-aggregate pending high-volume events |
 | `purgeStaleAnalyticsEvents`               | Delete raw events past retention window    |
 
-### Client exports (`@piton/analytics-convex`)
+### Client exports (`@piton-/analytics-convex`)
 
 | Export                                               | Description                                                                                                                            |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
