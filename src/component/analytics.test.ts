@@ -41,6 +41,40 @@ describe("analytics component", () => {
     expect(config!.events[0].name).toBe("page.viewed");
     expect(config!.metrics).toHaveLength(1);
     expect(config!.metrics[0].name).toBe("pageViews");
+    expect(config!.configHash).toEqual(expect.any(String));
+  });
+
+  it("does not rewrite unchanged configuration", async () => {
+    const t = createAnalyticsComponentTest(modules);
+    const config = pageViewsConfiguration();
+
+    await t.mutation(api.lib.writeConfiguration, config);
+    const first = await t.query(api.lib.fetchConfiguration, {});
+    expect(first).not.toBeNull();
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    await t.mutation(api.lib.writeConfiguration, config);
+    const second = await t.query(api.lib.fetchConfiguration, {});
+
+    expect(second!.configHash).toBe(first!.configHash);
+    expect(second!.updatedAt).toBe(first!.updatedAt);
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    await t.mutation(api.lib.writeConfiguration, {
+      ...config,
+      metrics: [
+        {
+          ...config.metrics[0],
+          label: "Page views total",
+        },
+      ],
+    });
+    const third = await t.query(api.lib.fetchConfiguration, {});
+
+    expect(third!.configHash).not.toBe(first!.configHash);
+    expect(third!.updatedAt).toBeGreaterThan(first!.updatedAt);
   });
 
   it("tracks an event and queries the summary", async () => {

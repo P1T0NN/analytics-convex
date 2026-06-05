@@ -199,6 +199,32 @@ export const configureAnalytics = mutation({
 });
 ```
 
+`writeConfiguration` is idempotent. It stores a deterministic `configHash`; when
+the incoming events, metrics, and effective settings match the stored config, it
+returns without updating the table. This makes it safe to run after every
+deploy.
+
+If you export the wrapped mutation from `convex/analytics.ts`:
+
+```ts
+export const { writeConfiguration } = analytics.client;
+```
+
+you can wire configuration into your normal scripts:
+
+```json
+{
+  "scripts": {
+    "analytics:configure": "bunx convex run analytics:writeConfiguration",
+    "deploy": "bunx convex deploy && bun run analytics:configure"
+  }
+}
+```
+
+Keep the configure function explicit instead of lazy-configuring on the first
+query or product mutation. Queries cannot write, and hidden configuration writes
+make deploy mistakes harder to diagnose.
+
 ### 3. Track events
 
 **From a server mutation:**
@@ -778,13 +804,13 @@ const top5 = getAnalyticsRanking({
 
 **Queries:**
 
-| Export                  | Description                                                |
-| ----------------------- | ---------------------------------------------------------- |
-| `fetchConfiguration`    | Read the current events, metrics, and settings config      |
-| `fetchTimeSeries`       | Daily bucketed chart data with optional dimension grouping |
-| `fetchSummary`          | Single aggregated total for a metric over a date range     |
-| `fetchBreakdown`        | Top dimension values ranked by total                       |
-| `fetchMetricComparison` | Compare metric between current and previous period         |
+| Export                  | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `fetchConfiguration`    | Read the current events, metrics, settings, and config hash |
+| `fetchTimeSeries`       | Daily bucketed chart data with optional dimension grouping  |
+| `fetchSummary`          | Single aggregated total for a metric over a date range      |
+| `fetchBreakdown`        | Top dimension values ranked by total                        |
+| `fetchMetricComparison` | Compare metric between current and previous period          |
 
 **Helpers:**
 

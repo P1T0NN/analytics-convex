@@ -39,6 +39,7 @@ import type * as utils_buildIdempotencyKey from "../utils/buildIdempotencyKey.js
 import type * as utils_common_dateUtils from "../utils/common/dateUtils.js";
 import type * as utils_common_stringUtils from "../utils/common/stringUtils.js";
 import type * as utils_compareScores from "../utils/compareScores.js";
+import type * as utils_configurationHash from "../utils/configurationHash.js";
 import type * as utils_getAnalyticsRanking from "../utils/getAnalyticsRanking.js";
 import type * as utils_getMetricRollupIncrements from "../utils/getMetricRollupIncrements.js";
 import type * as utils_getRollupIncrementKey from "../utils/getRollupIncrementKey.js";
@@ -93,6 +94,7 @@ const fullApi: ApiFromModules<{
   "utils/common/dateUtils": typeof utils_common_dateUtils;
   "utils/common/stringUtils": typeof utils_common_stringUtils;
   "utils/compareScores": typeof utils_compareScores;
+  "utils/configurationHash": typeof utils_configurationHash;
   "utils/getAnalyticsRanking": typeof utils_getAnalyticsRanking;
   "utils/getMetricRollupIncrements": typeof utils_getMetricRollupIncrements;
   "utils/getRollupIncrementKey": typeof utils_getRollupIncrementKey;

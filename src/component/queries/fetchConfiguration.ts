@@ -7,9 +7,9 @@ import { getConfigDoc } from "../analyticsConfig";
 
 // SCHEMAS
 import {
-	eventConfigValidator,
-	metricConfigValidator,
-	settingsValidator,
+  eventConfigValidator,
+  metricConfigValidator,
+  settingsValidator,
 } from "../schemas/schemas";
 
 /**
@@ -22,25 +22,27 @@ import {
  * const config = await ctx.runQuery(components.analytics.lib.fetchConfiguration, {});
  */
 export const fetchConfiguration = query({
-		args: {},
-		returns: v.union(
-			v.null(),
-			v.object({
-				events: v.array(eventConfigValidator),
-				metrics: v.array(metricConfigValidator),
-				settings: settingsValidator,
-				updatedAt: v.number(),
-			}),
-		),
-		handler: async (ctx) => {
-			const doc = await getConfigDoc(ctx);
-			if (!doc) return null;
-	
-			return {
-				events: doc.events,
-				metrics: doc.metrics,
-				settings: doc.settings,
-				updatedAt: doc.updatedAt,
-			};
-		},
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      events: v.array(eventConfigValidator),
+      metrics: v.array(metricConfigValidator),
+      settings: settingsValidator,
+      configHash: v.optional(v.string()),
+      updatedAt: v.number(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const doc = await getConfigDoc(ctx);
+    if (!doc) return null;
+
+    return {
+      events: doc.events,
+      metrics: doc.metrics,
+      settings: doc.settings,
+      configHash: doc.configHash,
+      updatedAt: doc.updatedAt,
+    };
+  },
 });

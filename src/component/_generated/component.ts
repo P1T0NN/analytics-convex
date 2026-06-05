@@ -85,6 +85,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {},
         null | {
+          configHash?: string;
           events: Array<{
             label: string;
             name: string;
@@ -446,6 +447,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {},
           null | {
+            configHash?: string;
             events: Array<{
               label: string;
               name: string;

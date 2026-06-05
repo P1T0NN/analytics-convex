@@ -9,13 +9,14 @@ import { getConfigDoc, defaultSettings } from "../analyticsConfig";
 import { CONFIG_KEY } from "../constants";
 
 // UTILS
+import { createConfigurationHash } from "../utils/configurationHash";
 import { validateConfiguration } from "../validations/validations";
 
 // SCHEMAS
 import {
-	eventConfigValidator,
-	metricConfigValidator,
-	settingsPatchValidator,
+  eventConfigValidator,
+  metricConfigValidator,
+  settingsPatchValidator,
 } from "../schemas/schemas";
 
 /**
@@ -31,41 +32,52 @@ import {
  * });
  */
 export const writeConfiguration = mutation({
-	args: {
-		events: v.array(eventConfigValidator),
-		metrics: v.array(metricConfigValidator),
-		settings: v.optional(settingsPatchValidator),
-	},
-	returns: v.null(),
-	handler: async (ctx, args) => {
-		const existing = await getConfigDoc(ctx);
-		const settings = {
-			...(existing?.settings ?? defaultSettings()),
-			...(args.settings ?? {}),
-		};
+  args: {
+    events: v.array(eventConfigValidator),
+    metrics: v.array(metricConfigValidator),
+    settings: v.optional(settingsPatchValidator),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await getConfigDoc(ctx);
+    const settings = {
+      ...(existing?.settings ?? defaultSettings()),
+      ...(args.settings ?? {}),
+    };
 
-		validateConfiguration({
-			events: args.events,
-			metrics: args.metrics,
-			settings,
-		});
+    validateConfiguration({
+      events: args.events,
+      metrics: args.metrics,
+      settings,
+    });
 
-		const value = {
-			events: args.events,
-			metrics: args.metrics,
-			settings,
-			updatedAt: Date.now(),
-		};
+    const configHash = createConfigurationHash({
+      events: args.events,
+      metrics: args.metrics,
+      settings,
+    });
 
-		if (existing) {
-			await ctx.db.patch("analyticsConfigs", existing._id, value);
-			return null;
-		}
+    if (existing?.configHash === configHash) {
+      return null;
+    }
 
-		await ctx.db.insert("analyticsConfigs", {
-			key: CONFIG_KEY,
-			...value,
-		});
-		return null;
-	},
+    const value = {
+      events: args.events,
+      metrics: args.metrics,
+      settings,
+      configHash,
+      updatedAt: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch("analyticsConfigs", existing._id, value);
+      return null;
+    }
+
+    await ctx.db.insert("analyticsConfigs", {
+      key: CONFIG_KEY,
+      ...value,
+    });
+    return null;
+  },
 });

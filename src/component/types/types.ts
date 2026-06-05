@@ -140,6 +140,7 @@ export type typesAnalyticsConfigState = {
   metrics: typesAnalyticsMetricConfig[];
   metricByName: Map<string, typesAnalyticsMetricConfig>;
   settings: typesAnalyticsSettings;
+  configHash?: string;
 };
 
 export type typesRollupMode = "realtime" | "highVolume";
