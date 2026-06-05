@@ -5,7 +5,7 @@ import { api } from "../_generated/api";
 
 // HELPERS
 import { getConfig } from "../analyticsConfig";
-import { aggregateEvents } from "../helpers/aggregateEvent";
+import { aggregateEvent } from "../helpers/aggregateEvent";
 
 // UTILS
 import { toAggregateInput } from "../utils/toAggregateInput";
@@ -47,7 +47,7 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
       };
     }
 
-    await aggregateEvents(
+    await aggregateEvent(
       ctx,
       config,
       pendingEvents.map((event) => toAggregateInput(event)),

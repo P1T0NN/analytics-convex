@@ -7,9 +7,9 @@ import { getConfigDoc } from "../analyticsConfig";
 
 // SCHEMAS
 import {
-		eventConfigValidator,
-		metricConfigValidator,
-		settingsValidator,
+	eventConfigValidator,
+	metricConfigValidator,
+	settingsValidator,
 } from "../schemas/schemas";
 
 /**
@@ -24,23 +24,23 @@ import {
 export const fetchConfiguration = query({
 		args: {},
 		returns: v.union(
-				v.null(),
-				v.object({
-						events: v.array(eventConfigValidator),
-						metrics: v.array(metricConfigValidator),
-						settings: settingsValidator,
-						updatedAt: v.number(),
-				}),
+			v.null(),
+			v.object({
+				events: v.array(eventConfigValidator),
+				metrics: v.array(metricConfigValidator),
+				settings: settingsValidator,
+				updatedAt: v.number(),
+			}),
 		),
 		handler: async (ctx) => {
-				const doc = await getConfigDoc(ctx);
-				if (!doc) return null;
-		
-				return {
-						events: doc.events,
-						metrics: doc.metrics,
-						settings: doc.settings,
-						updatedAt: doc.updatedAt,
-				};
+			const doc = await getConfigDoc(ctx);
+			if (!doc) return null;
+	
+			return {
+				events: doc.events,
+				metrics: doc.metrics,
+				settings: doc.settings,
+				updatedAt: doc.updatedAt,
+			};
 		},
 });

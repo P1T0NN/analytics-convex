@@ -1,15 +1,13 @@
 // MUTATIONS
 
 /** Store events, metrics, and settings config. Run once after deploys. */
-export { writeConfiguration } from "./mutations/configure.js";
+export { writeConfiguration } from "./mutations/writeConfiguration.js";
 
-/** Validate and schedule an analytics event. Returns immediately. */
-export { writeTrack } from "./mutations/track.js";
-export { writeTrackBatch } from "./mutations/trackBatch.js";
+/** Validate and schedule an analytics event or bounded event batch. */
+export { writeTrack } from "./mutations/writeTrack.js";
 
 /** @internal — scheduled by writeTrack(), do not call directly. */
 export { writeAnalyticsEvent } from "./helpers/writeAnalyticsEvent.js";
-export { writeAnalyticsEvents } from "./helpers/writeAnalyticsEvents.js";
 
 // QUERIES
 

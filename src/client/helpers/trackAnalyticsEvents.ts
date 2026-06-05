@@ -12,9 +12,9 @@ import type { typesTrackEventInput } from "../types/types";
  * implement their own auth. Returns immediately after scheduling.
  */
 export async function trackAnalyticsEvents(
-	ctx: Pick<GenericMutationCtx<GenericDataModel>, "runMutation">,
-	component: ComponentApi,
-	events: typesTrackEventInput[],
+  ctx: Pick<GenericMutationCtx<GenericDataModel>, "runMutation">,
+  component: ComponentApi,
+  events: typesTrackEventInput[],
 ) {
-	return await ctx.runMutation(component.lib.writeTrackBatch, { events });
+  return await ctx.runMutation(component.lib.writeTrack, { events });
 }

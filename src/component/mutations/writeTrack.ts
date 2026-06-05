@@ -1,0 +1,96 @@
+// LIBRARIES
+import { v } from "convex/values";
+import { mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
+
+// CONFIG
+import { getConfig } from "../analyticsConfig";
+
+// HELPERS
+import { prepareTrackEvent } from "../helpers/prepareTrackEvent";
+
+// VALIDATIONS
+import { validateTrackBatchLimits } from "../validations/eventInputLimits";
+
+// SCHEMAS
+import {
+	trackEventInputFields,
+	trackEventInputValidator,
+} from "../schemas/schemas";
+
+// TYPES
+import type { typesTrackEventInput } from "../types/types";
+
+/**
+ * Validate and schedule one or more analytics events.
+ *
+ * Accepts either a single event (via `name` + fields) or a batch (via
+ * `events` array). Returns immediately after scheduling. The actual DB
+ * insert and rollup aggregation happen asynchronously via an internal
+ * mutation. Idempotency keys prevent double-counting on retries.
+ *
+ * @example
+ * // Single event
+ * await ctx.runMutation(components.analytics.lib.writeTrack, {
+ *   name: "feature.used",
+ *   actorId: user._id,
+ *   properties: { feature: "search" },
+ * });
+ *
+ * // Batch
+ * await ctx.runMutation(components.analytics.lib.writeTrack, {
+ *   events: [
+ *     { name: "page.viewed", properties: { path: "/" } },
+ *     { name: "feature.used", properties: { feature: "export" } },
+ *   ],
+ * });
+ */
+export const writeTrack = mutation({
+		args: {
+			name: v.optional(v.string()),
+			...trackEventInputFields,
+			events: v.optional(v.array(trackEventInputValidator)),
+		},
+		returns: v.object({
+			scheduled: v.boolean(),
+			scheduledCount: v.number(),
+		}),
+		handler: async (ctx, args) => {
+			const config = await getConfig(ctx);
+	
+			if (args.events) {
+				validateTrackBatchLimits(args.events.length);
+		
+				const events = args.events.map((input) =>
+						prepareTrackEvent(config, input),
+				);
+		
+				await (ctx.scheduler.runAfter as any)(0, internal.lib.writeAnalyticsEvent, { events });
+		
+				return {
+						scheduled: true,
+						scheduledCount: events.length,
+				};
+			}
+	
+			if (!args.name) {
+				throw new Error('writeTrack requires either "name" or "events".');
+			}
+	
+			const input: typesTrackEventInput = {
+				...args,
+				name: args.name,
+			};
+	
+			const event = prepareTrackEvent(config, input);
+	
+			await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
+				...event,
+			});
+	
+			return {
+				scheduled: true,
+				scheduledCount: 1,
+			};
+		},
+});

@@ -284,28 +284,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           actorId?: string;
-          name: string;
-          occurredAt?: number;
-          organizationId?: string;
-          properties?: Record<string, string | number | boolean | null>;
-          scopes?: Array<{
-            scopeId: string;
-            scopeType: "global" | "organization" | "resource";
-          }>;
-          source?: {
-            name?: string;
-            type: "server" | "client" | "webhook" | "system";
-          };
-          subject?: { id: string; type: string };
-        },
-        { scheduled: boolean },
-        Name
-      >;
-      writeTrackBatch: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          events: Array<{
+          events?: Array<{
             actorId?: string;
             name: string;
             occurredAt?: number;
@@ -321,6 +300,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
             subject?: { id: string; type: string };
           }>;
+          name?: string;
+          occurredAt?: number;
+          organizationId?: string;
+          properties?: Record<string, string | number | boolean | null>;
+          scopes?: Array<{
+            scopeId: string;
+            scopeType: "global" | "organization" | "resource";
+          }>;
+          source?: {
+            name?: string;
+            type: "server" | "client" | "webhook" | "system";
+          };
+          subject?: { id: string; type: string };
         },
         { scheduled: boolean; scheduledCount: number },
         Name
@@ -374,30 +366,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             actorId?: string;
-            name: string;
-            occurredAt?: number;
-            organizationId?: string;
-            properties?: Record<string, string | number | boolean | null>;
-            scopes?: Array<{
-              scopeId: string;
-              scopeType: "global" | "organization" | "resource";
-            }>;
-            source?: {
-              name?: string;
-              type: "server" | "client" | "webhook" | "system";
-            };
-            subject?: { id: string; type: string };
-          },
-          { scheduled: boolean },
-          Name
-        >;
-      };
-      trackBatch: {
-        writeTrackBatch: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            events: Array<{
+            events?: Array<{
               actorId?: string;
               name: string;
               occurredAt?: number;
@@ -413,6 +382,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               };
               subject?: { id: string; type: string };
             }>;
+            name?: string;
+            occurredAt?: number;
+            organizationId?: string;
+            properties?: Record<string, string | number | boolean | null>;
+            scopes?: Array<{
+              scopeId: string;
+              scopeType: "global" | "organization" | "resource";
+            }>;
+            source?: {
+              name?: string;
+              type: "server" | "client" | "webhook" | "system";
+            };
+            subject?: { id: string; type: string };
           },
           { scheduled: boolean; scheduledCount: number },
           Name

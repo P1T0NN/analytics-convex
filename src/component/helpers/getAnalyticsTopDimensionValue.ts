@@ -23,22 +23,22 @@ import type { typesAnalyticsScopeType } from "../types/types";
  * });
  */
 export async function getAnalyticsTopDimensionValue(
-  ctx: QueryCtx,
-  args: {
-    metric: string;
-    scopeType: typesAnalyticsScopeType;
-    scopeId: string;
-    dimensionKey: string;
-    days?: number;
-  },
+    ctx: QueryCtx,
+    args: {
+        metric: string;
+        scopeType: typesAnalyticsScopeType;
+        scopeId: string;
+        dimensionKey: string;
+        days?: number;
+    },
 ): Promise<string | null> {
-  const totals = await getAnalyticsMetricTotalsByDimension(ctx, args);
+    const totals = await getAnalyticsMetricTotalsByDimension(ctx, args);
 
-  const [top] = getAnalyticsRanking({
-    items: [...totals.entries()],
-    getScore: ([, value]) => value,
-    limit: 1,
-  });
+	const [top] = getAnalyticsRanking({
+		items: [...totals.entries()],
+        getScore: ([, value]) => value,
+        limit: 1,
+    });
 
-  return top?.[0] ?? null;
+    return top?.[0] ?? null;
 }

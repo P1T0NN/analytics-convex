@@ -1,59 +1,92 @@
+// UTILS
+import { badRequest } from "../../errors/errors";
+
 // TYPES
 import type {
-    typesAnalyticsConfigState,
-    typesAnalyticsMetricConfig,
-    typesAnalyticsProperties,
-    typesAnalyticsSettings,
+	typesAnalyticsConfigState,
+	typesAnalyticsMetricConfig,
+	typesAnalyticsProperties,
+	typesAnalyticsSettings,
+	typesRollupMode,
+	typesAnalyticsAggregateEventInput,
 } from "../../types/types";
 
 export function getMetricDelta(
-    metric: typesAnalyticsMetricConfig,
-    properties: typesAnalyticsProperties,
+	metric: typesAnalyticsMetricConfig,
+	properties: typesAnalyticsProperties,
 ) {
-    if (metric.aggregation === "count") return 1;
-    
-    const value = metric.valueProperty
-        ? properties[metric.valueProperty]
-        : undefined;
-    
-    return typeof value === "number" ? value : null;
+	if (metric.aggregation === "count") return 1;
+
+	const value = metric.valueProperty
+		? properties[metric.valueProperty]
+		: undefined;
+
+	return typeof value === "number" ? value : null;
 }
 
 export function getTrafficMode(
-    settings: typesAnalyticsSettings,
-    metric: typesAnalyticsMetricConfig,
+	settings: typesAnalyticsSettings,
+	metric: typesAnalyticsMetricConfig,
 ) {
-    return metric.trafficMode ?? settings.trafficMode;
+	return metric.trafficMode ?? settings.trafficMode;
 }
 
 export function isHighVolumeMetric(
-    settings: typesAnalyticsSettings,
-    metric: typesAnalyticsMetricConfig,
+	settings: typesAnalyticsSettings,
+	metric: typesAnalyticsMetricConfig,
 ) {
-    return getTrafficMode(settings, metric) === "highVolume";
+	return getTrafficMode(settings, metric) === "highVolume";
 }
 
 export function hasHighVolumeMetrics(
-    config: typesAnalyticsConfigState,
-    eventName: string,
+	config: typesAnalyticsConfigState,
+	eventName: string,
 ) {
-    return config.metrics.some((metric) => {
-        return (
-            metric.eventNames.includes(eventName) && isHighVolumeMetric(config.settings, metric)
-        );
-    });
+	return config.metrics.some((metric) => {
+		return (
+			metric.eventNames.includes(eventName) &&
+			isHighVolumeMetric(config.settings, metric)
+		);
+	});
 }
 
 export function getHighVolumeEventNames(config: typesAnalyticsConfigState) {
-    const eventNames = new Set<string>();
+	const eventNames = new Set<string>();
 
-    for (const metric of config.metrics) {
-        if (!isHighVolumeMetric(config.settings, metric)) continue;
+	for (const metric of config.metrics) {
+		if (!isHighVolumeMetric(config.settings, metric)) continue;
 
-        for (const eventName of metric.eventNames) {
-            eventNames.add(eventName);
-        }
-    }
+		for (const eventName of metric.eventNames) {
+			eventNames.add(eventName);
+		}
+	}
 
-    return eventNames;
+	return eventNames;
+}
+
+export function shouldAggregateMetric(
+	config: typesAnalyticsConfigState,
+	event: typesAnalyticsAggregateEventInput,
+	metric: typesAnalyticsMetricConfig,
+	mode: typesRollupMode,
+) {
+	if (!metric.eventNames.includes(event.name)) return false;
+
+	if (mode === "realtime" && isHighVolumeMetric(config.settings, metric))
+		return false;
+
+	if (mode === "highVolume" && !isHighVolumeMetric(config.settings, metric))
+		return false;
+
+	return true;
+}
+
+export function getMetricConfigOrThrow(
+	config: typesAnalyticsConfigState,
+	metric: string,
+): typesAnalyticsMetricConfig {
+	const metricConfig = config.metricByName.get(metric);
+	if (!metricConfig) badRequest(`Unknown analytics metric "${metric}".`);
+
+	return metricConfig;
 }

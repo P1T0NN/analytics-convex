@@ -8,19 +8,29 @@ import { createAnalyticsApi } from "../api/createAnalyticsApi";
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
+// HELPERS
+import { createServerWrappers } from "../helpers/createServerWrappers";
+
 // TYPES
-import type { typesCreateAnalyticsApiOptions } from "../types/types";
+import type {
+	typesAnalyticsEventConfig,
+	typesAnalyticsMetricConfig,
+	typesCreateAnalyticsApiOptionsForConfig,
+} from "../types/types";
 
 /**
- * One-stop setup for analytics — mutations, queries, and cron registration.
- *
- * Replaces both `createAnalyticsApi` and `registerAnalyticsCrons`.
- * Call once in your app's `convex/analytics.ts` and once in `convex/crons.ts`.
+ * One-stop setup for analytics — server wrappers, client exports,
+ * and cron registration.
  *
  * @example
  * // convex/analytics.ts
- * export const { writeConfiguration, writeTrack, timeSeries, ... } =
+ * export const analytics =
  *   setupAnalytics(components.analytics, { events, metrics });
+ * export const { writeConfiguration, writeTrack, fetchTimeSeries, fetchSummary, fetchBreakdown } =
+ *   analytics.client;
+ *
+ * // convex/products.ts (server mutation)
+ * await analytics.writeTrack(ctx, { name: "product.viewed", ... });
  *
  * // convex/crons.ts
  * const crons = cronJobs();
@@ -28,16 +38,27 @@ import type { typesCreateAnalyticsApiOptions } from "../types/types";
  * export default crons;
  */
 export function setupAnalytics<
-	EventName extends string = string,
-	MetricName extends string = string,
+	const Events extends readonly typesAnalyticsEventConfig[],
+	const Metrics extends readonly typesAnalyticsMetricConfig<
+		string,
+		Events[number]["name"]
+	>[],
 >(
 	component: ComponentApi,
-	options: typesCreateAnalyticsApiOptions<EventName, MetricName>,
+	options: typesCreateAnalyticsApiOptionsForConfig<Events, Metrics>,
 ) {
-	const api = createAnalyticsApi(component, options);
+	const server = createServerWrappers(
+		component,
+		options.events,
+		options.metrics as any,
+	);
+
+	const client = createAnalyticsApi(component, options);
 
 	return {
-		...api,
+		...server,
+		/** Convex function builders — export for `useMutation` / `useQuery`. */
+		client,
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
 			crons: Crons,
