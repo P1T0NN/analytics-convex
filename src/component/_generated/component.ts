@@ -319,7 +319,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     mutations: {
-      configure: {
+      writeConfiguration: {
         writeConfiguration: FunctionReference<
           "mutation",
           "internal",
@@ -360,7 +360,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
-      track: {
+      writeTrack: {
         writeTrack: FunctionReference<
           "mutation",
           "internal",

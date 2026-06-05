@@ -21,6 +21,8 @@ import { validateTrackBatchLimits } from "../validations/eventInputLimits";
 import {
 	preparedTrackEventInputFields,
 	preparedTrackEventInputValidator,
+	propertyValueValidator,
+	sourceValidator,
 } from "../schemas/schemas";
 
 // TYPES
@@ -162,6 +164,10 @@ export const writeAnalyticsEvent = internalMutation({
 	args: {
 		...preparedTrackEventInputFields,
 		name: v.optional(v.string()),
+		occurredAt: v.optional(v.number()),
+		properties: v.optional(v.record(v.string(), propertyValueValidator)),
+		source: v.optional(sourceValidator),
+		idempotencyKey: v.optional(v.string()),
 		events: v.optional(v.array(preparedTrackEventInputValidator)),
 	},
 	returns: v.object({

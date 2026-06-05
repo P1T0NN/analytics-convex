@@ -24,8 +24,8 @@ import type * as helpers_upsertMetricRollupForEvent from "../helpers/upsertMetri
 import type * as helpers_writeAnalyticsEvent from "../helpers/writeAnalyticsEvent.js";
 import type * as http from "../http.js";
 import type * as lib from "../lib.js";
-import type * as mutations_configure from "../mutations/configure.js";
-import type * as mutations_track from "../mutations/track.js";
+import type * as mutations_writeConfiguration from "../mutations/writeConfiguration.js";
+import type * as mutations_writeTrack from "../mutations/writeTrack.js";
 import type * as queries_fetchBreakdown from "../queries/fetchBreakdown.js";
 import type * as queries_fetchConfiguration from "../queries/fetchConfiguration.js";
 import type * as queries_fetchMetricComparison from "../queries/fetchMetricComparison.js";
@@ -78,8 +78,8 @@ const fullApi: ApiFromModules<{
   "helpers/writeAnalyticsEvent": typeof helpers_writeAnalyticsEvent;
   http: typeof http;
   lib: typeof lib;
-  "mutations/configure": typeof mutations_configure;
-  "mutations/track": typeof mutations_track;
+  "mutations/writeConfiguration": typeof mutations_writeConfiguration;
+  "mutations/writeTrack": typeof mutations_writeTrack;
   "queries/fetchBreakdown": typeof queries_fetchBreakdown;
   "queries/fetchConfiguration": typeof queries_fetchConfiguration;
   "queries/fetchMetricComparison": typeof queries_fetchMetricComparison;
