@@ -36,7 +36,7 @@ regardless of event volume.
 ### Data flow
 
 ```
-track() mutation
+writeTrack() mutation
   → validates input against registered event config
   → builds idempotency key (event name + timestamp + actor + org + subject + scopes + properties + source)
   → schedules writeAnalyticsEvent via ctx.scheduler.runAfter(0, ...)
@@ -100,8 +100,8 @@ in convex.config.ts, define product events and metrics in convex/analytics.ts
 with defineAnalytics, event, property, and the typed metrics callback
 `metrics: ({ count, sum }) => ({ ... })`, run writeConfiguration after deploys
 or config changes, register registerAnalyticsCrons in convex/crons.ts, and
-track events from server mutations using the typed `analytics.track` helper.
-For batch ingestion, call `analytics.track(ctx, { events: [...] })`.
+use writeTrack from server mutations using the typed `analytics.writeTrack` helper.
+For batch ingestion, call `analytics.writeTrack(ctx, { events: [...] })`.
 
 Use mediumVolume by default, highVolume for noisy metrics, batch ingestion for
 buffered/firehose-style tracking, and monitor Convex Insights before production.
@@ -193,7 +193,7 @@ import { analytics } from "./analytics";
 export const configureAnalytics = mutation({
   args: {},
   handler: async (ctx) => {
-    await analytics.configure(ctx);
+    await analytics.writeConfiguration(ctx);
     return null;
   },
 });
@@ -213,7 +213,7 @@ export const useFeature = mutation({
   handler: async (ctx, args) => {
     // ...your product logic...
 
-    await analytics.track(ctx, "feature.used", {
+    await analytics.writeTrack(ctx, "feature.used", {
       actorId: ctx.auth.userId, // optional — who did this
       organizationId: user.orgId, // optional — which org
       properties: {
@@ -228,7 +228,7 @@ export const useFeature = mutation({
 You can also pass the event as one object:
 
 ```ts
-await analytics.track(ctx, {
+await analytics.writeTrack(ctx, {
   name: "page.viewed",
   properties: { path: "/dashboard" },
 });
@@ -236,12 +236,12 @@ await analytics.track(ctx, {
 
 **Batch ingestion:**
 
-Use `analytics.track(ctx, { events })` when you already have multiple events
+Use `analytics.writeTrack(ctx, { events })` when you already have multiple events
 buffered. Each call is bounded by `ANALYTICS_LIMITS.maxTrackBatchSize`; chunk
 larger firehose inputs into multiple calls.
 
 ```ts
-await analytics.track(ctx, {
+await analytics.writeTrack(ctx, {
   events: [
     {
       name: "page.viewed",
@@ -272,7 +272,7 @@ export const {
 ```
 
 The wrapped functions (`writeTrack`, `timeSeries`, etc.) include your
-`authorize` callback. The server-side helpers (`track`, `configure`,
+`authorize` callback. The server-side helpers (`writeTrack`, `writeConfiguration`,
 `fetchSummary`, `fetchTimeSeries`, etc.) bypass that callback and are meant for
 Convex functions that already have their own auth.
 
@@ -314,7 +314,7 @@ accumulate indefinitely.
 | `name`               | `string`                                            | Unique event identifier (e.g. `"page.viewed"`)                     |
 | `label`              | `string`                                            | Human-readable label for dashboards                                |
 | `properties`         | `Record<string, "string" \| "number" \| "boolean">` | Optional — registered property types                               |
-| `requiredProperties` | `string[]`                                          | Optional — properties that must be present on every `track()` call |
+| `requiredProperties` | `string[]`                                          | Optional — properties that must be present on every `writeTrack()` call |
 
 ### Metric config
 
@@ -388,7 +388,7 @@ or ingestion workers.
 
 ### Idempotency
 
-Every `track()` call generates an idempotency key from: event name + timestamp +
+Every `writeTrack()` call generates an idempotency key from: event name + timestamp +
 actor + organization + subject + scopes + properties + source. Duplicate calls
 with the same parameters within the same millisecond are silently ignored. This
 means you can safely retry failed product mutations without double-counting
@@ -404,7 +404,7 @@ are rejected. Required properties must be present and non-null.
 Events can be optionally scoped to an organization or resource:
 
 ```ts
-await analytics.track(ctx, "page.viewed", {
+await analytics.writeTrack(ctx, "page.viewed", {
   organizationId: "org_abc123",
   scopes: [{ scopeType: "resource", scopeId: "project:proj_xyz" }],
   properties: { path: "/dashboard" },
@@ -583,7 +583,7 @@ and Convex Insights before treating them as production defaults.
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Low: prototypes, admin tools, under 5 events/sec sustained     | Global `trafficMode: "lowVolume"`, defaults for shard counts, retention 30-90 days, retention cron daily                                                                                                                                                                                        |
 | Medium: normal SaaS, 5-50 events/sec sustained                 | Global `trafficMode: "mediumVolume"`, `mediumVolumeShardCount: 8-16`, `highVolumeShardCount: 32`, `highVolumeBatchSize: 250`, high-volume cron every 1-5 minutes                                                                                                                                |
-| High: noisy product events, webhooks, 50+ events/sec sustained | Keep normal metrics on `mediumVolume`, mark hot metrics `trafficMode: "highVolume"`, use `writeTrack({ events })` or `analytics.track(ctx, { events })`, `highVolumeShardCount: 64-128`, `highVolumeBatchSize: 500-1_000`, `highVolumeMaxCatchupBatches: 4-10`, high-volume cron every 1 minute |
+| High: noisy product events, webhooks, 50+ events/sec sustained | Keep normal metrics on `mediumVolume`, mark hot metrics `trafficMode: "highVolume"`, use `writeTrack({ events })` or `analytics.writeTrack(ctx, { events })`, `highVolumeShardCount: 64-128`, `highVolumeBatchSize: 500-1_000`, `highVolumeMaxCatchupBatches: 4-10`, high-volume cron every 1 minute |
 
 For firehose-style intake, buffer events in your app or worker and send chunks
 of at most `ANALYTICS_LIMITS.maxTrackBatchSize`. If Convex Insights shows OCC
@@ -656,7 +656,7 @@ The `adminOnly` flag on metric configs is informational — it's up to your
 `authorize` callback to enforce it.
 
 **Important:** Authorization only applies to the wrapped API (`writeTrack`,
-`timeSeries`, etc.). Server-side helpers (`track`, `fetchSummary`, etc.) and
+`timeSeries`, etc.). Server-side helpers (`writeTrack`, `fetchSummary`, etc.) and
 direct component calls bypass authorization. Use them only from mutations that
 already implement their own auth.
 
@@ -762,8 +762,9 @@ const top5 = getAnalyticsRanking({
 
 | Export                                               | Description                                                                                                                            |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side tracking                       |
-| `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `track`, `configure`, `fetchSummary`, and `fetchTimeSeries`               |
+| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                       |
+| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                    |
+| `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `writeTrack`, `writeConfiguration`, `fetchSummary`, and `fetchTimeSeries` |
 | `createAnalyticsReader(component, metrics)`          | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                       |
 | `createAnalyticsTracker(component, events)`          | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                            |
 | `event(name, options)`                               | Define an analytics event with typed properties                                                                                        |
@@ -776,6 +777,10 @@ const top5 = getAnalyticsRanking({
 | `registerAnalyticsCrons(crons, component, options?)` | Register maintenance cron jobs                                                                                                         |
 | `ANALYTICS_TRAFFIC_MODE`                             | Traffic mode constant object                                                                                                           |
 | `ANALYTICS_LIMITS`                                   | Hard limit constants for ingestion, config, and runtime settings                                                                       |
+| `getAnalyticsRanking`                                | Pure ranking/sorting utility with tie-breakers                                                                                         |
+| `compareScores`                                      | Direction-aware score comparison for sorting                                                                                           |
+| `getAnalyticsMetricTotalsByDimension`                | Aggregated dimension totals (Map) for counters and leaderboards                                                                        |
+| `getAnalyticsTopDimensionValue`                      | Single highest-value dimension entry, or null                                                                                          |
 
 ---
 
@@ -811,7 +816,7 @@ shard counts, batch size, retention, and query limits based on those signals.
    tracks future events (unless you build a custom backfill using the raw event
    table).
 
-2. **Use the scheduler pattern** — `track()` returns immediately. If you need
+2. **Use the scheduler pattern** — `writeTrack()` returns immediately. If you need
    confirmation that an event was recorded, query the event table by idempotency
    key.
 
