@@ -20,7 +20,7 @@
     "predev": "convex init && npm run build:codegen",
     "build": "tsc --project ./tsconfig.build.json",
     "build:codegen": "npx convex codegen --component-dir ./src/component && npm run build",
-    "build:clean": "rimraf dist *.tsbuildinfo && npm run build:codegen",
+    "build:clean": "rimraf dist && rimraf tsconfig.build.tsbuildinfo && npm run build:codegen",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
