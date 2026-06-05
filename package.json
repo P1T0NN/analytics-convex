@@ -29,8 +29,8 @@
     "insights": "convex insights --details",
     "insights:prod": "convex insights --details --prod",
     "preversion": "bun install --frozen-lockfile && npm run build:clean && npm run lint && npm run typecheck",
-    "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
-    "release": "npm version patch && npm publish && git push --follow-tags"
+    "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha --access public && git push --follow-tags",
+    "release": "npm version patch && npm publish --access public && git push --follow-tags"
   },
   "files": [
     "dist",
