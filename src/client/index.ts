@@ -25,6 +25,10 @@ export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 // LIMITS
 export { ANALYTICS_LIMITS } from "../shared/analyticsLimits";
 
+// UTILS
+export { compareScores } from "../component/utils/compareScores";
+export { getAnalyticsRanking } from "../component/utils/getAnalyticsRanking";
+
 // CRONS
 export { registerAnalyticsCrons } from "./crons/registerAnalyticsCrons";
 
