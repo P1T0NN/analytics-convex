@@ -228,7 +228,7 @@ export const useFeature = mutation({
 You can also pass the event as one object:
 
 ```ts
-await analytics.writeTrack(ctx, {
+await analytics.track(ctx, {
   name: "page.viewed",
   properties: { path: "/dashboard" },
 });
@@ -236,12 +236,12 @@ await analytics.writeTrack(ctx, {
 
 **Batch ingestion:**
 
-Use `analytics.writeTrack(ctx, { events })` when you already have multiple events
+Use `analytics.track(ctx, { events })` when you already have multiple events
 buffered. Each call is bounded by `ANALYTICS_LIMITS.maxTrackBatchSize`; chunk
 larger firehose inputs into multiple calls.
 
 ```ts
-await analytics.writeTrack(ctx, {
+await analytics.track(ctx, {
   events: [
     {
       name: "page.viewed",
@@ -272,9 +272,9 @@ export const {
 ```
 
 The wrapped functions (`writeTrack`, `fetchTimeSeries`, etc.) include your
-`authorize` callback. The server-side helpers at the top level (`writeTrack`, `writeConfiguration`,
-`fetchSummary`, `fetchTimeSeries`, etc.) bypass that callback and are meant for
-Convex functions that already have their own auth.
+`authorize` callback. The server-side helpers at the top level (`writeTrack`,
+`writeConfiguration`, `fetchSummary`, `fetchTimeSeries`, etc.) bypass that
+callback and are meant for Convex functions that already have their own auth.
 
 ### 4. Register crons
 
@@ -309,11 +309,11 @@ accumulate indefinitely.
 
 ### Event config
 
-| Field                | Type                                                | Description                                                        |
-| -------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
-| `name`               | `string`                                            | Unique event identifier (e.g. `"page.viewed"`)                     |
-| `label`              | `string`                                            | Human-readable label for dashboards                                |
-| `properties`         | `Record<string, "string" \| "number" \| "boolean">` | Optional — registered property types                               |
+| Field                | Type                                                | Description                                                             |
+| -------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `name`               | `string`                                            | Unique event identifier (e.g. `"page.viewed"`)                          |
+| `label`              | `string`                                            | Human-readable label for dashboards                                     |
+| `properties`         | `Record<string, "string" \| "number" \| "boolean">` | Optional — registered property types                                    |
 | `requiredProperties` | `string[]`                                          | Optional — properties that must be present on every `writeTrack()` call |
 
 ### Metric config
@@ -388,11 +388,11 @@ or ingestion workers.
 
 ### Idempotency
 
-Every `writeTrack()` call generates an idempotency key from: event name + timestamp +
-actor + organization + subject + scopes + properties + source. Duplicate calls
-with the same parameters within the same millisecond are silently ignored. This
-means you can safely retry failed product mutations without double-counting
-analytics.
+Every `writeTrack()` call generates an idempotency key from: event name +
+timestamp + actor + organization + subject + scopes + properties + source.
+Duplicate calls with the same parameters within the same millisecond are
+silently ignored. This means you can safely retry failed product mutations
+without double-counting analytics.
 
 ### Properties
 
@@ -579,10 +579,10 @@ config. Unset metrics inherit the global setting.
 These are starting points, not permanent rules. Confirm them with realistic load
 and Convex Insights before treating them as production defaults.
 
-| Traffic profile                                                | Recommended setup                                                                                                                                                                                                                                                                               |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Low: prototypes, admin tools, under 5 events/sec sustained     | Global `trafficMode: "lowVolume"`, defaults for shard counts, retention 30-90 days, retention cron daily                                                                                                                                                                                        |
-| Medium: normal SaaS, 5-50 events/sec sustained                 | Global `trafficMode: "mediumVolume"`, `mediumVolumeShardCount: 8-16`, `highVolumeShardCount: 32`, `highVolumeBatchSize: 250`, high-volume cron every 1-5 minutes                                                                                                                                |
+| Traffic profile                                                | Recommended setup                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Low: prototypes, admin tools, under 5 events/sec sustained     | Global `trafficMode: "lowVolume"`, defaults for shard counts, retention 30-90 days, retention cron daily                                                                                                                                                                                             |
+| Medium: normal SaaS, 5-50 events/sec sustained                 | Global `trafficMode: "mediumVolume"`, `mediumVolumeShardCount: 8-16`, `highVolumeShardCount: 32`, `highVolumeBatchSize: 250`, high-volume cron every 1-5 minutes                                                                                                                                     |
 | High: noisy product events, webhooks, 50+ events/sec sustained | Keep normal metrics on `mediumVolume`, mark hot metrics `trafficMode: "highVolume"`, use `writeTrack({ events })` or `analytics.writeTrack(ctx, { events })`, `highVolumeShardCount: 64-128`, `highVolumeBatchSize: 500-1_000`, `highVolumeMaxCatchupBatches: 4-10`, high-volume cron every 1 minute |
 
 For firehose-style intake, buffer events in your app or worker and send chunks
@@ -625,6 +625,53 @@ per-workspace, or per-product metrics.
 { type: "resource", resourceType: "project", id: "proj_xyz" }
 ```
 
+Use the exported helpers when a project needs stable compound scope IDs, such as
+owner-role analytics:
+
+```ts
+import { createAnalyticsScopeId } from "@piton-/analytics-convex";
+
+const ownerScopeId = createAnalyticsScopeId("hospitalityOwner", userId);
+// "hospitalityOwner:userId"
+```
+
+This is useful when you already store owner-role data under an organization
+scope:
+
+```ts
+const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
+  metric: "newReservations",
+  scopeType: "organization",
+  scopeId: ownerScopeId,
+  dimensionKey: "hospitalityId",
+});
+```
+
+For new resource-style scopes, create the tracking scope and query input from
+the same resource type + ID:
+
+```ts
+import {
+  createAnalyticsResourceScope,
+  createAnalyticsResourceScopeInput,
+} from "@piton-/analytics-convex";
+
+const ownerScope = createAnalyticsResourceScope("hospitalityOwner", userId);
+
+await analytics.writeTrack(ctx, {
+  name: "reservation.created",
+  scopes: [ownerScope],
+  properties: { hospitalityId },
+});
+
+const summary = await analytics.fetchSummary(ctx, {
+  metric: "newReservations",
+  from,
+  to,
+  scope: createAnalyticsResourceScopeInput("hospitalityOwner", userId),
+});
+```
+
 Events automatically generate scopes from their `organizationId`, `subject`, and
 explicit `scopes` array. Queries accept scopes via their `scope` parameter.
 
@@ -656,9 +703,9 @@ The `adminOnly` flag on metric configs is informational — it's up to your
 `authorize` callback to enforce it.
 
 **Important:** Authorization only applies to the wrapped API (`writeTrack`,
-`timeSeries`, etc.). Server-side helpers (`writeTrack`, `fetchSummary`, etc.) and
-direct component calls bypass authorization. Use them only from mutations that
-already implement their own auth.
+`timeSeries`, etc.). Server-side helpers (`writeTrack`, `fetchSummary`, etc.)
+and direct component calls bypass authorization. Use them only from mutations
+that already implement their own auth.
 
 ---
 
@@ -723,11 +770,11 @@ const top5 = getAnalyticsRanking({
 
 **Mutations:**
 
-| Export                 | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `writeConfiguration`   | Store events, metrics, and settings config                   |
-| `writeTrack`           | Validate and schedule one event or `{ events: [...] }` batch |
-| `writeAnalyticsEvent`  | Internal — scheduled by `writeTrack`, do not call directly   |
+| Export                | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `writeConfiguration`  | Store events, metrics, and settings config                   |
+| `writeTrack`          | Validate and schedule one event or `{ events: [...] }` batch |
+| `writeAnalyticsEvent` | Internal — scheduled by `writeTrack`, do not call directly   |
 
 **Queries:**
 
@@ -758,8 +805,8 @@ const top5 = getAnalyticsRanking({
 
 | Export                                               | Description                                                                                                                            |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                       |
-| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                    |
+| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                            |
+| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                          |
 | `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `writeTrack`, `writeConfiguration`, `fetchSummary`, and `fetchTimeSeries` |
 | `createAnalyticsReader(component, metrics)`          | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                       |
 | `createAnalyticsTracker(component, events)`          | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                            |
@@ -812,9 +859,9 @@ shard counts, batch size, retention, and query limits based on those signals.
    tracks future events (unless you build a custom backfill using the raw event
    table).
 
-2. **Use the scheduler pattern** — `writeTrack()` returns immediately. If you need
-   confirmation that an event was recorded, query the event table by idempotency
-   key.
+2. **Use the scheduler pattern** — `writeTrack()` returns immediately. If you
+   need confirmation that an event was recorded, query the event table by
+   idempotency key.
 
 3. **Keep dimensions low-cardinal** — dimensions like `userId` or `sessionId`
    will create one rollup row per value per day, blowing up the rollup table and

@@ -49,6 +49,18 @@ export { toAggregateInput } from "../component/utils/toAggregateInput";
 // LIMITS
 export { ANALYTICS_LIMITS } from "../shared/analyticsLimits";
 
+// SCOPES
+export {
+  ANALYTICS_RESOURCE_SCOPE_SEPARATOR,
+  ANALYTICS_SCOPE_SEPARATOR,
+  createAnalyticsResourceScope,
+  createAnalyticsResourceScopeId,
+  createAnalyticsResourceScopeInput,
+  createAnalyticsScopeId,
+  type typesAnalyticsResourceScope,
+  type typesAnalyticsResourceScopeInput,
+} from "../shared/analyticsScopes";
+
 // CRONS
 export { registerAnalyticsCrons } from "./crons/registerAnalyticsCrons";
 

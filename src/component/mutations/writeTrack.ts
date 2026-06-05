@@ -14,8 +14,8 @@ import { validateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
-	trackEventInputFields,
-	trackEventInputValidator,
+  trackEventInputFields,
+  trackEventInputValidator,
 } from "../schemas/schemas";
 
 // TYPES
@@ -46,51 +46,53 @@ import type { typesTrackEventInput } from "../types/types";
  * });
  */
 export const writeTrack = mutation({
-		args: {
-			name: v.optional(v.string()),
-			...trackEventInputFields,
-			events: v.optional(v.array(trackEventInputValidator)),
-		},
-		returns: v.object({
-			scheduled: v.boolean(),
-			scheduledCount: v.number(),
-		}),
-		handler: async (ctx, args) => {
-			const config = await getConfig(ctx);
-	
-			if (args.events) {
-				validateTrackBatchLimits(args.events.length);
-		
-				const events = args.events.map((input) =>
-						prepareTrackEvent(config, input),
-				);
-		
-				await (ctx.scheduler.runAfter as any)(0, internal.lib.writeAnalyticsEvent, { events });
-		
-				return {
-						scheduled: true,
-						scheduledCount: events.length,
-				};
-			}
-	
-			if (!args.name) {
-				throw new Error('writeTrack requires either "name" or "events".');
-			}
-	
-			const input: typesTrackEventInput = {
-				...args,
-				name: args.name,
-			};
-	
-			const event = prepareTrackEvent(config, input);
-	
-			await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
-				...event,
-			});
-	
-			return {
-				scheduled: true,
-				scheduledCount: 1,
-			};
-		},
+  args: {
+    name: v.optional(v.string()),
+    ...trackEventInputFields,
+    events: v.optional(v.array(trackEventInputValidator)),
+  },
+  returns: v.object({
+    scheduled: v.boolean(),
+    scheduledCount: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const config = await getConfig(ctx);
+
+    if (args.events) {
+      validateTrackBatchLimits(args.events.length);
+
+      const events = args.events.map((input) =>
+        prepareTrackEvent(config, input),
+      );
+
+      await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
+        events,
+      });
+
+      return {
+        scheduled: true,
+        scheduledCount: events.length,
+      };
+    }
+
+    if (!args.name) {
+      throw new Error('writeTrack requires either "name" or "events".');
+    }
+
+    const input: typesTrackEventInput = {
+      ...args,
+      name: args.name,
+    };
+
+    const event = prepareTrackEvent(config, input);
+
+    await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
+      ...event,
+    });
+
+    return {
+      scheduled: true,
+      scheduledCount: 1,
+    };
+  },
 });
