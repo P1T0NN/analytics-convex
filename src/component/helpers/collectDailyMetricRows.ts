@@ -5,11 +5,11 @@ import { ConvexError } from "convex/values";
 import { startOfUtcDay } from "../utils/common/dateUtils";
 
 // TYPES
-import type { QueryCtx } from "../_generated/server";
+import type { GenericDatabaseReader } from "convex/server";
 import type { typesAnalyticsScope, typesAnalyticsSettings } from "../types/types";
 
 export async function collectDailyMetricRows(
-    ctx: QueryCtx,
+    ctx: { db: GenericDatabaseReader<any> },
     args: {
         metric: string;
         scope: typesAnalyticsScope;

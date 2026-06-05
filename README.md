@@ -264,15 +264,15 @@ explicitly from `convex/analytics.ts`:
 export const {
   writeConfiguration,
   writeTrack, // single or batch: writeTrack({ name, ... }) or writeTrack({ events })
-  timeSeries,
-  summary,
-  breakdown,
-  metricComparison,
-} = analytics;
+  fetchTimeSeries,
+  fetchSummary,
+  fetchBreakdown,
+  fetchMetricComparison,
+} = analytics.client;
 ```
 
-The wrapped functions (`writeTrack`, `timeSeries`, etc.) include your
-`authorize` callback. The server-side helpers (`writeTrack`, `writeConfiguration`,
+The wrapped functions (`writeTrack`, `fetchTimeSeries`, etc.) include your
+`authorize` callback. The server-side helpers at the top level (`writeTrack`, `writeConfiguration`,
 `fetchSummary`, `fetchTimeSeries`, etc.) bypass that callback and are meant for
 Convex functions that already have their own auth.
 

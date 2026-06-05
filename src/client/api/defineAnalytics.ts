@@ -8,6 +8,9 @@ import { createAnalyticsApi } from "./createAnalyticsApi";
 // BUILDERS
 import { createAnalyticsMetricBuilders } from "../builders/metric";
 
+// HELPERS
+import { createServerWrappers } from "../helpers/createServerWrappers";
+
 // TYPES
 import type {
   typesAnalyticsEventConfig,
@@ -77,10 +80,13 @@ export function defineAnalytics<
     metric.build(name),
   ) as unknown as typesMetricConfigsForMap<Events, Metrics>;
 
-  return createAnalyticsApi(component, {
-    events,
-    metrics,
-    ...(options.settings ? { settings: options.settings } : {}),
-    ...(options.authorize ? { authorize: options.authorize } : {}),
-  });
+  return {
+    ...createServerWrappers(component, events, metrics as any),
+    client: createAnalyticsApi(component, {
+      events,
+      metrics,
+      ...(options.settings ? { settings: options.settings } : {}),
+      ...(options.authorize ? { authorize: options.authorize } : {}),
+    }),
+  };
 }

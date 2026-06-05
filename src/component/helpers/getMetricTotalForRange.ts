@@ -5,14 +5,14 @@ import { TOTAL_DIMENSION } from "../constants";
 import { collectDailyMetricRows } from "./collectDailyMetricRows";
 
 // TYPES
-import type { QueryCtx } from "../_generated/server";
+import type { GenericDatabaseReader } from "convex/server";
 import type {
 	typesAnalyticsConfigState,
 	typesAnalyticsScope,
 } from "../types/types";
 
 export async function getMetricTotalForRange(
-	ctx: QueryCtx,
+	ctx: { db: GenericDatabaseReader<any> },
 	config: typesAnalyticsConfigState,
 	args: {
 		metric: string;
