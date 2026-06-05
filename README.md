@@ -667,21 +667,18 @@ already implement their own auth.
 ### Dimension totals
 
 Get aggregated totals by dimension value for counters, leaderboards, and ranked
-lists:
+lists. Import directly and call with `ctx`:
 
 ```ts
-import { components } from "./_generated/api";
+import { getAnalyticsMetricTotalsByDimension } from "@piton-/analytics-convex";
 
-const totals = await ctx.runQuery(
-  components.analytics.lib.getAnalyticsMetricTotalsByDimension,
-  {
-    metric: "featureUses",
-    scopeType: "global",
-    scopeId: "__global",
-    dimensionKey: "feature",
-    days: 30, // default 30
-  },
-);
+const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
+  metric: "featureUses",
+  scopeType: "global",
+  scopeId: "__global",
+  dimensionKey: "feature",
+  days: 30, // default 30
+});
 
 // totals: Map { "search" → 523, "export" → 412, "dashboard" → 301 }
 ```
@@ -691,15 +688,14 @@ const totals = await ctx.runQuery(
 Get the single highest-value dimension entry:
 
 ```ts
-const top = await ctx.runQuery(
-  components.analytics.lib.getAnalyticsTopDimensionValue,
-  {
-    metric: "featureUses",
-    scopeType: "organization",
-    scopeId: "org_abc",
-    dimensionKey: "feature",
-  },
-);
+import { getAnalyticsTopDimensionValue } from "@piton-/analytics-convex";
+
+const top = await getAnalyticsTopDimensionValue(ctx, {
+  metric: "featureUses",
+  scopeType: "organization",
+  scopeId: "org_abc",
+  dimensionKey: "feature",
+});
 
 // top: "search" (or null if no data)
 ```
