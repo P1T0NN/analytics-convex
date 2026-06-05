@@ -6,7 +6,7 @@
   "bugs": {
     "url": "https://github.com/P1T0NN/analytics-convex/issues"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "keywords": [
     "convex",
@@ -30,8 +30,7 @@
     "insights:prod": "convex insights --details --prod",
     "preversion": "bun install --frozen-lockfile && npm run build:clean && npm run lint && npm run typecheck",
     "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
-    "release": "npm version patch && npm publish && git push --follow-tags",
-    "version": "(npm whoami || npm login) && vim -c 'normal o' -c 'normal o## '$npm_package_version CHANGELOG.md && prettier -w CHANGELOG.md && git add CHANGELOG.md"
+    "release": "npm version patch && npm publish && git push --follow-tags"
   },
   "files": [
     "dist",
