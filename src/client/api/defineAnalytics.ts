@@ -81,7 +81,7 @@ export function defineAnalytics<
   ) as unknown as typesMetricConfigsForMap<Events, Metrics>;
 
   return {
-    ...createServerWrappers(component, events, metrics as any),
+    ...createServerWrappers(component, events, metrics),
     client: createAnalyticsApi(component, {
       events,
       metrics,

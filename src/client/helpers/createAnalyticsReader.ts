@@ -53,6 +53,22 @@ type typesBreakdownArgs<
   groupBy: typesDimensionNameForMetric<Metrics, Name>;
 };
 
+type typesMetricTotalsByDimensionArgs<
+  Metrics extends readonly typesAnalyticsMetricConfig[],
+  Name extends typesMetricName<Metrics>,
+> = {
+  metric: Name;
+  scope?: typesAnalyticsScopeInput;
+  dimensionKey: typesDimensionNameForMetric<Metrics, Name>;
+  days?: number;
+  maxRows?: number;
+};
+
+type typesTopDimensionValueArgs<
+  Metrics extends readonly typesAnalyticsMetricConfig[],
+  Name extends typesMetricName<Metrics>,
+> = Omit<typesMetricTotalsByDimensionArgs<Metrics, Name>, "maxRows">;
+
 /**
  * Create typed server-side read helpers from your metric config.
  *
@@ -88,6 +104,23 @@ export function createAnalyticsReader<
       args: typesBreakdownArgs<Metrics, Name>,
     ) => {
       return await ctx.runQuery(component.lib.fetchBreakdown, args);
+    },
+    fetchMetricTotalsByDimension: async <Name extends typesMetricName<Metrics>>(
+      ctx: typesQueryCtx,
+      args: typesMetricTotalsByDimensionArgs<Metrics, Name>,
+    ): Promise<Map<string, number>> => {
+      const rows = await ctx.runQuery(
+        component.lib.fetchMetricTotalsByDimension,
+        args,
+      );
+
+      return new Map(rows.map((row) => [row.key, row.value]));
+    },
+    fetchTopDimensionValue: async <Name extends typesMetricName<Metrics>>(
+      ctx: typesQueryCtx,
+      args: typesTopDimensionValueArgs<Metrics, Name>,
+    ): Promise<string | null> => {
+      return await ctx.runQuery(component.lib.fetchTopDimensionValue, args);
     },
   };
 }

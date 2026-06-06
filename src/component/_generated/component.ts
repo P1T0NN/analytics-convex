@@ -157,6 +157,22 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      fetchMetricTotalsByDimension: FunctionReference<
+        "query",
+        "internal",
+        {
+          days?: number;
+          dimensionKey: string;
+          maxRows?: number;
+          metric: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+        },
+        Array<{ key: string; value: number }>,
+        Name
+      >;
       fetchSummary: FunctionReference<
         "query",
         "internal",
@@ -225,6 +241,21 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           };
           x: "date";
         },
+        Name
+      >;
+      fetchTopDimensionValue: FunctionReference<
+        "query",
+        "internal",
+        {
+          days?: number;
+          dimensionKey: string;
+          metric: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+        },
+        string | null,
         Name
       >;
       processPendingHighVolumeAnalyticsEvents: FunctionReference<
@@ -522,6 +553,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+      fetchMetricTotalsByDimension: {
+        fetchMetricTotalsByDimension: FunctionReference<
+          "query",
+          "internal",
+          {
+            days?: number;
+            dimensionKey: string;
+            maxRows?: number;
+            metric: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+          },
+          Array<{ key: string; value: number }>,
+          Name
+        >;
+      };
       fetchSummary: {
         fetchSummary: FunctionReference<
           "query",
@@ -593,6 +642,23 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
             x: "date";
           },
+          Name
+        >;
+      };
+      fetchTopDimensionValue: {
+        fetchTopDimensionValue: FunctionReference<
+          "query",
+          "internal",
+          {
+            days?: number;
+            dimensionKey: string;
+            metric: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+          },
+          string | null,
           Name
         >;
       };

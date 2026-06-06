@@ -8,7 +8,13 @@ import { getAnalyticsRanking } from "../utils/getAnalyticsRanking";
 import type { typesAnalyticsScopeType } from "../types/types";
 
 /**
+ * @internal
+ *
  * Get the single highest-value dimension entry.
+ *
+ * This helper reads the component database directly. App code must use
+ * `analytics.fetchTopDimensionValue(ctx, ...)` so reads route through the
+ * configured analytics component.
  *
  * Wraps getAnalyticsMetricTotalsByDimension and returns the top-ranked
  * dimension value, or null if no data exists.
@@ -22,22 +28,22 @@ import type { typesAnalyticsScopeType } from "../types/types";
  * });
  */
 export async function getAnalyticsTopDimensionValue(
-    ctx: any,
-    args: {
-        metric: string;
-        scopeType: typesAnalyticsScopeType;
-        scopeId: string;
-        dimensionKey: string;
-        days?: number;
-    },
+  ctx: any,
+  args: {
+    metric: string;
+    scopeType: typesAnalyticsScopeType;
+    scopeId: string;
+    dimensionKey: string;
+    days?: number;
+  },
 ): Promise<string | null> {
-    const totals = await getAnalyticsMetricTotalsByDimension(ctx, args);
+  const totals = await getAnalyticsMetricTotalsByDimension(ctx, args);
 
-	const [top] = getAnalyticsRanking({
-		items: [...totals.entries()],
-        getScore: ([, value]) => value,
-        limit: 1,
-    });
+  const [top] = getAnalyticsRanking({
+    items: [...totals.entries()],
+    getScore: ([, value]) => value,
+    limit: 1,
+  });
 
-    return top?.[0] ?? null;
+  return top?.[0] ?? null;
 }

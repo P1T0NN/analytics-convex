@@ -82,3 +82,12 @@ export function resolveScope(
     id: createResourceScopeId(scope.resourceType, scope.id),
   };
 }
+
+export function toMetricScope(
+  scope: typesAnalyticsScope,
+): typesAnalyticsMetricScope {
+  return {
+    scopeType: scope.type,
+    scopeId: scope.id,
+  };
+}

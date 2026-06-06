@@ -665,10 +665,9 @@ This is useful when you already store owner-role data under an organization
 scope:
 
 ```ts
-const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
+const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
   metric: "newReservations",
-  scopeType: "organization",
-  scopeId: ownerScopeId,
+  scope: { type: "organization", id: ownerScopeId },
   dimensionKey: "hospitalityId",
 });
 ```
@@ -740,15 +739,13 @@ that already implement their own auth.
 ### Dimension totals
 
 Get aggregated totals by dimension value for counters, leaderboards, and ranked
-lists. Import directly and call with `ctx`:
+lists. Use the configured `analytics` object so reads route through the
+analytics component database:
 
 ```ts
-import { getAnalyticsMetricTotalsByDimension } from "@piton-/analytics-convex";
-
-const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
+const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
   metric: "featureUses",
-  scopeType: "global",
-  scopeId: "__global",
+  scope: { type: "global" },
   dimensionKey: "feature",
   days: 30, // default 30
 });
@@ -761,12 +758,9 @@ const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
 Get the single highest-value dimension entry:
 
 ```ts
-import { getAnalyticsTopDimensionValue } from "@piton-/analytics-convex";
-
-const top = await getAnalyticsTopDimensionValue(ctx, {
+const top = await analytics.fetchTopDimensionValue(ctx, {
   metric: "featureUses",
-  scopeType: "organization",
-  scopeId: "org_abc",
+  scope: { type: "organization", id: "org_abc" },
   dimensionKey: "feature",
 });
 
@@ -796,29 +790,28 @@ const top5 = getAnalyticsRanking({
 
 **Mutations:**
 
-| Export                | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `writeConfiguration`  | Store events, metrics, and settings config                   |
-| `writeTrack`          | Validate and schedule one event or `{ events: [...] }` batch |
-| `writeAnalyticsEvent` | Internal — scheduled by `writeTrack`, do not call directly   |
+| Export               | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| `writeConfiguration` | Store events, metrics, and settings config                   |
+| `writeTrack`         | Validate and schedule one event or `{ events: [...] }` batch |
 
 **Queries:**
 
-| Export                  | Description                                                 |
-| ----------------------- | ----------------------------------------------------------- |
-| `fetchConfiguration`    | Read the current events, metrics, settings, and config hash |
-| `fetchTimeSeries`       | Daily bucketed chart data with optional dimension grouping  |
-| `fetchSummary`          | Single aggregated total for a metric over a date range      |
-| `fetchBreakdown`        | Top dimension values ranked by total                        |
-| `fetchMetricComparison` | Compare metric between current and previous period          |
+| Export                         | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `fetchConfiguration`           | Read events, metrics, settings, and config hash         |
+| `fetchTimeSeries`              | Daily bucketed chart data with optional dimension group |
+| `fetchSummary`                 | Single aggregated total for a metric over a date range  |
+| `fetchBreakdown`               | Top dimension values ranked by total                    |
+| `fetchMetricComparison`        | Compare metric between current and previous period      |
+| `fetchMetricTotalsByDimension` | Aggregated dimension totals for app-side helpers        |
+| `fetchTopDimensionValue`       | Single highest-value dimension entry for app helpers    |
 
 **Helpers:**
 
-| Export                                | Description                          |
-| ------------------------------------- | ------------------------------------ |
-| `getAnalyticsMetricTotalsByDimension` | Map of dimension values to totals    |
-| `getAnalyticsTopDimensionValue`       | Single highest-value dimension entry |
-| `getAnalyticsRanking`                 | Pure ranking/sorting utility         |
+| Export                | Description                  |
+| --------------------- | ---------------------------- |
+| `getAnalyticsRanking` | Pure ranking/sorting utility |
 
 **Crons:**
 
@@ -829,27 +822,25 @@ const top5 = getAnalyticsRanking({
 
 ### Client exports (`@piton-/analytics-convex`)
 
-| Export                                               | Description                                                                                                                            |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                            |
-| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                          |
-| `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `writeTrack`, `writeConfiguration`, `fetchSummary`, and `fetchTimeSeries` |
-| `createAnalyticsReader(component, metrics)`          | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                       |
-| `createAnalyticsTracker(component, events)`          | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                            |
-| `event(name, options)`                               | Define an analytics event with typed properties                                                                                        |
-| `property.string/number/boolean(options?)`           | Define event property types, optionally required                                                                                       |
-| `count(label)`                                       | Build a count metric with `.from(...)` and `.by(...)`; use through the `defineAnalytics` metrics callback for event-aware autocomplete |
-| `sum(label, unit?)`                                  | Build a sum metric with `.from(...)`, `.value(...)`, and `.by(...)`; the typed callback restricts `.value(...)` to number properties   |
-| `configureAnalytics(ctx, component, options)`        | Configure from a server mutation                                                                                                       |
-| `trackAnalyticsEvent(ctx, component, input)`         | Track from a server mutation                                                                                                           |
-| `trackAnalyticsEvents(ctx, component, events)`       | Track a bounded batch from a server mutation                                                                                           |
-| `registerAnalyticsCrons(crons, component, options?)` | Register maintenance cron jobs                                                                                                         |
-| `ANALYTICS_TRAFFIC_MODE`                             | Traffic mode constant object                                                                                                           |
-| `ANALYTICS_LIMITS`                                   | Hard limit constants for ingestion, config, and runtime settings                                                                       |
-| `getAnalyticsRanking`                                | Pure ranking/sorting utility with tie-breakers                                                                                         |
-| `compareScores`                                      | Direction-aware score comparison for sorting                                                                                           |
-| `getAnalyticsMetricTotalsByDimension`                | Aggregated dimension totals (Map) for counters and leaderboards                                                                        |
-| `getAnalyticsTopDimensionValue`                      | Single highest-value dimension entry, or null                                                                                          |
+| Export                                               | Description                                                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                                             |
+| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                                           |
+| `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `writeTrack`, `fetchSummary`, `fetchMetricTotalsByDimension`, and `fetchTopDimensionValue` |
+| `createAnalyticsReader(component, metrics)`          | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                                        |
+| `createAnalyticsTracker(component, events)`          | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                                             |
+| `event(name, options)`                               | Define an analytics event with typed properties                                                                                                         |
+| `property.string/number/boolean(options?)`           | Define event property types, optionally required                                                                                                        |
+| `count(label)`                                       | Build a count metric with `.from(...)` and `.by(...)`; use through the `defineAnalytics` metrics callback for event-aware autocomplete                  |
+| `sum(label, unit?)`                                  | Build a sum metric with `.from(...)`, `.value(...)`, and `.by(...)`; the typed callback restricts `.value(...)` to number properties                    |
+| `configureAnalytics(ctx, component, options)`        | Configure from a server mutation                                                                                                                        |
+| `trackAnalyticsEvent(ctx, component, input)`         | Track from a server mutation                                                                                                                            |
+| `trackAnalyticsEvents(ctx, component, events)`       | Track a bounded batch from a server mutation                                                                                                            |
+| `registerAnalyticsCrons(crons, component, options?)` | Register maintenance cron jobs                                                                                                                          |
+| `ANALYTICS_TRAFFIC_MODE`                             | Traffic mode constant object                                                                                                                            |
+| `ANALYTICS_LIMITS`                                   | Hard limit constants for ingestion, config, and runtime settings                                                                                        |
+| `getAnalyticsRanking`                                | Pure ranking/sorting utility with tie-breakers                                                                                                          |
+| `compareScores`                                      | Direction-aware score comparison for sorting                                                                                                            |
 
 ---
 

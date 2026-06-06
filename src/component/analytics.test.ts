@@ -96,7 +96,7 @@ describe("analytics component", () => {
 
     // Write event directly (bypass scheduler for test determinism)
     const now = Date.now();
-    await t.mutation(internal.lib.writeAnalyticsEvent, {
+    await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
       name: "feature.used",
       occurredAt: now,
       properties: {},
@@ -117,6 +117,66 @@ describe("analytics component", () => {
     expect(result.unit).toBe("count");
   });
 
+  it("queries dimension helper reads through component queries", async () => {
+    const t = createAnalyticsComponentTest(modules);
+    const now = Date.now();
+    const ownerScopeId = "hospitalityOwner:user_123";
+
+    await t.mutation(api.lib.writeConfiguration, {
+      events: [
+        {
+          name: "reservation.created",
+          label: "Reservation created",
+          properties: { hospitalityId: "string" },
+        },
+      ],
+      metrics: [
+        {
+          name: "newReservations",
+          label: "New reservations",
+          unit: "count",
+          eventNames: ["reservation.created"],
+          aggregation: "count",
+          dimensions: ["hospitalityId"],
+        },
+      ],
+    });
+
+    for (const [index, hospitalityId] of ["h1", "h1", "h2"].entries()) {
+      await t.mutation(
+        internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+        {
+          name: "reservation.created",
+          occurredAt: now + index,
+          organizationId: ownerScopeId,
+          properties: { hospitalityId },
+          source: { type: "server" },
+          idempotencyKey: `reservation.created:${now}:${index}`,
+        },
+      );
+    }
+
+    const totals = await t.query(api.lib.fetchMetricTotalsByDimension, {
+      metric: "newReservations",
+      scope: { type: "organization", id: ownerScopeId },
+      dimensionKey: "hospitalityId",
+      days: 30,
+    });
+
+    expect(totals).toEqual([
+      { key: "h1", value: 2 },
+      { key: "h2", value: 1 },
+    ]);
+
+    const top = await t.query(api.lib.fetchTopDimensionValue, {
+      metric: "newReservations",
+      scope: { type: "organization", id: ownerScopeId },
+      dimensionKey: "hospitalityId",
+    });
+
+    expect(top).toBe("h1");
+  });
+
   it("deduplicates events with same idempotency key", async () => {
     const t = createAnalyticsComponentTest(modules);
 
@@ -126,7 +186,7 @@ describe("analytics component", () => {
     const idempotencyKey = `page.viewed:${now}:server::`;
 
     // Write twice with same key
-    await t.mutation(internal.lib.writeAnalyticsEvent, {
+    await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
       name: "page.viewed",
       occurredAt: now,
       properties: {},
@@ -134,13 +194,16 @@ describe("analytics component", () => {
       idempotencyKey,
     });
 
-    const second = await t.mutation(internal.lib.writeAnalyticsEvent, {
-      name: "page.viewed",
-      occurredAt: now,
-      properties: {},
-      source: { type: "server" },
-      idempotencyKey,
-    });
+    const second = await t.mutation(
+      internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+      {
+        name: "page.viewed",
+        occurredAt: now,
+        properties: {},
+        source: { type: "server" },
+        idempotencyKey,
+      },
+    );
 
     expect((second as any).duplicate).toBe(true);
 
@@ -167,13 +230,16 @@ describe("analytics component", () => {
     );
 
     for (const [index, amount] of [10, 15].entries()) {
-      const result = await t.mutation(internal.lib.writeAnalyticsEvent, {
-        name: "purchase.completed",
-        occurredAt: now + index,
-        properties: { amount, plan: "pro" },
-        source: { type: "server" },
-        idempotencyKey: `purchase.completed:${now}:${index}`,
-      });
+      const result = await t.mutation(
+        internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+        {
+          name: "purchase.completed",
+          occurredAt: now + index,
+          properties: { amount, plan: "pro" },
+          source: { type: "server" },
+          idempotencyKey: `purchase.completed:${now}:${index}`,
+        },
+      );
 
       expect((result as any).highVolumeStatus).toBe("pending");
     }
@@ -244,7 +310,7 @@ describe("analytics component", () => {
       },
     });
 
-    await t.mutation(internal.lib.writeAnalyticsEvent, {
+    await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
       name: "page.viewed",
       occurredAt: old,
       properties: {},
@@ -252,7 +318,7 @@ describe("analytics component", () => {
       idempotencyKey: `page.viewed:${old}`,
     });
 
-    await t.mutation(internal.lib.writeAnalyticsEvent, {
+    await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
       name: "video.played",
       occurredAt: old,
       properties: {},

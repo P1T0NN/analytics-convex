@@ -34,16 +34,31 @@ describe("defineAnalytics", () => {
           .by("category", "currency"),
       }),
     });
+    type TotalsInput = Parameters<
+      typeof analytics.fetchMetricTotalsByDimension<"productsAdded">
+    >[1];
+    const validTotalsInput: TotalsInput = {
+      metric: "productsAdded",
+      dimensionKey: "category",
+    };
+    const _invalidTotalsInput: TotalsInput = {
+      metric: "productsAdded",
+      // @ts-expect-error dimensionKey must be a configured dimension.
+      dimensionKey: "currency",
+    };
 
-    // Server wrappers (top-level) — callable with ctx
+    // Server wrappers (top-level) - callable with ctx
     expect(analytics.writeTrack).toBeDefined();
     expect(analytics.writeConfiguration).toBeDefined();
     expect(analytics.fetchSummary).toBeDefined();
     expect(analytics.fetchTimeSeries).toBeDefined();
     expect(analytics.fetchBreakdown).toBeDefined();
     expect(analytics.fetchMetricComparison).toBeDefined();
+    expect(analytics.fetchMetricTotalsByDimension).toBeDefined();
+    expect(analytics.fetchTopDimensionValue).toBeDefined();
+    expect(validTotalsInput.dimensionKey).toBe("category");
 
-    // Client exports (under .client) — Convex function references
+    // Client exports (under .client) - Convex function references
     expect(analytics.client.writeTrack).toBeDefined();
     expect(analytics.client.writeConfiguration).toBeDefined();
     expect(analytics.client.breakdown).toBeDefined();

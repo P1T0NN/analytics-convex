@@ -65,9 +65,13 @@ export const writeTrack = mutation({
         prepareTrackEvent(config, input),
       );
 
-      await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
-        events,
-      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+        {
+          events,
+        },
+      );
 
       return {
         scheduled: true,
@@ -86,9 +90,13 @@ export const writeTrack = mutation({
 
     const event = prepareTrackEvent(config, input);
 
-    await ctx.scheduler.runAfter(0, internal.lib.writeAnalyticsEvent, {
-      ...event,
-    });
+    await ctx.scheduler.runAfter(
+      0,
+      internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+      {
+        ...event,
+      },
+    );
 
     return {
       scheduled: true,

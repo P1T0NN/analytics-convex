@@ -6,9 +6,6 @@ export { writeConfiguration } from "./mutations/writeConfiguration.js";
 /** Validate and schedule an analytics event or bounded event batch. */
 export { writeTrack } from "./mutations/writeTrack.js";
 
-/** @internal — scheduled by writeTrack(), do not call directly. */
-export { writeAnalyticsEvent } from "./helpers/writeAnalyticsEvent.js";
-
 // QUERIES
 
 /** Read the current analytics config (events, metrics, settings). */
@@ -26,12 +23,18 @@ export { fetchBreakdown } from "./queries/fetchBreakdown.js";
 /** Compare a metric between current and previous period. */
 export { fetchMetricComparison } from "./queries/fetchMetricComparison.js";
 
-// HELPERS
-
-/** Aggregated dimension totals (Map<dimensionValue, total>). */
-export { getAnalyticsMetricTotalsByDimension } from "./helpers/getAnalyticsMetricTotalsByDimension.js";
+/** Aggregated totals by dimension value. */
+export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimension.js";
 
 /** Single highest-value dimension entry, or null. */
+export { fetchTopDimensionValue } from "./queries/fetchTopDimensionValue.js";
+
+// HELPERS
+
+/** @internal — direct component-db helper. App code should use analytics.fetchMetricTotalsByDimension(). */
+export { getAnalyticsMetricTotalsByDimension } from "./helpers/getAnalyticsMetricTotalsByDimension.js";
+
+/** @internal — direct component-db helper. App code should use analytics.fetchTopDimensionValue(). */
 export { getAnalyticsTopDimensionValue } from "./helpers/getAnalyticsTopDimensionValue.js";
 
 // UTILS

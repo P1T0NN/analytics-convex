@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ComponentApi } from "../../component/_generated/component";
 
 // API
@@ -37,6 +37,9 @@ describe("createAnalyticsApi", () => {
     type SummaryInput = Parameters<
       typeof analytics.fetchSummary<"productsAdded">
     >[1];
+    type TotalsInput = Parameters<
+      typeof analytics.fetchMetricTotalsByDimension<"productsAdded">
+    >[1];
     const validInput: ProductAddedInput = {
       properties: {
         category: "Shoes",
@@ -48,6 +51,11 @@ describe("createAnalyticsApi", () => {
       from: 0,
       to: 1,
       scope: { type: "global" },
+    };
+    const validTotalsInput: TotalsInput = {
+      metric: "productsAdded",
+      dimensionKey: "category",
+      days: 30,
     };
 
     const _invalidInput: ProductAddedInput = {
@@ -63,10 +71,89 @@ describe("createAnalyticsApi", () => {
       from: 0,
       to: 1,
     };
+    const _invalidTotalsInput: TotalsInput = {
+      metric: "productsAdded",
+      // @ts-expect-error dimensionKey must be a configured dimension.
+      dimensionKey: "price",
+    };
 
     expect(analytics.track).toBeDefined();
     expect(analytics.fetchSummary).toBeDefined();
+    expect(analytics.fetchMetricTotalsByDimension).toBeDefined();
+    expect(analytics.fetchTopDimensionValue).toBeDefined();
     expect(validInput.properties.price).toBe(120);
     expect(validSummaryInput.metric).toBe("productsAdded");
+    expect(validTotalsInput.dimensionKey).toBe("category");
+  });
+
+  it("routes dimension helpers through component queries without reading app db", async () => {
+    const component = {
+      lib: {
+        fetchMetricTotalsByDimension: "fetchMetricTotalsByDimensionRef",
+        fetchTopDimensionValue: "fetchTopDimensionValueRef",
+      },
+    } as unknown as ComponentApi;
+    const analytics = createAnalyticsApi(component, {
+      events: [
+        {
+          name: "product.added",
+          label: "Product added",
+        },
+      ] as const,
+      metrics: [
+        {
+          name: "productsAdded",
+          label: "Products added",
+          unit: "count",
+          eventNames: ["product.added"],
+          aggregation: "count",
+          dimensions: ["category"],
+        },
+      ] as const,
+    });
+    const runQuery = vi
+      .fn()
+      .mockResolvedValueOnce([{ key: "Shoes", value: 3 }])
+      .mockResolvedValueOnce("Shoes");
+    const ctx = {
+      runQuery,
+      get db(): never {
+        throw new Error("app ctx.db should not be accessed");
+      },
+    };
+
+    const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
+      metric: "productsAdded",
+      scope: { type: "organization", id: "org_123" },
+      dimensionKey: "category",
+      days: 30,
+    });
+    const top = await analytics.fetchTopDimensionValue(ctx, {
+      metric: "productsAdded",
+      scope: { type: "organization", id: "org_123" },
+      dimensionKey: "category",
+    });
+
+    expect(totals).toEqual(new Map([["Shoes", 3]]));
+    expect(top).toBe("Shoes");
+    expect(runQuery).toHaveBeenNthCalledWith(
+      1,
+      component.lib.fetchMetricTotalsByDimension,
+      {
+        metric: "productsAdded",
+        scope: { type: "organization", id: "org_123" },
+        dimensionKey: "category",
+        days: 30,
+      },
+    );
+    expect(runQuery).toHaveBeenNthCalledWith(
+      2,
+      component.lib.fetchTopDimensionValue,
+      {
+        metric: "productsAdded",
+        scope: { type: "organization", id: "org_123" },
+        dimensionKey: "category",
+      },
+    );
   });
 });

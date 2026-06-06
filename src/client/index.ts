@@ -22,29 +22,9 @@ export { createAnalyticsTracker } from "./helpers/createAnalyticsTracker";
 export { trackAnalyticsEvent } from "./helpers/trackAnalyticsEvent";
 export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 
-// COMPONENT HELPERS
-export { aggregateEvent } from "../component/helpers/aggregateEvent";
-export { collectDailyMetricRows } from "../component/helpers/collectDailyMetricRows";
-export { getAnalyticsMetricTotalsByDimension } from "../component/helpers/getAnalyticsMetricTotalsByDimension";
-export { getAnalyticsTopDimensionValue } from "../component/helpers/getAnalyticsTopDimensionValue";
-export { getMetricTotalForRange } from "../component/helpers/getMetricTotalForRange";
-export { incrementDailyMetric } from "../component/helpers/incrementDailyMetric";
-export { prepareTrackEvent } from "../component/helpers/prepareTrackEvent";
-export { upsertMetricRollupForEvent } from "../component/helpers/upsertMetricRollupForEvent";
-export { writeAnalyticsEvent } from "../component/helpers/writeAnalyticsEvent";
-
-// COMPONENT UTILS
-export { buildAggregateInput } from "../component/utils/buildAggregateInput";
-export { buildAnalyticsEventInsert } from "../component/utils/buildAnalyticsEventInsert";
-export { buildIdempotencyKey } from "../component/utils/buildIdempotencyKey";
+// PURE UTILS
 export { compareScores } from "../component/utils/compareScores";
 export { getAnalyticsRanking } from "../component/utils/getAnalyticsRanking";
-export { getMetricRollupIncrements } from "../component/utils/getMetricRollupIncrements";
-export { getRollupIncrementKey } from "../component/utils/getRollupIncrementKey";
-export { getTopSeriesKeys } from "../component/utils/getTopSeriesKeys";
-export { hashString } from "../component/utils/hashString";
-export { listDailyBuckets } from "../component/utils/listDailyBuckets";
-export { toAggregateInput } from "../component/utils/toAggregateInput";
 
 // LIMITS
 export { ANALYTICS_LIMITS } from "../shared/analyticsLimits";
