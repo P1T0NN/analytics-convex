@@ -68,6 +68,8 @@ export function setupAnalytics<
 		...server,
 		/** Convex function builders — export for `useMutation` / `useQuery`. */
 		client,
+		/** The runtime config object — inspect, override, or pass to crons. */
+		config,
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
 			crons: Crons,

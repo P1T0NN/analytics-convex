@@ -52,7 +52,8 @@ writeTrack() mutation
 Events, metrics, and settings are runtime config defined in your app's
 `convex/analytics.ts`. The generated app-side helpers pass that config into the
 component automatically, so changing analytics definitions is just a code change
-and deploy.
+and deploy. Access the resolved config via `analytics.config` — useful for
+inspecting settings, passing to crons, or logging at startup.
 
 ### Why scheduled writes?
 

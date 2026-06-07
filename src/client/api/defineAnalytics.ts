@@ -83,6 +83,12 @@ export function defineAnalytics<
 		metric.build(name),
 	) as unknown as typesMetricConfigsForMap<Events, Metrics>;
 
+	const config = {
+		events: events as any,
+		metrics: metrics as any,
+		settings: (options.settings ?? {}) as any,
+	};
+
 	return {
 		...createAnalyticsServerHelpers(
 			component,
@@ -96,6 +102,8 @@ export function defineAnalytics<
 			...(options.settings ? { settings: options.settings } : {}),
 			...(options.authorize ? { authorize: options.authorize } : {}),
 		}),
+		/** The runtime config object — inspect, override, or pass to crons. */
+		config,
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
 			crons: any,
@@ -105,16 +113,7 @@ export function defineAnalytics<
 				retentionIntervalHours?: number;
 			},
 		) {
-			registerAnalyticsCrons(
-				crons,
-				internalApi,
-				{
-					events: events as any,
-					metrics: metrics as any,
-					settings: (options.settings ?? {}) as any,
-				},
-				cronOptions,
-			);
+			registerAnalyticsCrons(crons, internalApi, config, cronOptions);
 		},
 	};
 }
