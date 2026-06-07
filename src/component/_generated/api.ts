@@ -14,6 +14,7 @@ import type * as crons_processPendingHighVolumeAnalyticsEvents from "../crons/pr
 import type * as crons_purgeStaleAnalyticsEvents from "../crons/purgeStaleAnalyticsEvents.js";
 import type * as errors_errors from "../errors/errors.js";
 import type * as helpers_aggregateEvent from "../helpers/aggregateEvent.js";
+import type * as helpers_claimUniqueEvent from "../helpers/claimUniqueEvent.js";
 import type * as helpers_incrementDailyMetric from "../helpers/incrementDailyMetric.js";
 import type * as helpers_prepareTrackEvent from "../helpers/prepareTrackEvent.js";
 import type * as helpers_rollupReads from "../helpers/rollupReads.js";
@@ -66,6 +67,7 @@ const fullApi: ApiFromModules<{
   "crons/purgeStaleAnalyticsEvents": typeof crons_purgeStaleAnalyticsEvents;
   "errors/errors": typeof errors_errors;
   "helpers/aggregateEvent": typeof helpers_aggregateEvent;
+  "helpers/claimUniqueEvent": typeof helpers_claimUniqueEvent;
   "helpers/incrementDailyMetric": typeof helpers_incrementDailyMetric;
   "helpers/prepareTrackEvent": typeof helpers_prepareTrackEvent;
   "helpers/rollupReads": typeof helpers_rollupReads;

@@ -6,4 +6,6 @@ export {
 	subjectValidator,
 	trackEventInputFields,
 	trackEventInputValidator,
+	uniqueEventValidator,
+	uniqueScopeValidator,
 } from "../../shared/analyticsSchemas";

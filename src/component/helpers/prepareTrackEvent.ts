@@ -57,5 +57,6 @@ export function prepareTrackEvent(
 		properties,
 		source,
 		idempotencyKey,
+		...(input.unique ? { unique: input.unique } : {}),
 	};
 }

@@ -15,6 +15,11 @@ export type typesAnalyticsUnit = "count" | "currency" | "bytes";
 export type typesAnalyticsAggregation = "count" | "sum";
 export type typesAnalyticsScopeType = "global" | "organization" | "resource";
 
+export type typesAnalyticsUnique = {
+	key: string;
+	scope?: "forever";
+};
+
 export type typesAnalyticsEventConfig<Name extends string = string> = {
 	name: Name;
 	label: string;
@@ -87,6 +92,7 @@ export type typesTrackEventInput<Name extends string = string> = {
 		type: "server" | "client" | "webhook" | "system";
 		name?: string;
 	};
+	unique?: typesAnalyticsUnique;
 };
 
 export type typesTrackEventsInput<Name extends string = string> =

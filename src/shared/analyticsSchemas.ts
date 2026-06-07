@@ -32,6 +32,13 @@ export const subjectValidator = v.object({
 	id: v.string(),
 });
 
+export const uniqueScopeValidator = v.literal("forever");
+
+export const uniqueEventValidator = v.object({
+	key: v.string(),
+	scope: v.optional(uniqueScopeValidator),
+});
+
 export const scopeInputValidator = v.union(
 	v.object({
 		type: v.literal("global"),
@@ -56,6 +63,7 @@ export const trackEventInputFields = {
 	scopes: v.optional(v.array(scopeValidator)),
 	properties: v.optional(v.record(v.string(), propertyValueValidator)),
 	source: v.optional(sourceValidator),
+	unique: v.optional(uniqueEventValidator),
 };
 
 export const trackEventInputValidator = v.object({

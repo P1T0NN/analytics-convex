@@ -14,6 +14,7 @@ export const ANALYTICS_LIMITS = {
 	maxPropertyStringLength: 2_048,
 	maxPropertyPayloadCharacters: 16_384,
 	maxSourceNameLength: 128,
+	maxUniqueKeyLength: 512,
 	maxMediumVolumeShardCount: 64,
 	maxHighVolumeShardCount: 256,
 	maxHighVolumeBatchSize: 1_000,

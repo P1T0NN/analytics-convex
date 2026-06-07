@@ -84,4 +84,21 @@ export default defineSchema({
 			"bucketStart",
 			"shard",
 		]),
+
+	analyticsUniqueEvents: defineTable({
+		key: v.string(),
+		eventName: v.string(),
+		actorId: v.optional(v.string()),
+		organizationId: v.optional(v.string()),
+		subject: v.optional(
+			v.object({
+				type: v.string(),
+				id: v.string(),
+			}),
+		),
+		createdAt: v.number(),
+		expiresAt: v.optional(v.number()),
+	})
+		.index("by_key", ["key"])
+		.index("by_expires_at", ["expiresAt"]),
 });

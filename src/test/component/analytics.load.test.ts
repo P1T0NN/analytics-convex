@@ -9,7 +9,7 @@ import {
 	revenueConfiguration,
 } from "../../testUtils/componentTestUtils";
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts"]);
+const modules = import.meta.glob("../../component/**/*.ts");
 
 describe("analytics load behavior", () => {
 	afterEach(() => {

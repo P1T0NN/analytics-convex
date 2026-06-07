@@ -66,6 +66,7 @@ export {
 	type typesAnalyticsSettings,
 	type typesAnalyticsTrafficMode,
 	type typesAnalyticsUnit,
+	type typesAnalyticsUnique,
 	type typesCreateAnalyticsApiOptions,
 	type typesCreateAnalyticsApiOptionsForConfig,
 	type typesTrackEventInput,
@@ -84,6 +85,8 @@ export {
 	scopeValidator,
 	sourceValidator,
 	subjectValidator,
+	uniqueEventValidator,
+	uniqueScopeValidator,
 } from "./schemas/schemas";
 
 export type QueryCtx = Pick<

@@ -31,6 +31,7 @@ regardless of event volume.
 | ----------------------- | --------------------------------------------------------- | ------------------------------- |
 | `analyticsEvents`       | Raw event log with idempotency keys                       | Configurable (default 90 days)  |
 | `analyticsDailyMetrics` | Pre-aggregated daily rollup rows, sharded by traffic mode | Forever (powers all dashboards) |
+| `analyticsUniqueEvents` | Product-level uniqueness claims by deterministic key      | Forever                         |
 
 ### Data flow
 
@@ -38,8 +39,9 @@ regardless of event volume.
 writeTrack() mutation
   → validates input against registered event config
   → builds idempotency key (event name + timestamp + actor + org + subject + scopes + properties + source)
+  → optionally claims unique.key (duplicate → no raw event, no rollup)
   → schedules writeAnalyticsEvent via ctx.scheduler.runAfter(0, ...)
-  → returns { scheduled: true } immediately
+  → returns { scheduled, scheduledCount, deduped?, dedupedCount? } immediately
 
 [async] writeAnalyticsEvent (internal mutation)
   → checks idempotency (duplicate → no-op)
@@ -219,6 +221,39 @@ await analytics.track(ctx, {
 });
 ```
 
+**Product-level unique events:**
+
+Use `unique.key` when an event should count only once across timestamps, retries,
+or future calls. Keys are global within the analytics component, so include a
+namespace and the product identifiers that define uniqueness.
+
+```ts
+await analytics.track(ctx, {
+	name: "qr.scanned",
+	actorId: guestId,
+	properties: {
+		hospitalityId,
+		accommodationId,
+	},
+	unique: {
+		key: `guestView:${guestId}:${hospitalityId}`,
+		scope: "forever", // optional; forever is the only supported scope today
+	},
+});
+```
+
+For daily active users, include the UTC day in the deterministic key:
+
+```ts
+const day = new Date(now).toISOString().slice(0, 10);
+
+await analytics.track(ctx, {
+	name: "user.active",
+	actorId: userId,
+	unique: { key: `dailyActive:${day}:${userId}` },
+});
+```
+
 **Batch ingestion:**
 
 Use `analytics.track(ctx, { events })` when you already have multiple events
@@ -385,6 +420,7 @@ or ingestion workers.
 | Description length                       |                            1,024 chars |
 | Single string property value             |                            2,048 chars |
 | Total property payload                   |                           16,384 chars |
+| Unique event key                         |                              512 chars |
 | Medium-volume shards                     |                                 64 max |
 | High-volume shards                       |                                256 max |
 | High-volume batch size                   |                              1,000 max |
@@ -406,6 +442,48 @@ timestamp + actor + organization + subject + scopes + properties + source.
 Duplicate calls with the same parameters within the same millisecond are
 silently ignored. This means you can safely retry failed product mutations
 without double-counting analytics.
+
+### Product uniqueness
+
+Idempotency protects retry safety for the same event payload. It does not mean
+"count this product action only once forever." For product-level uniqueness, pass
+`unique.key` on the tracking call:
+
+```ts
+await analytics.track(ctx, {
+	name: "campaign.converted",
+	actorId: userId,
+	properties: { campaignId },
+	unique: { key: `conversion:${userId}:${campaignId}` },
+});
+```
+
+If the key was already claimed, the component returns a deduped result, does not
+insert a raw event, and does not update rollups:
+
+```ts
+{
+	scheduled: false,
+	scheduledCount: 0,
+	deduped: true,
+	dedupedCount: 1,
+}
+```
+
+For batches, duplicate unique keys are skipped and the accepted events are still
+scheduled. Dashboard reads remain unchanged because only accepted events update
+`analyticsDailyMetrics`.
+
+This is event-level uniqueness. The component does not yet implement
+metric-level `distinctCount("actorId")`; true distinct-count metrics need
+per-metric and per-bucket cardinality storage, which is more expensive and has a
+different data model.
+
+Keep your own product ledger table when uniqueness is part of product state or
+business rules, for example issuing a coupon once, granting a reward once,
+showing whether a guest has already viewed an item, auditing the actor who won a
+race, or reversing/expiring claims. `unique.key` is for analytics counting, not
+for enforcing product permissions or workflows.
 
 ### Properties
 

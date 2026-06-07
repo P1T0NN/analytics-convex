@@ -7,6 +7,7 @@ import { internal } from "../_generated/api";
 import { normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
+import { claimUniqueEvent, withoutUniqueClaim } from "../helpers/claimUniqueEvent";
 import { prepareTrackEvent } from "../helpers/prepareTrackEvent";
 
 // VALIDATIONS
@@ -20,7 +21,10 @@ import {
 } from "../schemas/schemas";
 
 // TYPES
-import type { typesTrackEventInput } from "../types/types";
+import type {
+	typesPreparedTrackEventInput,
+	typesTrackEventInput,
+} from "../types/types";
 
 /**
  * Validate and schedule one or more analytics events.
@@ -56,6 +60,8 @@ export const writeTrack = mutation({
 	returns: v.object({
 		scheduled: v.boolean(),
 		scheduledCount: v.number(),
+		deduped: v.optional(v.boolean()),
+		dedupedCount: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {
 		const config = normalizeConfig(args.config);
@@ -66,19 +72,40 @@ export const writeTrack = mutation({
 			const events = args.events.map((input) =>
 				prepareTrackEvent(config, input),
 			);
+			const acceptedEvents: typesPreparedTrackEventInput[] = [];
+			let dedupedCount = 0;
+
+			for (const event of events) {
+				const claim = await claimUniqueEvent(ctx, event);
+				if (!claim.claimed) {
+					dedupedCount += 1;
+					continue;
+				}
+
+				acceptedEvents.push(withoutUniqueClaim(event));
+			}
+
+			if (acceptedEvents.length === 0) {
+				return {
+					scheduled: false,
+					scheduledCount: 0,
+					...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
+				};
+			}
 
 			await ctx.scheduler.runAfter(
 				0,
 				internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
 				{
 					config: args.config,
-					events,
+					events: acceptedEvents,
 				},
 			);
 
 			return {
 				scheduled: true,
-				scheduledCount: events.length,
+				scheduledCount: acceptedEvents.length,
+				...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
 			};
 		}
 
@@ -95,16 +122,27 @@ export const writeTrack = mutation({
 			scopes: args.scopes,
 			properties: args.properties,
 			source: args.source,
+			unique: args.unique,
 		};
 
 		const event = prepareTrackEvent(config, input);
+		const claim = await claimUniqueEvent(ctx, event);
+
+		if (!claim.claimed) {
+			return {
+				scheduled: false,
+				scheduledCount: 0,
+				deduped: true,
+				dedupedCount: 1,
+			};
+		}
 
 		await ctx.scheduler.runAfter(
 			0,
 			internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
 			{
 				config: args.config,
-				...event,
+				...withoutUniqueClaim(event),
 			},
 		);
 

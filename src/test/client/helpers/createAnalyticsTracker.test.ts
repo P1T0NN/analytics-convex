@@ -45,6 +45,7 @@ describe("createAnalyticsTracker", () => {
 		};
 		const validInput: ProductAddedInput = {
 			properties: validProperties,
+			unique: { key: "productAdded:user_1:category_shoes" },
 		};
 
 		const _invalidPrice: ProductAddedInput["properties"] = {
@@ -61,6 +62,7 @@ describe("createAnalyticsTracker", () => {
 		const validObjectInput: ProductAddedEventInput = {
 			name: "product.added",
 			properties: validProperties,
+			unique: { key: "productAdded:user_1:sku_1" },
 		};
 		const validBatchInput: ProductAddedBatchInput = {
 			events: [validObjectInput],
@@ -74,5 +76,6 @@ describe("createAnalyticsTracker", () => {
 			price: 120,
 			inStock: true,
 		});
+		expect(validInput.unique?.scope).toBeUndefined();
 	});
 });

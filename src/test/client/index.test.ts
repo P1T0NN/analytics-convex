@@ -13,6 +13,7 @@ const unsafeComponentDbExports = [
 	"buildAggregateInput",
 	"buildAnalyticsEventInsert",
 	"buildIdempotencyKey",
+	"claimUniqueEvent",
 	"getMetricRollupIncrements",
 	"getRollupIncrementKey",
 	"getTopSeriesKeys",
@@ -36,5 +37,6 @@ describe("package root exports", () => {
 		expect(analytics.trackAnalytics).toBeDefined();
 		expect(analytics.getAnalyticsRanking).toBeDefined();
 		expect(analytics.compareScores).toBeDefined();
+		expect(analytics.uniqueEventValidator).toBeDefined();
 	});
 });

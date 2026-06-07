@@ -745,6 +745,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               type: "server" | "client" | "webhook" | "system";
             };
             subject?: { id: string; type: string };
+            unique?: { key: string; scope?: "forever" };
           }>;
           name?: string;
           occurredAt?: number;
@@ -759,8 +760,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type: "server" | "client" | "webhook" | "system";
           };
           subject?: { id: string; type: string };
+          unique?: { key: string; scope?: "forever" };
         },
-        { scheduled: boolean; scheduledCount: number },
+        {
+          deduped?: boolean;
+          dedupedCount?: number;
+          scheduled: boolean;
+          scheduledCount: number;
+        },
         Name
       >;
     };
@@ -861,6 +868,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 type: "server" | "client" | "webhook" | "system";
               };
               subject?: { id: string; type: string };
+              unique?: { key: string; scope?: "forever" };
             }>;
             name?: string;
             occurredAt?: number;
@@ -875,8 +883,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               type: "server" | "client" | "webhook" | "system";
             };
             subject?: { id: string; type: string };
+            unique?: { key: string; scope?: "forever" };
           },
-          { scheduled: boolean; scheduledCount: number },
+          {
+            deduped?: boolean;
+            dedupedCount?: number;
+            scheduled: boolean;
+            scheduledCount: number;
+          },
           Name
         >;
       };

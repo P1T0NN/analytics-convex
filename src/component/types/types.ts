@@ -105,6 +105,11 @@ export type typesAnalyticsSource = {
 	name?: string;
 };
 
+export type typesAnalyticsUnique = {
+	key: string;
+	scope?: "forever";
+};
+
 export type typesTrackEventInput = {
 	name: string;
 	occurredAt?: number;
@@ -117,6 +122,7 @@ export type typesTrackEventInput = {
 	scopes?: typesAnalyticsMetricScope[];
 	properties?: Record<string, typesAnalyticsPropertyValue>;
 	source?: typesAnalyticsSource;
+	unique?: typesAnalyticsUnique;
 };
 
 export type typesPreparedTrackEventInput = {
@@ -132,6 +138,7 @@ export type typesPreparedTrackEventInput = {
 	properties: typesAnalyticsProperties;
 	source: typesAnalyticsSource;
 	idempotencyKey: string;
+	unique?: typesAnalyticsUnique;
 };
 
 export type typesAnalyticsConfigState = {

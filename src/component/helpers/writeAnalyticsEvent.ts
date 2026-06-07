@@ -7,6 +7,7 @@ import { normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
 import { aggregateEvent } from "./aggregateEvent";
+import { claimUniqueEvent } from "./claimUniqueEvent";
 import {
 	buildAggregateInput,
 	buildAnalyticsEventInsert,
@@ -41,9 +42,10 @@ async function _writeSingle(
 	config: typesAnalyticsConfigState,
 	args: any,
 ): Promise<{
-	eventId: any;
+	eventId?: any;
 	duplicate: boolean;
-	highVolumeStatus: typesHighVolumeStatus;
+	deduped?: boolean;
+	highVolumeStatus?: typesHighVolumeStatus;
 }> {
 	const { name, idempotencyKey } = args as any;
 
@@ -62,6 +64,15 @@ async function _writeSingle(
 			eventId: existing._id,
 			duplicate: true,
 			highVolumeStatus,
+		};
+	}
+
+	const uniqueClaim = await claimUniqueEvent(ctx, args);
+	if (!uniqueClaim.claimed) {
+		return {
+			duplicate: true,
+			deduped: true,
+			highVolumeStatus: "none",
 		};
 	}
 
@@ -98,6 +109,7 @@ async function _writeBatch(
 ): Promise<{
 	inserted: number;
 	duplicates: number;
+	dedupedCount: number;
 	pendingHighVolume: number;
 }> {
 	validateTrackBatchLimits(events.length);
@@ -107,6 +119,7 @@ async function _writeBatch(
 	const aggregateInputs: typesAnalyticsAggregateEventInput[] = [];
 
 	let duplicates = 0;
+	let dedupedCount = 0;
 	let pendingHighVolume = 0;
 
 	for (const event of events) {
@@ -125,6 +138,13 @@ async function _writeBatch(
 
 		if (existing) {
 			duplicates += 1;
+			continue;
+		}
+
+		const uniqueClaim = await claimUniqueEvent(ctx, event);
+		if (!uniqueClaim.claimed) {
+			duplicates += 1;
+			dedupedCount += 1;
 			continue;
 		}
 
@@ -151,6 +171,7 @@ async function _writeBatch(
 	return {
 		inserted: aggregateInputs.length,
 		duplicates,
+		dedupedCount,
 		pendingHighVolume,
 	};
 }
@@ -178,6 +199,7 @@ export const writeAnalyticsEvent = internalMutation({
 		// Single
 		eventId: v.optional(v.id("analyticsEvents")),
 		duplicate: v.optional(v.boolean()),
+		deduped: v.optional(v.boolean()),
 		highVolumeStatus: v.optional(
 			v.union(v.literal("none"), v.literal("pending"), v.literal("processed")),
 		),
@@ -185,6 +207,7 @@ export const writeAnalyticsEvent = internalMutation({
 		// Batch
 		inserted: v.optional(v.number()),
 		duplicates: v.optional(v.number()),
+		dedupedCount: v.optional(v.number()),
 		pendingHighVolume: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {

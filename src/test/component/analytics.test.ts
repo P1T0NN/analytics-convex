@@ -10,7 +10,7 @@ import {
 	runtimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts"]);
+const modules = import.meta.glob("../../component/**/*.ts");
 
 describe("analytics component", () => {
 	it("reads runtime configuration back", async () => {

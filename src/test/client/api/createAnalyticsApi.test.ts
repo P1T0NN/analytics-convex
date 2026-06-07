@@ -48,6 +48,10 @@ describe("createAnalyticsApi", () => {
 				category: "Shoes",
 				price: 120,
 			},
+			unique: {
+				key: "productAdded:user_1:category_shoes",
+				scope: "forever",
+			},
 		};
 		const validSummaryInput: SummaryInput = {
 			metric: "productsAdded",
@@ -91,6 +95,7 @@ describe("createAnalyticsApi", () => {
 		expect(analytics.fetchTopDimensionValue).toBeDefined();
 		expect(analytics.fetchTopDimension).toBeDefined();
 		expect(validInput.properties.price).toBe(120);
+		expect(validInput.unique?.key).toBe("productAdded:user_1:category_shoes");
 		expect(validSummaryInput.metric).toBe("productsAdded");
 		expect(validTotalsInput.dimensionKey).toBe("category");
 		expect(validDimensionTotalsInput.dimensionKey).toBe("category");

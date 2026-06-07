@@ -9,7 +9,7 @@ import {
 	runtimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts"]);
+const modules = import.meta.glob("../../component/**/*.ts");
 
 describe("analytics hard limits", () => {
 	it("rejects metric configs with too many dimensions", async () => {
@@ -146,5 +146,39 @@ describe("analytics hard limits", () => {
 				},
 			}),
 		).rejects.toThrow(/body/);
+	});
+
+	it("rejects invalid unique event configuration", async () => {
+		const t = createAnalyticsComponentTest(modules);
+		const config = pageViewsConfiguration();
+
+		await expect(
+			t.mutation(api.lib.writeTrack, {
+				config,
+				name: "page.viewed",
+				unique: { key: "" },
+			}),
+		).rejects.toThrow(/unique\.key/);
+
+		await expect(
+			t.mutation(api.lib.writeTrack, {
+				config,
+				name: "page.viewed",
+				unique: {
+					key: "x".repeat(ANALYTICS_LIMITS.maxUniqueKeyLength + 1),
+				},
+			}),
+		).rejects.toThrow(/unique\.key/);
+
+		await expect(
+			t.mutation(api.lib.writeTrack, {
+				config,
+				name: "page.viewed",
+				unique: {
+					key: "daily:user_1",
+					scope: "daily" as "forever",
+				},
+			}),
+		).rejects.toThrow(/forever/);
 	});
 });

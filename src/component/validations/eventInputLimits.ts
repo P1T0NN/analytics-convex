@@ -31,6 +31,7 @@ export function validateTrackEventLimits(args: {
 	scopes?: typesAnalyticsMetricScope[];
 	properties: typesAnalyticsProperties;
 	source?: { type: string; name?: string };
+	unique?: { key: string; scope?: "forever" };
 }) {
 	assertStringLength(
 		args.name,
@@ -71,6 +72,19 @@ export function validateTrackEventLimits(args: {
 			ANALYTICS_LIMITS.maxSourceNameLength,
 			"source.name",
 		);
+	}
+	if (args.unique) {
+		if (args.unique.key.trim().length === 0) {
+			badRequest("unique.key must not be empty.");
+		}
+		assertStringLength(
+			args.unique.key,
+			ANALYTICS_LIMITS.maxUniqueKeyLength,
+			"unique.key",
+		);
+		if (args.unique.scope && args.unique.scope !== "forever") {
+			badRequest('unique.scope must be "forever".');
+		}
 	}
 
 	assertAtMost(
