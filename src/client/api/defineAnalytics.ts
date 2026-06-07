@@ -14,6 +14,9 @@ import { createAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHe
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
+// DEFAULTS
+import { defaultAnalyticsSettings } from "../../shared/analyticsDefaults";
+
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
@@ -86,7 +89,10 @@ export function defineAnalytics<
 	const config = {
 		events: events as any,
 		metrics: metrics as any,
-		settings: (options.settings ?? {}) as any,
+		settings: {
+			...defaultAnalyticsSettings(),
+			...(options.settings ?? {}),
+		},
 	};
 
 	return {
