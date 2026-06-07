@@ -35,7 +35,10 @@ type typesRequiredKeysFromInputs<Properties extends typesPropertyInputs> = {
 export type typesDefinedAnalyticsEventConfig<
 	Name extends string,
 	Properties extends typesPropertyInputs,
-> = Omit<typesAnalyticsEventConfig<Name>, "properties" | "requiredProperties"> & {
+> = Omit<
+	typesAnalyticsEventConfig<Name>,
+	"properties" | "requiredProperties"
+> & {
 	properties: typesPropertyConfigFromInputs<Properties>;
 	requiredProperties: readonly typesRequiredKeysFromInputs<Properties>[];
 };
@@ -69,6 +72,7 @@ export function event<
 		name,
 		label: options.label,
 		properties: properties as typesPropertyConfigFromInputs<Properties>,
-		requiredProperties: requiredProperties as unknown as readonly typesRequiredKeysFromInputs<Properties>[],
+		requiredProperties:
+			requiredProperties as unknown as readonly typesRequiredKeysFromInputs<Properties>[],
 	};
 }

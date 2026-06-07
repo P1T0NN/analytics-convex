@@ -26,39 +26,99 @@ export function assertNonEmptyString(value: string, field: string) {
 	}
 }
 
-export function assertPositiveInteger(value: number, field: keyof typesAnalyticsSettings) {
+export function assertPositiveInteger(
+	value: number,
+	field: keyof typesAnalyticsSettings,
+) {
 	if (!Number.isInteger(value) || value <= 0) {
 		badRequest(`settings.${field} must be a positive integer.`);
 	}
 }
 
-export function assertNonNegativeInteger(value: number, field: keyof typesAnalyticsSettings) {
+export function assertNonNegativeInteger(
+	value: number,
+	field: keyof typesAnalyticsSettings,
+) {
 	if (!Number.isInteger(value) || value < 0) {
 		badRequest(`settings.${field} must be a non-negative integer.`);
 	}
 }
 
 export function validateSettings(settings: typesAnalyticsSettings) {
-	assertPositiveInteger(settings.mediumVolumeShardCount, "mediumVolumeShardCount");
+	assertPositiveInteger(
+		settings.mediumVolumeShardCount,
+		"mediumVolumeShardCount",
+	);
 	assertPositiveInteger(settings.highVolumeShardCount, "highVolumeShardCount");
 	assertPositiveInteger(settings.highVolumeBatchSize, "highVolumeBatchSize");
-	assertPositiveInteger(settings.highVolumeBatchIntervalMinutes, "highVolumeBatchIntervalMinutes");
-	assertNonNegativeInteger(settings.highVolumeMaxCatchupBatches, "highVolumeMaxCatchupBatches");
+	assertPositiveInteger(
+		settings.highVolumeBatchIntervalMinutes,
+		"highVolumeBatchIntervalMinutes",
+	);
+	assertNonNegativeInteger(
+		settings.highVolumeMaxCatchupBatches,
+		"highVolumeMaxCatchupBatches",
+	);
 	assertPositiveInteger(settings.maxQueryRangeDays, "maxQueryRangeDays");
-	assertPositiveInteger(settings.maxRollupRowsPerQuery, "maxRollupRowsPerQuery");
+	assertPositiveInteger(
+		settings.maxRollupRowsPerQuery,
+		"maxRollupRowsPerQuery",
+	);
 	assertPositiveInteger(settings.maxBreakdownItems, "maxBreakdownItems");
-	assertNonNegativeInteger(settings.rawEventRetentionDays, "rawEventRetentionDays");
-	assertPositiveInteger(settings.maxRawEventDeletesPerRun, "maxRawEventDeletesPerRun");
+	assertNonNegativeInteger(
+		settings.rawEventRetentionDays,
+		"rawEventRetentionDays",
+	);
+	assertPositiveInteger(
+		settings.maxRawEventDeletesPerRun,
+		"maxRawEventDeletesPerRun",
+	);
 
-	assertNumberAtMost(settings.mediumVolumeShardCount, ANALYTICS_LIMITS.maxMediumVolumeShardCount, "settings.mediumVolumeShardCount");
-	assertNumberAtMost(settings.highVolumeShardCount, ANALYTICS_LIMITS.maxHighVolumeShardCount, "settings.highVolumeShardCount");
-	assertNumberAtMost(settings.highVolumeBatchSize, ANALYTICS_LIMITS.maxHighVolumeBatchSize, "settings.highVolumeBatchSize");
-	assertNumberAtMost(settings.highVolumeMaxCatchupBatches, ANALYTICS_LIMITS.maxHighVolumeMaxCatchupBatches, "settings.highVolumeMaxCatchupBatches");
-	assertNumberAtMost(settings.maxQueryRangeDays, ANALYTICS_LIMITS.maxQueryRangeDays, "settings.maxQueryRangeDays");
-	assertNumberAtMost(settings.maxRollupRowsPerQuery, ANALYTICS_LIMITS.maxRollupRowsPerQuery, "settings.maxRollupRowsPerQuery");
-	assertNumberAtMost(settings.maxBreakdownItems, ANALYTICS_LIMITS.maxBreakdownItems, "settings.maxBreakdownItems");
-	assertNumberAtMost(settings.rawEventRetentionDays, ANALYTICS_LIMITS.maxRawEventRetentionDays, "settings.rawEventRetentionDays");
-	assertNumberAtMost(settings.maxRawEventDeletesPerRun, ANALYTICS_LIMITS.maxRawEventDeletesPerRun, "settings.maxRawEventDeletesPerRun");
+	assertNumberAtMost(
+		settings.mediumVolumeShardCount,
+		ANALYTICS_LIMITS.maxMediumVolumeShardCount,
+		"settings.mediumVolumeShardCount",
+	);
+	assertNumberAtMost(
+		settings.highVolumeShardCount,
+		ANALYTICS_LIMITS.maxHighVolumeShardCount,
+		"settings.highVolumeShardCount",
+	);
+	assertNumberAtMost(
+		settings.highVolumeBatchSize,
+		ANALYTICS_LIMITS.maxHighVolumeBatchSize,
+		"settings.highVolumeBatchSize",
+	);
+	assertNumberAtMost(
+		settings.highVolumeMaxCatchupBatches,
+		ANALYTICS_LIMITS.maxHighVolumeMaxCatchupBatches,
+		"settings.highVolumeMaxCatchupBatches",
+	);
+	assertNumberAtMost(
+		settings.maxQueryRangeDays,
+		ANALYTICS_LIMITS.maxQueryRangeDays,
+		"settings.maxQueryRangeDays",
+	);
+	assertNumberAtMost(
+		settings.maxRollupRowsPerQuery,
+		ANALYTICS_LIMITS.maxRollupRowsPerQuery,
+		"settings.maxRollupRowsPerQuery",
+	);
+	assertNumberAtMost(
+		settings.maxBreakdownItems,
+		ANALYTICS_LIMITS.maxBreakdownItems,
+		"settings.maxBreakdownItems",
+	);
+	assertNumberAtMost(
+		settings.rawEventRetentionDays,
+		ANALYTICS_LIMITS.maxRawEventRetentionDays,
+		"settings.rawEventRetentionDays",
+	);
+	assertNumberAtMost(
+		settings.maxRawEventDeletesPerRun,
+		ANALYTICS_LIMITS.maxRawEventDeletesPerRun,
+		"settings.maxRawEventDeletesPerRun",
+	);
 }
 
 export function validateConfiguration(args: {
@@ -90,10 +150,15 @@ export function validateConfiguration(args: {
 		}
 
 		for (const requiredProperty of event.requiredProperties ?? []) {
-			assertNonEmptyString(requiredProperty, `event "${event.name}" required property`);
+			assertNonEmptyString(
+				requiredProperty,
+				`event "${event.name}" required property`,
+			);
 
 			if (!event.properties?.[requiredProperty]) {
-				badRequest(`Required property "${requiredProperty}" is not registered on event "${event.name}".`);
+				badRequest(
+					`Required property "${requiredProperty}" is not registered on event "${event.name}".`,
+				);
 			}
 		}
 	}
@@ -115,7 +180,9 @@ export function validateConfiguration(args: {
 
 		for (const eventName of metric.eventNames) {
 			if (!eventNames.has(eventName)) {
-				badRequest(`Metric "${metric.name}" references unknown event "${eventName}".`);
+				badRequest(
+					`Metric "${metric.name}" references unknown event "${eventName}".`,
+				);
 			}
 		}
 
@@ -131,7 +198,9 @@ export function validateConfiguration(args: {
 	validateSettings(args.settings);
 }
 
-export function sanitizeProperties(input: Record<string, typesAnalyticsPropertyValue> | undefined) {
+export function sanitizeProperties(
+	input: Record<string, typesAnalyticsPropertyValue> | undefined,
+) {
 	const properties: typesAnalyticsProperties = {};
 
 	for (const [key, value] of Object.entries(input ?? {})) {
@@ -148,7 +217,11 @@ export function sanitizeProperties(input: Record<string, typesAnalyticsPropertyV
 	return properties;
 }
 
-export function validateEventInput(config: typesAnalyticsConfigState, name: string, properties: typesAnalyticsProperties) {
+export function validateEventInput(
+	config: typesAnalyticsConfigState,
+	name: string,
+	properties: typesAnalyticsProperties,
+) {
 	const eventConfig = config.eventByName.get(name);
 	const errors: string[] = [];
 
@@ -160,7 +233,9 @@ export function validateEventInput(config: typesAnalyticsConfigState, name: stri
 
 	for (const key of eventConfig.requiredProperties ?? []) {
 		if (properties[key] === undefined || properties[key] === null) {
-			errors.push(`Missing required property "${key}" for analytics event "${name}".`);
+			errors.push(
+				`Missing required property "${key}" for analytics event "${name}".`,
+			);
 		}
 	}
 
@@ -168,19 +243,26 @@ export function validateEventInput(config: typesAnalyticsConfigState, name: stri
 		const expectedType = propertyTypes[key];
 
 		if (!expectedType) {
-			errors.push(`Property "${key}" is not registered for analytics event "${name}".`);
+			errors.push(
+				`Property "${key}" is not registered for analytics event "${name}".`,
+			);
 			continue;
 		}
 
 		if (value !== null && typeof value !== expectedType) {
-			errors.push(`Property "${key}" for analytics event "${name}" must be ${expectedType}; received ${typeof value}.`);
+			errors.push(
+				`Property "${key}" for analytics event "${name}" must be ${expectedType}; received ${typeof value}.`,
+			);
 		}
 	}
 
 	return errors;
 }
 
-export function assertDateRange(args: { from: number; to: number }, settings: typesAnalyticsSettings) {
+export function assertDateRange(
+	args: { from: number; to: number },
+	settings: typesAnalyticsSettings,
+) {
 	const from = startOfUtcDay(args.from);
 	const to = startOfUtcDay(args.to);
 
@@ -191,11 +273,16 @@ export function assertDateRange(args: { from: number; to: number }, settings: ty
 	const rangeDays = Math.floor((to - from) / DAY_MS) + 1;
 
 	if (rangeDays > settings.maxQueryRangeDays) {
-		badRequest(`Analytics queries are limited to ${settings.maxQueryRangeDays} days. Narrow the date range.`);
+		badRequest(
+			`Analytics queries are limited to ${settings.maxQueryRangeDays} days. Narrow the date range.`,
+		);
 	}
 }
 
-export function assertAllowedDimension(metric: typesAnalyticsMetricConfig, groupBy: string) {
+export function assertAllowedDimension(
+	metric: typesAnalyticsMetricConfig,
+	groupBy: string,
+) {
 	if (!metric.dimensions?.includes(groupBy)) {
 		badRequest(`Metric "${metric.name}" cannot be grouped by "${groupBy}".`);
 	}

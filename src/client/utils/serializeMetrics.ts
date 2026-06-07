@@ -1,7 +1,9 @@
 // TYPES
 import type { typesAnalyticsMetricConfig } from "../types/types";
 
-export function serializeMetrics(metrics: readonly typesAnalyticsMetricConfig[]) {
+export function serializeMetrics(
+	metrics: readonly typesAnalyticsMetricConfig[],
+) {
 	return metrics.map((metric) => ({
 		name: metric.name,
 		label: metric.label,

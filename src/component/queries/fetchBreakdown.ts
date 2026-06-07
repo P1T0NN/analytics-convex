@@ -3,10 +3,10 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { getConfig, chartConfig } from "../analyticsConfig";
+import { chartConfig, normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { collectDailyMetricRows } from "../helpers/collectDailyMetricRows";
+import { collectDailyMetricRows } from "../helpers/rollupReads";
 import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
@@ -19,6 +19,7 @@ import {
 
 // SCHEMAS
 import {
+	analyticsRuntimeConfigValidator,
 	chartConfigValidator,
 	rangeValidator,
 	resolvedScopeValidator,
@@ -43,6 +44,7 @@ import {
  */
 export const fetchBreakdown = query({
 	args: {
+		config: analyticsRuntimeConfigValidator,
 		metric: v.string(),
 		from: v.number(),
 		to: v.number(),
@@ -68,7 +70,7 @@ export const fetchBreakdown = query({
 		}),
 	}),
 	handler: async (ctx, args) => {
-		const config = await getConfig(ctx);
+		const config = normalizeConfig(args.config);
 		assertDateRange(args, config.settings);
 
 		const metricConfig = getMetricConfigOrThrow(config, args.metric);

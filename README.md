@@ -27,11 +27,10 @@ regardless of event volume.
 
 ### Tables
 
-| Table                   | Purpose                                                          | Retention                       |
-| ----------------------- | ---------------------------------------------------------------- | ------------------------------- |
-| `analyticsConfigs`      | Single document storing registered events, metrics, and settings | Forever                         |
-| `analyticsEvents`       | Raw event log with idempotency keys                              | Configurable (default 90 days)  |
-| `analyticsDailyMetrics` | Pre-aggregated daily rollup rows, sharded by traffic mode        | Forever (powers all dashboards) |
+| Table                   | Purpose                                                   | Retention                       |
+| ----------------------- | --------------------------------------------------------- | ------------------------------- |
+| `analyticsEvents`       | Raw event log with idempotency keys                       | Configurable (default 90 days)  |
+| `analyticsDailyMetrics` | Pre-aggregated daily rollup rows, sharded by traffic mode | Forever (powers all dashboards) |
 
 ### Data flow
 
@@ -49,6 +48,11 @@ writeTrack() mutation
       → low/medium volume: updates rollup rows inline (sharded writes)
       → high volume: marks event as pending, cron processes it in batches
 ```
+
+Events, metrics, and settings are runtime config defined in your app's
+`convex/analytics.ts`. The generated app-side helpers pass that config into the
+component automatically, so changing analytics definitions is just a code change
+and deploy.
 
 ### Why scheduled writes?
 
@@ -72,11 +76,11 @@ respect the internal file boundaries:
 | `src/component/queries/`     | Public dashboard/query functions such as time series, summaries, breakdowns, and comparisons.                        |
 | `src/component/helpers/`     | Shared component-side implementation helpers and internal mutations.                                                 |
 | `src/component/validations/` | Configuration, event input, and hard-limit validation helpers.                                                       |
-| `src/component/utils/`       | Pure utility functions for dates, scopes, sharding, ranking, and metric behavior.                                    |
+| `src/component/utils/`       | Component-side utility functions for dates, scopes, sharding, and metric behavior.                                   |
 | `src/component/crons/`       | Maintenance jobs for high-volume processing and raw event retention.                                                 |
 | `src/client/builders/`       | Builder API for ergonomic event, property, and metric definitions.                                                   |
 | `src/client/`                | Package API used by app-side Convex projects: `createAnalyticsApi`, server helpers, crons, schemas, and types.       |
-| `src/shared/`                | Constants shared by the component and client packages, including `ANALYTICS_LIMITS`.                                 |
+| `src/shared/`                | Shared constants and pure utilities used by both component and client code, including limits, scopes, and ranking.   |
 
 When adding new behavior, keep it in the matching folder instead of putting
 everything into one file. Regenerate the Convex API after component export
@@ -98,9 +102,9 @@ page-view analytics; Umami or another web analytics tool handles that separately
 Follow the documented project structure and public API. Register the component
 in convex.config.ts, define product events and metrics in convex/analytics.ts
 with defineAnalytics, event, property, and the typed metrics callback
-`metrics: ({ count, sum }) => ({ ... })`, run writeConfiguration after deploys
-or config changes, register registerAnalyticsCrons in convex/crons.ts, and
-use writeTrack from server mutations using the typed `analytics.writeTrack` helper.
+`metrics: ({ count, sum }) => ({ ... })`, register crons from the returned
+`analytics` object in convex/crons.ts, and use writeTrack from server mutations
+using the typed `analytics.writeTrack` helper.
 For batch ingestion, call `analytics.writeTrack(ctx, { events: [...] })`.
 
 Use mediumVolume by default, highVolume for noisy metrics, batch ingestion for
@@ -142,90 +146,44 @@ import { components } from "./_generated/api";
 import { defineAnalytics, event, property } from "@piton-/analytics-convex";
 
 export const analytics = defineAnalytics(components.analytics, {
-  events: {
-    pageViewed: event("page.viewed", {
-      label: "Page viewed",
-      properties: {
-        path: property.string({ required: true }),
-        referrer: property.string(),
-      },
-    }),
-    featureUsed: event("feature.used", {
-      label: "Feature used",
-      properties: {
-        feature: property.string({ required: true }),
-        plan: property.string(),
-        value: property.number(),
-      },
-    }),
-  },
-  metrics: ({ count, sum }) => ({
-    pageViews: count("Page views").from("page.viewed").by("path", "referrer"),
-    featureUses: count("Feature uses")
-      .description("Total feature usage across all plans")
-      .from("feature.used")
-      .by("feature", "plan")
-      .trafficMode("mediumVolume") // optional per-metric override
-      .adminOnly(false), // restrict query access to admins
-    featureValue: sum("Feature value", "currency")
-      .from("feature.used")
-      .value("value")
-      .by("feature", "plan"),
-  }),
-  authorize: async (ctx, operation) => {
-    // Add your app's auth logic here.
-    // Throw a ConvexError to deny access.
-  },
+	events: {
+		pageViewed: event("page.viewed", {
+			label: "Page viewed",
+			properties: {
+				path: property.string({ required: true }),
+				referrer: property.string(),
+			},
+		}),
+		featureUsed: event("feature.used", {
+			label: "Feature used",
+			properties: {
+				feature: property.string({ required: true }),
+				plan: property.string(),
+				value: property.number(),
+			},
+		}),
+	},
+	metrics: ({ count, sum }) => ({
+		pageViews: count("Page views").from("page.viewed").by("path", "referrer"),
+		featureUses: count("Feature uses")
+			.description("Total feature usage across all plans")
+			.from("feature.used")
+			.by("feature", "plan")
+			.trafficMode("mediumVolume") // optional per-metric override
+			.adminOnly(false), // restrict query access to admins
+		featureValue: sum("Feature value", "currency")
+			.from("feature.used")
+			.value("value")
+			.by("feature", "plan"),
+	}),
+	authorize: async (ctx, operation) => {
+		// Add your app's auth logic here.
+		// Throw a ConvexError to deny access.
+	},
 });
 ```
 
-### 2. Run configure
-
-Call `writeConfiguration` once — typically from the Convex dashboard or a
-one-time script. Run it again whenever you add, remove, or rename events or
-metrics.
-
-```ts
-// convex/admin.ts
-import { mutation } from "./_generated/server";
-import { analytics } from "./analytics";
-
-export const configureAnalytics = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await analytics.writeConfiguration(ctx);
-    return null;
-  },
-});
-```
-
-`writeConfiguration` is idempotent. It stores a deterministic `configHash`; when
-the incoming events, metrics, and effective settings match the stored config, it
-returns without updating the table. This makes it safe to run after every
-deploy.
-
-If you export the wrapped mutation from `convex/analytics.ts`:
-
-```ts
-export const { writeConfiguration } = analytics.client;
-```
-
-you can wire configuration into your normal scripts:
-
-```json
-{
-  "scripts": {
-    "analytics:configure": "bunx convex run analytics:writeConfiguration",
-    "deploy": "bunx convex deploy && bun run analytics:configure"
-  }
-}
-```
-
-Keep the configure function explicit instead of lazy-configuring on the first
-query or product mutation. Queries cannot write, and hidden configuration writes
-make deploy mistakes harder to diagnose.
-
-### 3. Track events
+### 2. Track events
 
 **From a server mutation:**
 
@@ -235,19 +193,19 @@ import { v } from "convex/values";
 import { analytics } from "./analytics";
 
 export const useFeature = mutation({
-  args: { feature: v.string(), plan: v.string() },
-  handler: async (ctx, args) => {
-    // ...your product logic...
+	args: { feature: v.string(), plan: v.string() },
+	handler: async (ctx, args) => {
+		// ...your product logic...
 
-    await analytics.writeTrack(ctx, "feature.used", {
-      actorId: ctx.auth.userId, // optional — who did this
-      organizationId: user.orgId, // optional — which org
-      properties: {
-        feature: args.feature,
-        plan: args.plan,
-      },
-    });
-  },
+		await analytics.writeTrack(ctx, "feature.used", {
+			actorId: ctx.auth.userId, // optional — who did this
+			organizationId: user.orgId, // optional — which org
+			properties: {
+				feature: args.feature,
+				plan: args.plan,
+			},
+		});
+	},
 });
 ```
 
@@ -255,8 +213,8 @@ You can also pass the event as one object:
 
 ```ts
 await analytics.track(ctx, {
-  name: "page.viewed",
-  properties: { path: "/dashboard" },
+	name: "page.viewed",
+	properties: { path: "/dashboard" },
 });
 ```
 
@@ -268,18 +226,18 @@ larger firehose inputs into multiple calls.
 
 ```ts
 await analytics.track(ctx, {
-  events: [
-    {
-      name: "page.viewed",
-      properties: { path: "/dashboard" },
-      source: { type: "server" },
-    },
-    {
-      name: "feature.used",
-      properties: { feature: "export", plan: "pro" },
-      source: { type: "server" },
-    },
-  ],
+	events: [
+		{
+			name: "page.viewed",
+			properties: { path: "/dashboard" },
+			source: { type: "server" },
+		},
+		{
+			name: "feature.used",
+			properties: { feature: "export", plan: "pro" },
+			source: { type: "server" },
+		},
+	],
 });
 ```
 
@@ -288,33 +246,31 @@ explicitly from `convex/analytics.ts`:
 
 ```ts
 export const {
-  writeConfiguration,
-  writeTrack, // single or batch: writeTrack({ name, ... }) or writeTrack({ events })
-  fetchTimeSeries,
-  fetchSummary,
-  fetchBreakdown,
-  fetchMetricComparison,
+	writeTrack, // single or batch: writeTrack({ name, ... }) or writeTrack({ events })
+	fetchTimeSeries,
+	fetchSummary,
+	fetchBreakdown,
+	fetchMetricComparison,
 } = analytics.client;
 ```
 
 The wrapped functions (`writeTrack`, `fetchTimeSeries`, etc.) include your
 `authorize` callback. The server-side helpers at the top level (`writeTrack`,
-`writeConfiguration`, `fetchSummary`, `fetchTimeSeries`, etc.) bypass that
-callback and are meant for Convex functions that already have their own auth.
+`fetchSummary`, `fetchTimeSeries`, etc.) bypass that callback and are meant for
+Convex functions that already have their own auth.
 
-### 4. Register crons
+### 3. Register crons
 
 ```ts
 // convex/crons.ts
 import { cronJobs } from "convex/server";
-import { components } from "./_generated/api";
-import { registerAnalyticsCrons } from "@piton-/analytics-convex";
+import { analytics } from "./analytics";
 
 const crons = cronJobs();
 
-registerAnalyticsCrons(crons, components.analytics, {
-  highVolumeBatchIntervalMinutes: 1, // default: 1
-  retentionIntervalHours: 24, // default: 24
+analytics.registerCrons(crons, {
+	highVolumeBatchIntervalMinutes: 1, // default: 1
+	retentionIntervalHours: 24, // default: 24
 });
 
 export default crons;
@@ -359,8 +315,8 @@ accumulate indefinitely.
 
 ### Settings
 
-Pass a partial `settings` object to `createAnalyticsApi` or `writeConfiguration`
-to override defaults:
+Pass a partial `settings` object to `defineAnalytics`, `setupAnalytics`, or
+`createAnalyticsApi` to override defaults in code:
 
 | Setting                          | Default          | Description                                            |
 | -------------------------------- | ---------------- | ------------------------------------------------------ |
@@ -431,9 +387,9 @@ Events can be optionally scoped to an organization or resource:
 
 ```ts
 await analytics.writeTrack(ctx, "page.viewed", {
-  organizationId: "org_abc123",
-  scopes: [{ scopeType: "resource", scopeId: "project:proj_xyz" }],
-  properties: { path: "/dashboard" },
+	organizationId: "org_abc123",
+	scopes: [{ scopeType: "resource", scopeId: "project:proj_xyz" }],
+	properties: { path: "/dashboard" },
 });
 ```
 
@@ -446,16 +402,16 @@ Track where the event came from:
 
 ```ts
 source: {
-  type: "server";
+	type: "server";
 } // default if omitted
 source: {
-  type: "client";
+	type: "client";
 }
 source: {
-  type: "webhook";
+	type: "webhook";
 }
 source: {
-  type: "system";
+	type: "system";
 }
 ```
 
@@ -475,12 +431,12 @@ dimension grouping.
 
 ```ts
 const result = await analytics.fetchTimeSeries(ctx, {
-  metric: "pageViews",
-  from: Date.UTC(2026, 0, 1),
-  to: Date.UTC(2026, 0, 31),
-  groupBy: "path", // optional — split by dimension
-  scope: { type: "organization", id: "org_abc" }, // optional
-  fill: true, // default true — fill gaps with zeros
+	metric: "pageViews",
+	from: Date.UTC(2026, 0, 1),
+	to: Date.UTC(2026, 0, 31),
+	groupBy: "path", // optional — split by dimension
+	scope: { type: "organization", id: "org_abc" }, // optional
+	fill: true, // default true — fill gaps with zeros
 });
 
 // result.data:  [{ date: 1767225600000, "/home": 42, "/pricing": 18 }, ...]
@@ -493,10 +449,10 @@ Single aggregated total for a metric over a date range.
 
 ```ts
 const result = await analytics.fetchSummary(ctx, {
-  metric: "featureUses",
-  from: Date.UTC(2026, 0, 1),
-  to: Date.UTC(2026, 0, 31),
-  scope: { type: "global" },
+	metric: "featureUses",
+	from: Date.UTC(2026, 0, 1),
+	to: Date.UTC(2026, 0, 31),
+	scope: { type: "global" },
 });
 
 // result: { metric, label, unit, scope, value: 1234, range: { from, to } }
@@ -510,15 +466,15 @@ import { query } from "./_generated/server";
 import { analytics } from "./analytics";
 
 export const fetchAccommodationsSummary = query({
-  args: {},
-  handler: async (ctx) => {
-    return await analytics.fetchSummary(ctx, {
-      metric: "featureUses",
-      from: Date.UTC(2026, 0, 1),
-      to: Date.UTC(2026, 0, 31),
-      scope: { type: "organization", id: "org_abc" },
-    });
-  },
+	args: {},
+	handler: async (ctx) => {
+		return await analytics.fetchSummary(ctx, {
+			metric: "featureUses",
+			from: Date.UTC(2026, 0, 1),
+			to: Date.UTC(2026, 0, 31),
+			scope: { type: "organization", id: "org_abc" },
+		});
+	},
 });
 ```
 
@@ -529,10 +485,10 @@ dimension.
 
 ```ts
 const result = await analytics.fetchBreakdown(ctx, {
-  metric: "featureUses",
-  from: Date.UTC(2026, 0, 1),
-  to: Date.UTC(2026, 0, 31),
-  groupBy: "feature",
+	metric: "featureUses",
+	from: Date.UTC(2026, 0, 1),
+	to: Date.UTC(2026, 0, 31),
+	groupBy: "feature",
 });
 
 // result.data: [{ key: "search", value: 523 }, { key: "export", value: 412 }, ...]
@@ -546,9 +502,9 @@ auto-calculated by shifting the current range backward.
 
 ```ts
 const result = await analytics.fetchMetricComparison(ctx, {
-  metric: "pageViews",
-  from: Date.UTC(2026, 5, 1), // June 1
-  to: Date.UTC(2026, 5, 7), // June 7  (7 days)
+	metric: "pageViews",
+	from: Date.UTC(2026, 5, 1), // June 1
+	to: Date.UTC(2026, 5, 7), // June 7  (7 days)
 });
 
 // result: {
@@ -630,7 +586,7 @@ Default — aggregates across all events.
 
 ```ts
 {
-  type: "global";
+	type: "global";
 }
 ```
 
@@ -665,10 +621,10 @@ This is useful when you already store owner-role data under an organization
 scope:
 
 ```ts
-const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
-  metric: "newReservations",
-  scope: { type: "organization", id: ownerScopeId },
-  dimensionKey: "hospitalityId",
+const totals = await analytics.fetchDimensionTotals(ctx, {
+	metric: "newReservations",
+	scope: { type: "organization", id: ownerScopeId },
+	dimensionKey: "hospitalityId",
 });
 ```
 
@@ -677,23 +633,23 @@ the same resource type + ID:
 
 ```ts
 import {
-  createAnalyticsResourceScope,
-  createAnalyticsResourceScopeInput,
+	createAnalyticsResourceScope,
+	createAnalyticsResourceScopeInput,
 } from "@piton-/analytics-convex";
 
 const ownerScope = createAnalyticsResourceScope("hospitalityOwner", userId);
 
 await analytics.writeTrack(ctx, {
-  name: "reservation.created",
-  scopes: [ownerScope],
-  properties: { hospitalityId },
+	name: "reservation.created",
+	scopes: [ownerScope],
+	properties: { hospitalityId },
 });
 
 const summary = await analytics.fetchSummary(ctx, {
-  metric: "newReservations",
-  from,
-  to,
-  scope: createAnalyticsResourceScopeInput("hospitalityOwner", userId),
+	metric: "newReservations",
+	from,
+	to,
+	scope: createAnalyticsResourceScopeInput("hospitalityOwner", userId),
 });
 ```
 
@@ -709,18 +665,18 @@ context and an operation descriptor:
 
 ```ts
 authorize: async (ctx, operation) => {
-  // operation.type: "configure" | "track" | "read"
-  // operation.name: event name (track only)
-  // operation.query: "timeSeries" | "summary" | "breakdown" (read only)
-  // operation.metric: metric name (read only)
-  // operation.scope: requested scope (read only)
+	// operation.type: "configure" | "track" | "read"
+	// operation.name: event name (track only)
+	// operation.query: "timeSeries" | "summary" | "breakdown" (read only)
+	// operation.metric: metric name (read only)
+	// operation.scope: requested scope (read only)
 
-  const user = await getAuthUser(ctx);
-  if (!user) throw new ConvexError("Not authenticated");
+	const user = await getAuthUser(ctx);
+	if (!user) throw new ConvexError("Not authenticated");
 
-  if (operation.type === "configure" && user.role !== "admin") {
-    throw new ConvexError("Admins only");
-  }
+	if (operation.type === "configure" && user.role !== "admin") {
+		throw new ConvexError("Admins only");
+	}
 };
 ```
 
@@ -743,11 +699,11 @@ lists. Use the configured `analytics` object so reads route through the
 analytics component database:
 
 ```ts
-const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
-  metric: "featureUses",
-  scope: { type: "global" },
-  dimensionKey: "feature",
-  days: 30, // default 30
+const totals = await analytics.fetchDimensionTotals(ctx, {
+	metric: "featureUses",
+	scope: { type: "global" },
+	dimensionKey: "feature",
+	days: 30, // default 30
 });
 
 // totals: Map { "search" → 523, "export" → 412, "dashboard" → 301 }
@@ -758,10 +714,10 @@ const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
 Get the single highest-value dimension entry:
 
 ```ts
-const top = await analytics.fetchTopDimensionValue(ctx, {
-  metric: "featureUses",
-  scope: { type: "organization", id: "org_abc" },
-  dimensionKey: "feature",
+const top = await analytics.fetchTopDimension(ctx, {
+	metric: "featureUses",
+	scope: { type: "organization", id: "org_abc" },
+	dimensionKey: "feature",
 });
 
 // top: "search" (or null if no data)
@@ -775,10 +731,10 @@ Pure function for sorting items by score with optional tie-breakers:
 import { getAnalyticsRanking } from "@piton-/analytics-convex";
 
 const top5 = getAnalyticsRanking({
-  items: [...totals.entries()],
-  getScore: ([, value]) => value,
-  limit: 5,
-  direction: "desc",
+	items: [...totals.entries()],
+	getScore: ([, value]) => value,
+	limit: 5,
+	direction: "desc",
 });
 ```
 
@@ -792,26 +748,20 @@ const top5 = getAnalyticsRanking({
 
 | Export               | Description                                                  |
 | -------------------- | ------------------------------------------------------------ |
-| `writeConfiguration` | Store events, metrics, and settings config                   |
+| `writeConfiguration` | Legacy validation-only compatibility mutation                |
 | `writeTrack`         | Validate and schedule one event or `{ events: [...] }` batch |
 
 **Queries:**
 
 | Export                         | Description                                             |
 | ------------------------------ | ------------------------------------------------------- |
-| `fetchConfiguration`           | Read events, metrics, settings, and config hash         |
+| `fetchConfiguration`           | Read the runtime config passed by app-side helpers      |
 | `fetchTimeSeries`              | Daily bucketed chart data with optional dimension group |
 | `fetchSummary`                 | Single aggregated total for a metric over a date range  |
 | `fetchBreakdown`               | Top dimension values ranked by total                    |
 | `fetchMetricComparison`        | Compare metric between current and previous period      |
 | `fetchMetricTotalsByDimension` | Aggregated dimension totals for app-side helpers        |
 | `fetchTopDimensionValue`       | Single highest-value dimension entry for app helpers    |
-
-**Helpers:**
-
-| Export                | Description                  |
-| --------------------- | ---------------------------- |
-| `getAnalyticsRanking` | Pure ranking/sorting utility |
 
 **Crons:**
 
@@ -822,25 +772,26 @@ const top5 = getAnalyticsRanking({
 
 ### Client exports (`@piton-/analytics-convex`)
 
-| Export                                               | Description                                                                                                                                             |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `defineAnalytics(component, options)`                | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                                             |
-| `setupAnalytics(component, options)`                 | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                                           |
-| `createAnalyticsApi(component, options)`             | Create wrapped functions plus typed server-side helpers like `writeTrack`, `fetchSummary`, `fetchMetricTotalsByDimension`, and `fetchTopDimensionValue` |
-| `createAnalyticsReader(component, metrics)`          | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                                        |
-| `createAnalyticsTracker(component, events)`          | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                                             |
-| `event(name, options)`                               | Define an analytics event with typed properties                                                                                                         |
-| `property.string/number/boolean(options?)`           | Define event property types, optionally required                                                                                                        |
-| `count(label)`                                       | Build a count metric with `.from(...)` and `.by(...)`; use through the `defineAnalytics` metrics callback for event-aware autocomplete                  |
-| `sum(label, unit?)`                                  | Build a sum metric with `.from(...)`, `.value(...)`, and `.by(...)`; the typed callback restricts `.value(...)` to number properties                    |
-| `configureAnalytics(ctx, component, options)`        | Configure from a server mutation                                                                                                                        |
-| `trackAnalyticsEvent(ctx, component, input)`         | Track from a server mutation                                                                                                                            |
-| `trackAnalyticsEvents(ctx, component, events)`       | Track a bounded batch from a server mutation                                                                                                            |
-| `registerAnalyticsCrons(crons, component, options?)` | Register maintenance cron jobs                                                                                                                          |
-| `ANALYTICS_TRAFFIC_MODE`                             | Traffic mode constant object                                                                                                                            |
-| `ANALYTICS_LIMITS`                                   | Hard limit constants for ingestion, config, and runtime settings                                                                                        |
-| `getAnalyticsRanking`                                | Pure ranking/sorting utility with tie-breakers                                                                                                          |
-| `compareScores`                                      | Direction-aware score comparison for sorting                                                                                                            |
+| Export                                                       | Description                                                                                                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `defineAnalytics(component, options)`                        | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                                |
+| `setupAnalytics(component, options)`                         | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                              |
+| `createAnalyticsApi(component, options)`                     | Create wrapped functions plus typed server-side helpers like `writeTrack`, `fetchSummary`, `fetchDimensionTotals`, and `fetchTopDimension` |
+| `createAnalyticsReader(component, metrics)`                  | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                           |
+| `createAnalyticsTracker(component, events)`                  | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                                |
+| `event(name, options)`                                       | Define an analytics event with typed properties                                                                                            |
+| `property.string/number/boolean(options?)`                   | Define event property types, optionally required                                                                                           |
+| `count(label)`                                               | Build a count metric with `.from(...)` and `.by(...)`; use through the `defineAnalytics` metrics callback for event-aware autocomplete     |
+| `sum(label, unit?)`                                          | Build a sum metric with `.from(...)`, `.value(...)`, and `.by(...)`; the typed callback restricts `.value(...)` to number properties       |
+| `configureAnalytics(ctx, component, options)`                | Legacy validation-only helper; normal usage does not require configure                                                                     |
+| `trackAnalytics(ctx, component, input, config)`              | Lower-level direct helper; normally use `analytics.writeTrack`                                                                             |
+| `trackAnalyticsEvent(ctx, component, input, config)`         | Lower-level direct single-event helper                                                                                                     |
+| `trackAnalyticsEvents(ctx, component, events, config)`       | Lower-level direct batch helper                                                                                                            |
+| `registerAnalyticsCrons(crons, component, config, options?)` | Lower-level cron registration; normally use `analytics.registerCrons(crons)`                                                               |
+| `ANALYTICS_TRAFFIC_MODE`                                     | Traffic mode constant object                                                                                                               |
+| `ANALYTICS_LIMITS`                                           | Hard limit constants for ingestion, config, and runtime settings                                                                           |
+| `getAnalyticsRanking`                                        | Pure ranking/sorting utility with tie-breakers                                                                                             |
+| `compareScores`                                              | Direction-aware score comparison for sorting                                                                                               |
 
 ---
 
@@ -893,9 +844,9 @@ shard counts, batch size, retention, and query limits based on those signals.
    events by organization from day one. Retrofitting scopes requires a full
    event backfill.
 
-6. **Run `writeConfiguration` after deploys** — whenever you change event or
-   metric definitions, call `writeConfiguration` so the component's validation
-   and aggregation logic stays in sync.
+6. **Keep analytics config in code** — change events, metrics, and settings in
+   `convex/analytics.ts`. The app-side helpers pass that runtime config into the
+   component automatically, so no configure command is required after deploys.
 
 7. **Don't skip the crons** — without `registerAnalyticsCrons`, high-volume
    events never aggregate and raw events never expire.

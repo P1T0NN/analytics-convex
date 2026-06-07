@@ -1,6 +1,6 @@
 // MUTATIONS
 
-/** Store events, metrics, and settings config. Run once after deploys. */
+/** Legacy validation-only compatibility mutation. */
 export { writeConfiguration } from "./mutations/writeConfiguration.js";
 
 /** Validate and schedule an analytics event or bounded event batch. */
@@ -29,23 +29,10 @@ export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimen
 /** Single highest-value dimension entry, or null. */
 export { fetchTopDimensionValue } from "./queries/fetchTopDimensionValue.js";
 
-// HELPERS
-
-/** @internal — direct component-db helper. App code should use analytics.fetchMetricTotalsByDimension(). */
-export { getAnalyticsMetricTotalsByDimension } from "./helpers/getAnalyticsMetricTotalsByDimension.js";
-
-/** @internal — direct component-db helper. App code should use analytics.fetchTopDimensionValue(). */
-export { getAnalyticsTopDimensionValue } from "./helpers/getAnalyticsTopDimensionValue.js";
-
-// UTILS
-
-/** Pure ranking/sorting utility with tie-breakers. */
-export { getAnalyticsRanking } from "./utils/getAnalyticsRanking.js";
-
 // CRONS
 
-/** @internal — batch-aggregate pending high-volume events. */
+/** @internal - batch-aggregate pending high-volume events. */
 export { processPendingHighVolumeAnalyticsEvents } from "./crons/processPendingHighVolumeAnalyticsEvents.js";
 
-/** @internal — delete raw events past retention window. */
+/** @internal - delete raw events past retention window. */
 export { purgeStaleAnalyticsEvents } from "./crons/purgeStaleAnalyticsEvents.js";

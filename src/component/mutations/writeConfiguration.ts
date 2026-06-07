@@ -3,81 +3,41 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
 // CONFIG
-import { getConfigDoc, defaultSettings } from "../analyticsConfig";
-
-// CONSTANTS
-import { CONFIG_KEY } from "../constants";
+import { defaultSettings } from "../analyticsConfig";
 
 // UTILS
-import { createConfigurationHash } from "../utils/configurationHash";
 import { validateConfiguration } from "../validations/validations";
 
 // SCHEMAS
 import {
-  eventConfigValidator,
-  metricConfigValidator,
-  settingsPatchValidator,
+	eventConfigValidator,
+	metricConfigValidator,
+	settingsPatchValidator,
 } from "../schemas/schemas";
 
 /**
- * Store events, metrics, and settings config.
+ * Deprecated validation-only compatibility mutation.
  *
- * Run once after deploys that change event or metric definitions.
- * Merges with existing config — partial settings patches are supported.
- *
- * @example
- * await ctx.runMutation(components.analytics.lib.writeConfiguration, {
- *   events: [...],
- *   metrics: [...],
- * });
+ * Runtime config is now passed from app-side analytics setup into component
+ * functions, so this does not store anything.
  */
 export const writeConfiguration = mutation({
-  args: {
-    events: v.array(eventConfigValidator),
-    metrics: v.array(metricConfigValidator),
-    settings: v.optional(settingsPatchValidator),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const existing = await getConfigDoc(ctx);
-    const settings = {
-      ...(existing?.settings ?? defaultSettings()),
-      ...(args.settings ?? {}),
-    };
+	args: {
+		events: v.array(eventConfigValidator),
+		metrics: v.array(metricConfigValidator),
+		settings: v.optional(settingsPatchValidator),
+	},
+	returns: v.null(),
+	handler: async (_ctx, args) => {
+		validateConfiguration({
+			events: args.events,
+			metrics: args.metrics,
+			settings: {
+				...defaultSettings(),
+				...(args.settings ?? {}),
+			},
+		});
 
-    validateConfiguration({
-      events: args.events,
-      metrics: args.metrics,
-      settings,
-    });
-
-    const configHash = createConfigurationHash({
-      events: args.events,
-      metrics: args.metrics,
-      settings,
-    });
-
-    if (existing?.configHash === configHash) {
-      return null;
-    }
-
-    const value = {
-      events: args.events,
-      metrics: args.metrics,
-      settings,
-      configHash,
-      updatedAt: Date.now(),
-    };
-
-    if (existing) {
-      await ctx.db.patch("analyticsConfigs", existing._id, value);
-      return null;
-    }
-
-    await ctx.db.insert("analyticsConfigs", {
-      key: CONFIG_KEY,
-      ...value,
-    });
-    return null;
-  },
+		return null;
+	},
 });

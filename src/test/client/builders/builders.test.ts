@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 // BUILDERS
-import { event } from "./event";
-import { count, sum } from "./metric";
-import { property } from "./property";
+import { event } from "../../../client/builders/event";
+import { count, sum } from "../../../client/builders/metric";
+import { property } from "../../../client/builders/property";
 
 describe("analytics builders", () => {
 	it("builds event config from property helpers", () => {
@@ -30,9 +30,10 @@ describe("analytics builders", () => {
 
 	it("builds count and sum metric config from metric helpers", () => {
 		expect(
-			count("Products added").from("product.added").by("category").build(
-				"productsAdded",
-			),
+			count("Products added")
+				.from("product.added")
+				.by("category")
+				.build("productsAdded"),
 		).toEqual({
 			name: "productsAdded",
 			label: "Products added",

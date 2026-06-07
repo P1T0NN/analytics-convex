@@ -19,11 +19,7 @@ import type {
 } from "../types/types.js";
 
 export function validateTrackBatchLimits(count: number) {
-	assertAtMost(
-		count,
-		ANALYTICS_LIMITS.maxTrackBatchSize,
-		"events",
-	);
+	assertAtMost(count, ANALYTICS_LIMITS.maxTrackBatchSize, "events");
 }
 
 export function validateTrackEventLimits(args: {

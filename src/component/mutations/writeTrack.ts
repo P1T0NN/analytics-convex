@@ -4,7 +4,7 @@ import { mutation } from "../_generated/server";
 import { internal } from "../_generated/api";
 
 // CONFIG
-import { getConfig } from "../analyticsConfig";
+import { normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
 import { prepareTrackEvent } from "../helpers/prepareTrackEvent";
@@ -14,8 +14,9 @@ import { validateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
-  trackEventInputFields,
-  trackEventInputValidator,
+	analyticsRuntimeConfigValidator,
+	trackEventInputFields,
+	trackEventInputValidator,
 } from "../schemas/schemas";
 
 // TYPES
@@ -46,61 +47,70 @@ import type { typesTrackEventInput } from "../types/types";
  * });
  */
 export const writeTrack = mutation({
-  args: {
-    name: v.optional(v.string()),
-    ...trackEventInputFields,
-    events: v.optional(v.array(trackEventInputValidator)),
-  },
-  returns: v.object({
-    scheduled: v.boolean(),
-    scheduledCount: v.number(),
-  }),
-  handler: async (ctx, args) => {
-    const config = await getConfig(ctx);
+	args: {
+		config: analyticsRuntimeConfigValidator,
+		name: v.optional(v.string()),
+		...trackEventInputFields,
+		events: v.optional(v.array(trackEventInputValidator)),
+	},
+	returns: v.object({
+		scheduled: v.boolean(),
+		scheduledCount: v.number(),
+	}),
+	handler: async (ctx, args) => {
+		const config = normalizeConfig(args.config);
 
-    if (args.events) {
-      validateTrackBatchLimits(args.events.length);
+		if (args.events) {
+			validateTrackBatchLimits(args.events.length);
 
-      const events = args.events.map((input) =>
-        prepareTrackEvent(config, input),
-      );
+			const events = args.events.map((input) =>
+				prepareTrackEvent(config, input),
+			);
 
-      await ctx.scheduler.runAfter(
-        0,
-        internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
-        {
-          events,
-        },
-      );
+			await ctx.scheduler.runAfter(
+				0,
+				internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+				{
+					config: args.config,
+					events,
+				},
+			);
 
-      return {
-        scheduled: true,
-        scheduledCount: events.length,
-      };
-    }
+			return {
+				scheduled: true,
+				scheduledCount: events.length,
+			};
+		}
 
-    if (!args.name) {
-      throw new Error('writeTrack requires either "name" or "events".');
-    }
+		if (!args.name) {
+			throw new Error('writeTrack requires either "name" or "events".');
+		}
 
-    const input: typesTrackEventInput = {
-      ...args,
-      name: args.name,
-    };
+		const input: typesTrackEventInput = {
+			name: args.name,
+			occurredAt: args.occurredAt,
+			actorId: args.actorId,
+			organizationId: args.organizationId,
+			subject: args.subject,
+			scopes: args.scopes,
+			properties: args.properties,
+			source: args.source,
+		};
 
-    const event = prepareTrackEvent(config, input);
+		const event = prepareTrackEvent(config, input);
 
-    await ctx.scheduler.runAfter(
-      0,
-      internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
-      {
-        ...event,
-      },
-    );
+		await ctx.scheduler.runAfter(
+			0,
+			internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+			{
+				config: args.config,
+				...event,
+			},
+		);
 
-    return {
-      scheduled: true,
-      scheduledCount: 1,
-    };
-  },
+		return {
+			scheduled: true,
+			scheduledCount: 1,
+		};
+	},
 });

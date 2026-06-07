@@ -9,7 +9,10 @@ import { createAnalyticsApi } from "../api/createAnalyticsApi";
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
 // HELPERS
-import { createServerWrappers } from "../helpers/createServerWrappers";
+import { createAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
+
+// UTILS
+import { createAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // TYPES
 import type {
@@ -47,13 +50,19 @@ export function setupAnalytics<
 	component: ComponentApi,
 	options: typesCreateAnalyticsApiOptionsForConfig<Events, Metrics>,
 ) {
-	const server = createServerWrappers(
+	const server = createAnalyticsServerHelpers(
 		component,
 		options.events,
 		options.metrics as any,
+		options.settings,
 	);
 
 	const client = createAnalyticsApi(component, options);
+	const config = createAnalyticsConfiguration(
+		options.events,
+		options.metrics,
+		options.settings,
+	);
 
 	return {
 		...server,
@@ -67,7 +76,7 @@ export function setupAnalytics<
 				retentionIntervalHours?: number;
 			},
 		) {
-			registerAnalyticsCrons(crons, component, cronOptions);
+			registerAnalyticsCrons(crons, component, config, cronOptions);
 		},
 	};
 }

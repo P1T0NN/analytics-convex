@@ -10,10 +10,10 @@ import { serializeMetrics } from "../utils/serializeMetrics";
 import type { typesCreateAnalyticsApiOptions } from "../types/types";
 
 /**
- * Configure analytics from a server-side mutation.
+ * Legacy validation-only helper.
  *
- * Stores events, metrics, and optional settings. Run once after deploys
- * that change event or metric definitions.
+ * Normal usage passes config from `defineAnalytics` / `setupAnalytics` into
+ * component functions automatically; no configure command is required.
  *
  * @example
  * await configureAnalytics(ctx, components.analytics, {

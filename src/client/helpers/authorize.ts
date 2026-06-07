@@ -1,6 +1,9 @@
 // TYPES
 import type { Auth } from "convex/server";
-import type { typesCreateAnalyticsApiOptions, typesAnalyticsOperation } from "../types/types";
+import type {
+	typesCreateAnalyticsApiOptions,
+	typesAnalyticsOperation,
+} from "../types/types";
 
 export async function authorize(
 	options: typesCreateAnalyticsApiOptions,

@@ -3,12 +3,14 @@ import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 
 // CONFIG
-import { getConfig } from "../analyticsConfig";
+import { normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
 import { aggregateEvent } from "./aggregateEvent";
-import { buildAggregateInput } from "../utils/buildAggregateInput";
-import { buildAnalyticsEventInsert } from "../utils/buildAnalyticsEventInsert";
+import {
+	buildAggregateInput,
+	buildAnalyticsEventInsert,
+} from "../utils/analyticsEventPayloads";
 
 // UTILS
 import {
@@ -19,6 +21,7 @@ import { validateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
+	analyticsRuntimeConfigValidator,
 	preparedTrackEventInputFields,
 	preparedTrackEventInputValidator,
 	propertyValueValidator,
@@ -162,6 +165,7 @@ async function _writeBatch(
  */
 export const writeAnalyticsEvent = internalMutation({
 	args: {
+		config: analyticsRuntimeConfigValidator,
 		...preparedTrackEventInputFields,
 		name: v.optional(v.string()),
 		occurredAt: v.optional(v.number()),
@@ -184,7 +188,7 @@ export const writeAnalyticsEvent = internalMutation({
 		pendingHighVolume: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {
-		const config = await getConfig(ctx);
+		const config = normalizeConfig(args.config);
 
 		if (args.events) {
 			return _writeBatch(ctx, config, args.events);

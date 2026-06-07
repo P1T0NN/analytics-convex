@@ -6,12 +6,15 @@ import { mutation } from "../_generated/server";
 import { DAY_MS } from "../constants";
 
 // HELPERS
-import { getConfig } from "../analyticsConfig";
+import { normalizeConfig } from "../analyticsConfig";
+
+// SCHEMAS
+import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
 
 const DELETABLE_HIGH_VOLUME_STATUSES = [
-  undefined,
-  "none",
-  "processed",
+	undefined,
+	"none",
+	"processed",
 ] as const;
 
 /**
@@ -24,45 +27,47 @@ const DELETABLE_HIGH_VOLUME_STATUSES = [
  * @internal
  */
 export const purgeStaleAnalyticsEvents = mutation({
-  args: {},
-  returns: v.object({
-    deleted: v.number(),
-    cutoff: v.optional(v.number()),
-    skipped: v.boolean(),
-  }),
-  handler: async (ctx) => {
-    const config = await getConfig(ctx);
+	args: {
+		config: analyticsRuntimeConfigValidator,
+	},
+	returns: v.object({
+		deleted: v.number(),
+		cutoff: v.optional(v.number()),
+		skipped: v.boolean(),
+	}),
+	handler: async (ctx, args) => {
+		const config = normalizeConfig(args.config);
 
-    if (config.settings.rawEventRetentionDays <= 0) {
-      return { deleted: 0, skipped: true };
-    }
+		if (config.settings.rawEventRetentionDays <= 0) {
+			return { deleted: 0, skipped: true };
+		}
 
-    const cutoff = Date.now() - config.settings.rawEventRetentionDays * DAY_MS;
-    let deleted = 0;
+		const cutoff = Date.now() - config.settings.rawEventRetentionDays * DAY_MS;
+		let deleted = 0;
 
-    for (const status of DELETABLE_HIGH_VOLUME_STATUSES) {
-      const remaining = config.settings.maxRawEventDeletesPerRun - deleted;
-      if (remaining <= 0) break;
+		for (const status of DELETABLE_HIGH_VOLUME_STATUSES) {
+			const remaining = config.settings.maxRawEventDeletesPerRun - deleted;
+			if (remaining <= 0) break;
 
-      const rows = await ctx.db
-        .query("analyticsEvents")
-        .withIndex("by_high_volume_status_occurred_at", (q) =>
-          q.eq("highVolumeStatus", status).lt("occurredAt", cutoff),
-        )
-        .take(remaining);
+			const rows = await ctx.db
+				.query("analyticsEvents")
+				.withIndex("by_high_volume_status_occurred_at", (q) =>
+					q.eq("highVolumeStatus", status).lt("occurredAt", cutoff),
+				)
+				.take(remaining);
 
-      for (const row of rows) {
-        await ctx.db.delete("analyticsEvents", row._id);
-        deleted += 1;
-      }
+			for (const row of rows) {
+				await ctx.db.delete("analyticsEvents", row._id);
+				deleted += 1;
+			}
 
-      if (rows.length < remaining) continue;
-    }
+			if (rows.length < remaining) continue;
+		}
 
-    return {
-      deleted,
-      cutoff,
-      skipped: false,
-    };
-  },
+		return {
+			deleted,
+			cutoff,
+			skipped: false,
+		};
+	},
 });

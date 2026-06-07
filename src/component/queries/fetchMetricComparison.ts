@@ -3,11 +3,11 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { getConfig } from "../analyticsConfig";
+import { normalizeConfig } from "../analyticsConfig";
 
 // HELPERS
 import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { getMetricTotalForRange } from "../helpers/getMetricTotalForRange";
+import { getMetricTotalForRange } from "../helpers/rollupReads";
 
 // UTILS
 import { resolveScope } from "../utils/shared/scopeUtils";
@@ -16,6 +16,7 @@ import { assertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
+	analyticsRuntimeConfigValidator,
 	rangeValidator,
 	resolvedScopeValidator,
 	scopeInputValidator,
@@ -38,6 +39,7 @@ import {
  */
 export const fetchMetricComparison = query({
 	args: {
+		config: analyticsRuntimeConfigValidator,
 		metric: v.string(),
 		from: v.number(),
 		to: v.number(),
@@ -62,7 +64,7 @@ export const fetchMetricComparison = query({
 		const previousFrom = args.from - rangeMs;
 		const previousTo = args.from;
 
-		const config = await getConfig(ctx);
+		const config = normalizeConfig(args.config);
 		assertDateRange({ from: args.from, to: args.to }, config.settings);
 		assertDateRange({ from: previousFrom, to: previousTo }, config.settings);
 

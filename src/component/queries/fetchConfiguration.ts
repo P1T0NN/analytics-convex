@@ -2,47 +2,38 @@
 import { v } from "convex/values";
 import { query } from "../_generated/server";
 
-// HELPERS
-import { getConfigDoc } from "../analyticsConfig";
+// CONFIG
+import { normalizeConfig } from "../analyticsConfig";
 
 // SCHEMAS
 import {
-  eventConfigValidator,
-  metricConfigValidator,
-  settingsValidator,
+	analyticsRuntimeConfigValidator,
+	eventConfigValidator,
+	metricConfigValidator,
+	settingsValidator,
 } from "../schemas/schemas";
 
 /**
- * Read the current analytics config.
- *
- * Returns the stored events, metrics, and settings document,
- * or null if configure has not been called yet.
- *
- * @example
- * const config = await ctx.runQuery(components.analytics.lib.fetchConfiguration, {});
+ * Read the runtime analytics config passed by the app-side analytics setup.
  */
 export const fetchConfiguration = query({
-  args: {},
-  returns: v.union(
-    v.null(),
-    v.object({
-      events: v.array(eventConfigValidator),
-      metrics: v.array(metricConfigValidator),
-      settings: settingsValidator,
-      configHash: v.optional(v.string()),
-      updatedAt: v.number(),
-    }),
-  ),
-  handler: async (ctx) => {
-    const doc = await getConfigDoc(ctx);
-    if (!doc) return null;
+	args: {
+		config: analyticsRuntimeConfigValidator,
+	},
+	returns: v.object({
+		events: v.array(eventConfigValidator),
+		metrics: v.array(metricConfigValidator),
+		settings: settingsValidator,
+		configHash: v.optional(v.string()),
+	}),
+	handler: async (_ctx, args) => {
+		const config = normalizeConfig(args.config);
 
-    return {
-      events: doc.events,
-      metrics: doc.metrics,
-      settings: doc.settings,
-      configHash: doc.configHash,
-      updatedAt: doc.updatedAt,
-    };
-  },
+		return {
+			events: config.events,
+			metrics: config.metrics,
+			settings: config.settings,
+			configHash: config.configHash,
+		};
+	},
 });

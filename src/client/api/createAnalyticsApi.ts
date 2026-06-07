@@ -1,34 +1,33 @@
 // LIBRARIES
 import {
-  mutationGeneric,
-  queryGeneric,
-  type GenericDataModel,
-  type GenericMutationCtx,
+	mutationGeneric,
+	queryGeneric,
+	type GenericDataModel,
+	type GenericMutationCtx,
 } from "convex/server";
 import { v } from "convex/values";
-import type { ComponentApi } from "../../component/_generated/component.js";
 
 // HELPERS
 import { authorize } from "../helpers/authorize";
 import { createAnalyticsReader } from "../helpers/createAnalyticsReader";
 import { createAnalyticsTracker } from "../helpers/createAnalyticsTracker";
-import { serializeEvents } from "../utils/serializeEvents";
-import { serializeMetrics } from "../utils/serializeMetrics";
+import { createAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // SCHEMAS
 import { scopeInputValidator, trackEventInputFields } from "../schemas/schemas";
 
 // TYPES
 import type {
-  typesAnalyticsEventConfig,
-  typesAnalyticsMetricConfig,
-  typesAnalyticsScopeInput,
-  typesCreateAnalyticsApiOptionsForConfig,
+	typesAnalyticsEventConfig,
+	typesAnalyticsMetricConfig,
+	typesAnalyticsScopeInput,
+	typesCreateAnalyticsApiOptionsForConfig,
 } from "../types/types";
+import type { ComponentApi } from "../../component/_generated/component.js";
 
 type typesMutationCtx = Pick<
-  GenericMutationCtx<GenericDataModel>,
-  "runMutation"
+	GenericMutationCtx<GenericDataModel>,
+	"runMutation"
 >;
 
 /**
@@ -39,172 +38,194 @@ type typesMutationCtx = Pick<
  * mutations and app-specific analytics queries.
  */
 export function createAnalyticsApi<
-  const Events extends readonly typesAnalyticsEventConfig[],
-  const Metrics extends readonly typesAnalyticsMetricConfig<
-    string,
-    Events[number]["name"]
-  >[],
+	const Events extends readonly typesAnalyticsEventConfig[],
+	const Metrics extends readonly typesAnalyticsMetricConfig<
+		string,
+		Events[number]["name"]
+	>[],
 >(
-  component: ComponentApi,
-  options: typesCreateAnalyticsApiOptionsForConfig<Events, Metrics>,
+	component: ComponentApi,
+	options: typesCreateAnalyticsApiOptionsForConfig<Events, Metrics>,
 ) {
-  type EventName = Events[number]["name"];
-  type MetricName = Metrics[number]["name"];
+	type EventName = Events[number]["name"];
+	type MetricName = Metrics[number]["name"];
 
-  const eventNameValidator = v.union(
-    ...options.events.map((e) => v.literal(e.name as EventName)),
-  );
-  const metricNameValidator = v.union(
-    ...options.metrics.map((m) => v.literal(m.name as MetricName)),
-  );
-  const tracker = createAnalyticsTracker(component, options.events);
-  const reader = createAnalyticsReader(component, options.metrics);
-  const singleTrackEventArgs = {
-    name: eventNameValidator,
-    ...trackEventInputFields,
-  };
-  const writeTrackArgs = {
-    name: v.optional(eventNameValidator),
-    ...trackEventInputFields,
-    events: v.optional(v.array(v.object(singleTrackEventArgs))),
-  };
-  const configuration = {
-    events: serializeEvents(options.events),
-    metrics: serializeMetrics(options.metrics),
-    ...(options.settings ? { settings: options.settings } : {}),
-  };
+	const eventNameValidator = v.union(
+		...options.events.map((e) => v.literal(e.name as EventName)),
+	);
 
-  return {
-    ...tracker,
-    ...reader,
-    configure: async (ctx: typesMutationCtx) => {
-      await ctx.runMutation(component.lib.writeConfiguration, configuration);
-    },
-    writeConfiguration: mutationGeneric({
-      args: {},
-      returns: v.null(),
-      handler: async (ctx) => {
-        await authorize(options, ctx, { type: "configure" });
-        await ctx.runMutation(component.lib.writeConfiguration, configuration);
-        return null;
-      },
-    }),
-    writeTrack: mutationGeneric({
-      args: writeTrackArgs,
-      returns: v.any(),
-      handler: async (ctx, args) => {
-        if (args.events) {
-          for (const event of args.events) {
-            await authorize(options, ctx, {
-              type: "track",
-              name: event.name,
-            });
-          }
+	const metricNameValidator = v.union(
+		...options.metrics.map((m) => v.literal(m.name as MetricName)),
+	);
 
-          return await ctx.runMutation(component.lib.writeTrack, {
-            events: args.events,
-          });
-        }
+	const configuration = createAnalyticsConfiguration(
+		options.events,
+		options.metrics,
+		options.settings,
+	);
 
-        if (!args.name) {
-          throw new Error('writeTrack requires either "name" or "events".');
-        }
+	const tracker = createAnalyticsTracker(
+		component,
+		options.events,
+		configuration,
+	);
 
-        const { events: _events, ...event } = args;
+	const reader = createAnalyticsReader(
+		component,
+		options.metrics,
+		configuration,
+	);
 
-        await authorize(options, ctx, {
-          type: "track",
-          name: args.name,
-        });
+	const singleTrackEventArgs = {
+		name: eventNameValidator,
+		...trackEventInputFields,
+	};
 
-        return await ctx.runMutation(component.lib.writeTrack, {
-          ...event,
-          name: args.name,
-        });
-      },
-    }),
-    metricComparison: queryGeneric({
-      args: {
-        metric: metricNameValidator,
-        from: v.number(),
-        to: v.number(),
-        scope: v.optional(scopeInputValidator),
-      },
-      returns: v.any(),
-      handler: async (ctx, args) => {
-        await authorize(options, ctx, {
-          type: "read",
-          query: "metricComparison",
-          metric: args.metric,
-          ...(args.scope
-            ? { scope: args.scope as typesAnalyticsScopeInput }
-            : {}),
-        });
-        return await ctx.runQuery(component.lib.fetchMetricComparison, args);
-      },
-    }),
-    timeSeries: queryGeneric({
-      args: {
-        metric: metricNameValidator,
-        from: v.number(),
-        to: v.number(),
-        groupBy: v.optional(v.string()),
-        scope: v.optional(scopeInputValidator),
-        fill: v.optional(v.boolean()),
-      },
-      returns: v.any(),
-      handler: async (ctx, args) => {
-        await authorize(options, ctx, {
-          type: "read",
-          query: "timeSeries",
-          metric: args.metric,
-          ...(args.scope
-            ? { scope: args.scope as typesAnalyticsScopeInput }
-            : {}),
-        });
-        return await ctx.runQuery(component.lib.fetchTimeSeries, args);
-      },
-    }),
-    summary: queryGeneric({
-      args: {
-        metric: metricNameValidator,
-        from: v.number(),
-        to: v.number(),
-        scope: v.optional(scopeInputValidator),
-      },
-      returns: v.any(),
-      handler: async (ctx, args) => {
-        await authorize(options, ctx, {
-          type: "read",
-          query: "summary",
-          metric: args.metric,
-          ...(args.scope
-            ? { scope: args.scope as typesAnalyticsScopeInput }
-            : {}),
-        });
-        return await ctx.runQuery(component.lib.fetchSummary, args);
-      },
-    }),
-    breakdown: queryGeneric({
-      args: {
-        metric: metricNameValidator,
-        from: v.number(),
-        to: v.number(),
-        groupBy: v.string(),
-        scope: v.optional(scopeInputValidator),
-      },
-      returns: v.any(),
-      handler: async (ctx, args) => {
-        await authorize(options, ctx, {
-          type: "read",
-          query: "breakdown",
-          metric: args.metric,
-          ...(args.scope
-            ? { scope: args.scope as typesAnalyticsScopeInput }
-            : {}),
-        });
-        return await ctx.runQuery(component.lib.fetchBreakdown, args);
-      },
-    }),
-  };
+	const writeTrackArgs = {
+		name: v.optional(eventNameValidator),
+		...trackEventInputFields,
+		events: v.optional(v.array(v.object(singleTrackEventArgs))),
+	};
+
+	const scopeArg = (scope: unknown) => scope ? { scope: scope as typesAnalyticsScopeInput } : {};
+
+	return {
+		...tracker,
+		...reader,
+		configure: async (ctx: typesMutationCtx) => {
+			await ctx.runMutation(component.lib.writeConfiguration, configuration);
+		},
+		writeConfiguration: mutationGeneric({
+			args: {},
+			returns: v.null(),
+			handler: async (ctx) => {
+				await authorize(options, ctx, { type: "configure" });
+				await ctx.runMutation(component.lib.writeConfiguration, configuration);
+				return null;
+			},
+		}),
+		writeTrack: mutationGeneric({
+			args: writeTrackArgs,
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				if (args.events) {
+					for (const event of args.events) {
+						await authorize(options, ctx, {
+							type: "track",
+							name: event.name,
+						});
+					}
+
+					return await ctx.runMutation(component.lib.writeTrack, {
+						config: configuration,
+						events: args.events,
+					});
+				}
+
+				if (!args.name) {
+					throw new Error('writeTrack requires either "name" or "events".');
+				}
+
+				const { events: _events, ...event } = args;
+
+				await authorize(options, ctx, {
+					type: "track",
+					name: args.name,
+				});
+
+				return await ctx.runMutation(component.lib.writeTrack, {
+					config: configuration,
+					...event,
+					name: args.name,
+				});
+			},
+		}),
+		metricComparison: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "metricComparison",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchMetricComparison, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		timeSeries: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				groupBy: v.optional(v.string()),
+				scope: v.optional(scopeInputValidator),
+				fill: v.optional(v.boolean()),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "timeSeries",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchTimeSeries, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		summary: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "summary",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchSummary, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		breakdown: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				groupBy: v.string(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "breakdown",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchBreakdown, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+	};
 }

@@ -28,7 +28,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         processPendingHighVolumeAnalyticsEvents: FunctionReference<
           "mutation",
           "internal",
-          { remainingCatchupBatches?: number },
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            remainingCatchupBatches?: number;
+          },
           { processed: number; scheduledNextBatch: boolean },
           Name
         >;
@@ -37,7 +73,42 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         purgeStaleAnalyticsEvents: FunctionReference<
           "mutation",
           "internal",
-          {},
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+          },
           { cutoff?: number; deleted: number; skipped: boolean },
           Name
         >;
@@ -48,6 +119,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           from: number;
           groupBy: string;
           metric: string;
@@ -83,8 +188,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       fetchConfiguration: FunctionReference<
         "query",
         "internal",
-        {},
-        null | {
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+        },
+        {
           configHash?: string;
           events: Array<{
             label: string;
@@ -117,7 +257,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             rawEventRetentionDays: number;
             trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
           };
-          updatedAt: number;
         },
         Name
       >;
@@ -125,6 +264,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           from: number;
           metric: string;
           scope?:
@@ -161,6 +334,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           days?: number;
           dimensionKey: string;
           maxRows?: number;
@@ -177,6 +384,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           from: number;
           metric: string;
           scope?:
@@ -207,6 +448,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           fill?: boolean;
           from: number;
           groupBy?: string;
@@ -247,6 +522,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           days?: number;
           dimensionKey: string;
           metric: string;
@@ -261,14 +570,85 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       processPendingHighVolumeAnalyticsEvents: FunctionReference<
         "mutation",
         "internal",
-        { remainingCatchupBatches?: number },
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          remainingCatchupBatches?: number;
+        },
         { processed: number; scheduledNextBatch: boolean },
         Name
       >;
       purgeStaleAnalyticsEvents: FunctionReference<
         "mutation",
         "internal",
-        {},
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+        },
         { cutoff?: number; deleted: number; skipped: boolean },
         Name
       >;
@@ -316,6 +696,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           actorId?: string;
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
           events?: Array<{
             actorId?: string;
             name: string;
@@ -398,6 +812,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             actorId?: string;
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             events?: Array<{
               actorId?: string;
               name: string;
@@ -439,6 +887,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             from: number;
             groupBy: string;
             metric: string;
@@ -476,8 +958,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         fetchConfiguration: FunctionReference<
           "query",
           "internal",
-          {},
-          null | {
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+          },
+          {
             configHash?: string;
             events: Array<{
               label: string;
@@ -510,7 +1027,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               rawEventRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
-            updatedAt: number;
           },
           Name
         >;
@@ -520,6 +1036,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             from: number;
             metric: string;
             scope?:
@@ -558,6 +1108,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             days?: number;
             dimensionKey: string;
             maxRows?: number;
@@ -576,6 +1160,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             from: number;
             metric: string;
             scope?:
@@ -608,6 +1226,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             fill?: boolean;
             from: number;
             groupBy?: string;
@@ -650,6 +1302,40 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
             days?: number;
             dimensionKey: string;
             metric: string;

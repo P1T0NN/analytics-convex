@@ -4,11 +4,14 @@ import { mutation } from "../_generated/server";
 import { api } from "../_generated/api";
 
 // HELPERS
-import { getConfig } from "../analyticsConfig";
+import { normalizeConfig } from "../analyticsConfig";
 import { aggregateEvent } from "../helpers/aggregateEvent";
 
 // UTILS
-import { toAggregateInput } from "../utils/toAggregateInput";
+import { toAggregateInput } from "../utils/analyticsEventPayloads";
+
+// SCHEMAS
+import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
 
 /**
  * Batch-aggregate pending high-volume events.
@@ -20,63 +23,67 @@ import { toAggregateInput } from "../utils/toAggregateInput";
  * @internal
  */
 export const processPendingHighVolumeAnalyticsEvents = mutation({
-  args: {
-    remainingCatchupBatches: v.optional(v.number()),
-  },
-  returns: v.object({
-    processed: v.number(),
-    scheduledNextBatch: v.boolean(),
-  }),
-  handler: async (ctx, args) => {
-    const config = await getConfig(ctx);
-    const remainingCatchupBatches =
-      args.remainingCatchupBatches ??
-      config.settings.highVolumeMaxCatchupBatches;
+	args: {
+		config: analyticsRuntimeConfigValidator,
+		remainingCatchupBatches: v.optional(v.number()),
+	},
+	returns: v.object({
+		processed: v.number(),
+		scheduledNextBatch: v.boolean(),
+	}),
+	handler: async (ctx, args) => {
+		const config = normalizeConfig(args.config);
+		const remainingCatchupBatches =
+			args.remainingCatchupBatches ??
+			config.settings.highVolumeMaxCatchupBatches;
 
-    const pendingEvents = await ctx.db
-      .query("analyticsEvents")
-      .withIndex("by_high_volume_status_occurred_at", (q) =>
-        q.eq("highVolumeStatus", "pending"),
-      )
-      .take(config.settings.highVolumeBatchSize);
+		const pendingEvents = await ctx.db
+			.query("analyticsEvents")
+			.withIndex("by_high_volume_status_occurred_at", (q) =>
+				q.eq("highVolumeStatus", "pending"),
+			)
+			.take(config.settings.highVolumeBatchSize);
 
-    if (pendingEvents.length === 0) {
-      return {
-        processed: 0,
-        scheduledNextBatch: false,
-      };
-    }
+		if (pendingEvents.length === 0) {
+			return {
+				processed: 0,
+				scheduledNextBatch: false,
+			};
+		}
 
-    await aggregateEvent(
-      ctx,
-      config,
-      pendingEvents.map((event) => toAggregateInput(event)),
-      "highVolume",
-    );
+		await aggregateEvent(
+			ctx,
+			config,
+			pendingEvents.map((event) => toAggregateInput(event)),
+			"highVolume",
+		);
 
-    const now = Date.now();
-    for (const event of pendingEvents) {
-      await ctx.db.patch("analyticsEvents", event._id, {
-        highVolumeStatus: "processed",
-        highVolumeAggregatedAt: now,
-      });
-    }
+		const now = Date.now();
+		for (const event of pendingEvents) {
+			await ctx.db.patch("analyticsEvents", event._id, {
+				highVolumeStatus: "processed",
+				highVolumeAggregatedAt: now,
+			});
+		}
 
-    const shouldContinue =
-      pendingEvents.length === config.settings.highVolumeBatchSize &&
-      remainingCatchupBatches > 0;
+		const shouldContinue =
+			pendingEvents.length === config.settings.highVolumeBatchSize &&
+			remainingCatchupBatches > 0;
 
-    if (shouldContinue) {
-      await ctx.scheduler.runAfter(
-        0,
-        api.lib.processPendingHighVolumeAnalyticsEvents,
-        { remainingCatchupBatches: remainingCatchupBatches - 1 },
-      );
-    }
+		if (shouldContinue) {
+			await ctx.scheduler.runAfter(
+				0,
+				api.lib.processPendingHighVolumeAnalyticsEvents,
+				{
+					config: args.config,
+					remainingCatchupBatches: remainingCatchupBatches - 1,
+				},
+			);
+		}
 
-    return {
-      processed: pendingEvents.length,
-      scheduledNextBatch: shouldContinue,
-    };
-  },
+		return {
+			processed: pendingEvents.length,
+			scheduledNextBatch: shouldContinue,
+		};
+	},
 });
