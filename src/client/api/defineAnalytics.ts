@@ -11,6 +11,9 @@ import { createAnalyticsMetricBuilders } from "../builders/metric";
 // HELPERS
 import { createAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
 
+// CRONS
+import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
+
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
@@ -93,5 +96,24 @@ export function defineAnalytics<
 			...(options.settings ? { settings: options.settings } : {}),
 			...(options.authorize ? { authorize: options.authorize } : {}),
 		}),
+		/** Register maintenance cron jobs. Call from convex/crons.ts. */
+		registerCrons(
+			crons: any,
+			cronOptions?: {
+				highVolumeBatchIntervalMinutes?: number;
+				retentionIntervalHours?: number;
+			},
+		) {
+			registerAnalyticsCrons(
+				crons,
+				component,
+				{
+					events: events as any,
+					metrics: metrics as any,
+					settings: (options.settings ?? {}) as any,
+				},
+				cronOptions,
+			);
+		},
 	};
 }
