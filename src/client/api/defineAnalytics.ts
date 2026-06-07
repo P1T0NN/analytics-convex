@@ -99,6 +99,7 @@ export function defineAnalytics<
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
 			crons: any,
+			internalApi: any,
 			cronOptions?: {
 				highVolumeBatchIntervalMinutes?: number;
 				retentionIntervalHours?: number;
@@ -106,7 +107,7 @@ export function defineAnalytics<
 		) {
 			registerAnalyticsCrons(
 				crons,
-				component,
+				internalApi,
 				{
 					events: events as any,
 					metrics: metrics as any,

@@ -1,6 +1,5 @@
 // LIBRARIES
 import type { Crons } from "convex/server";
-import type { ComponentApi } from "../../component/_generated/component.js";
 
 // TYPES
 import type { typesAnalyticsRuntimeConfig } from "../types/types";
@@ -8,18 +7,22 @@ import type { typesAnalyticsRuntimeConfig } from "../types/types";
 /**
  * Register maintenance cron jobs for analytics.
  *
- * Sets up two jobs: high-volume batch aggregation and raw event retention
- * purging. Call once from your app's `convex/crons.ts`.
+ * Requires thin wrapper mutations in your app's `convex/analytics/crons.ts`
+ * (see README for the snippet). Pass your app's `internal.analytics.crons`
+ * as the third argument.
  *
  * @example
- * registerAnalyticsCrons(crons, components.analytics, config, {
+ * registerAnalyticsCrons(crons, internal.analytics.crons, config, {
  *   highVolumeBatchIntervalMinutes: 1,
  *   retentionIntervalHours: 24,
  * });
  */
 export function registerAnalyticsCrons(
 	crons: Crons,
-	component: ComponentApi,
+	internalApi: {
+		processPendingHighVolumeAnalyticsEvents: any;
+		purgeStaleAnalyticsEvents: any;
+	},
 	config: typesAnalyticsRuntimeConfig,
 	options: {
 		highVolumeBatchIntervalMinutes?: number;
@@ -29,14 +32,14 @@ export function registerAnalyticsCrons(
 	crons.interval(
 		"process high-volume analytics events",
 		{ minutes: options.highVolumeBatchIntervalMinutes ?? 1 },
-		component.lib.processPendingHighVolumeAnalyticsEvents,
+		internalApi.processPendingHighVolumeAnalyticsEvents,
 		{ config },
 	);
 
 	crons.interval(
 		"purge stale analytics events",
 		{ hours: options.retentionIntervalHours ?? 24 },
-		component.lib.purgeStaleAnalyticsEvents,
+		internalApi.purgeStaleAnalyticsEvents,
 		{ config },
 	);
 }

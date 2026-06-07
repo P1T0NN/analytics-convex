@@ -261,16 +261,46 @@ Convex functions that already have their own auth.
 
 ### 3. Register crons
 
+First, paste these thin wrapper mutations once — they let the Convex cron
+scheduler reference component functions through your app's internal API:
+
+```ts
+// convex/analytics/crons.ts
+import { internalMutation } from "../_generated/server";
+import { components } from "../_generated/api";
+
+export const processPendingHighVolumeAnalyticsEvents = internalMutation({
+    handler: async (ctx) => {
+        await ctx.runMutation(
+            components.analytics.lib.processPendingHighVolumeAnalyticsEvents,
+            {},
+        );
+    },
+});
+
+export const purgeStaleAnalyticsEvents = internalMutation({
+    handler: async (ctx) => {
+        await ctx.runMutation(
+            components.analytics.lib.purgeStaleAnalyticsEvents,
+            {},
+        );
+    },
+});
+```
+
+Then register the jobs from your `crons.ts`:
+
 ```ts
 // convex/crons.ts
 import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
 import { analytics } from "./analytics";
 
 const crons = cronJobs();
 
-analytics.registerCrons(crons, {
-	highVolumeBatchIntervalMinutes: 1, // default: 1
-	retentionIntervalHours: 24, // default: 24
+analytics.registerCrons(crons, internal.analytics.crons, {
+    highVolumeBatchIntervalMinutes: 1, // default: 1
+    retentionIntervalHours: 24, // default: 24
 });
 
 export default crons;
@@ -787,7 +817,7 @@ const top5 = getAnalyticsRanking({
 | `trackAnalytics(ctx, component, input, config)`              | Lower-level direct helper; normally use `analytics.writeTrack`                                                                             |
 | `trackAnalyticsEvent(ctx, component, input, config)`         | Lower-level direct single-event helper                                                                                                     |
 | `trackAnalyticsEvents(ctx, component, events, config)`       | Lower-level direct batch helper                                                                                                            |
-| `registerAnalyticsCrons(crons, component, config, options?)` | Lower-level cron registration; normally use `analytics.registerCrons(crons)`                                                               |
+| `registerAnalyticsCrons(crons, internalApi, config, options?)` | Lower-level cron registration; normally use `analytics.registerCrons(crons, internal.analytics.crons)` |
 | `ANALYTICS_TRAFFIC_MODE`                                     | Traffic mode constant object                                                                                                               |
 | `ANALYTICS_LIMITS`                                           | Hard limit constants for ingestion, config, and runtime settings                                                                           |
 | `getAnalyticsRanking`                                        | Pure ranking/sorting utility with tie-breakers                                                                                             |

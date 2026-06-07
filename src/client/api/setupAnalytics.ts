@@ -71,12 +71,13 @@ export function setupAnalytics<
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
 			crons: Crons,
+			internalApi: any,
 			cronOptions?: {
 				highVolumeBatchIntervalMinutes?: number;
 				retentionIntervalHours?: number;
 			},
 		) {
-			registerAnalyticsCrons(crons, component, config, cronOptions);
+			registerAnalyticsCrons(crons, internalApi, config, cronOptions);
 		},
 	};
 }
