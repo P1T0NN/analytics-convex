@@ -3,6 +3,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+	analyticsConfigurations: defineTable({
+		hash: v.string(),
+		config: v.any(),
+		createdAt: v.number(),
+	}).index("by_hash", ["hash"]),
+
 	analyticsEvents: defineTable({
 		name: v.string(),
 		occurredAt: v.number(),
@@ -64,7 +70,6 @@ export default defineSchema({
 		dimensionValue: v.string(),
 		shard: v.optional(v.number()),
 		value: v.number(),
-		updatedAt: v.number(),
 	})
 		.index("by_metric_scope_dimension_bucket", [
 			"metric",
@@ -97,8 +102,5 @@ export default defineSchema({
 			}),
 		),
 		createdAt: v.number(),
-		expiresAt: v.optional(v.number()),
-	})
-		.index("by_key", ["key"])
-		.index("by_expires_at", ["expiresAt"]),
+	}).index("by_key", ["key"]),
 });

@@ -4,6 +4,7 @@ import type { ComponentApi } from "../../component/_generated/component";
 
 // UTILS
 import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
+import { internalAnalyticsConfigReference } from "../utils/configReference";
 
 // TYPES
 import type {
@@ -39,6 +40,16 @@ type typesWriteTrackInput =
 			events: typesTrackEventsInput;
 	  };
 
+function normalizeWriteTrackEvents(
+	input: typesWriteTrackInput,
+): typesTrackEventsInput {
+	if ("events" in input) {
+		return input.events;
+	}
+
+	return [input];
+}
+
 export function internalCreateAnalyticsServerHelpers<
 	const Metrics extends readonly typesAnalyticsMetricConfig[],
 >(
@@ -54,6 +65,7 @@ export function internalCreateAnalyticsServerHelpers<
 		settings,
 		funnels,
 	);
+	const configReference = internalAnalyticsConfigReference(config);
 
 	const fetchMetricTotalsByDimension = async <
 		Name extends typesMetricName<Metrics>,
@@ -64,7 +76,7 @@ export function internalCreateAnalyticsServerHelpers<
 		const rows = await ctx.runQuery(
 			component.lib.fetchMetricTotalsByDimension,
 			{
-				config,
+				...configReference,
 				...args,
 			},
 		);
@@ -77,7 +89,7 @@ export function internalCreateAnalyticsServerHelpers<
 		args: typesTopDimensionValueArgs<Metrics, Name>,
 	): Promise<string | null> => {
 		return await ctx.runQuery(component.lib.fetchTopDimensionValue, {
-			config,
+			...configReference,
 			...args,
 		});
 	};
@@ -87,7 +99,7 @@ export function internalCreateAnalyticsServerHelpers<
 			ctx: typesMutationCtx,
 			settings?: Record<string, unknown>,
 		) => {
-			await ctx.runMutation(component.lib.writeConfiguration, {
+			return await ctx.runMutation(component.lib.writeConfiguration, {
 				events: config.events,
 				metrics: config.metrics,
 				...(config.funnels ? { funnels: config.funnels } : {}),
@@ -100,8 +112,8 @@ export function internalCreateAnalyticsServerHelpers<
 
 		writeTrack: async (ctx: typesMutationCtx, input: typesWriteTrackInput) => {
 			return await ctx.runMutation(component.lib.writeTrack, {
-				config,
-				...input,
+				...configReference,
+				events: normalizeWriteTrackEvents(input),
 			});
 		},
 
@@ -110,7 +122,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesTimeSeriesArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchTimeSeries, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -120,7 +132,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchSummary, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -130,7 +142,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesBreakdownArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchBreakdown, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -140,7 +152,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricComparison, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -153,7 +165,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesMetricConversionArgs<Metrics, Numerator, Denominator>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricConversion, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -163,7 +175,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesMetricEvaluationArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -173,7 +185,7 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesDashboardMetricsArgs<Metrics>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -183,18 +195,16 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesFunnelConversionArgs,
 		) => {
 			return await ctx.runQuery(component.lib.fetchFunnelConversion, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
 
 		fetchMetricTotalsByDimension,
-		fetchDimensionTotals: fetchMetricTotalsByDimension,
 		fetchTopDimensionValue,
-		fetchTopDimension: fetchTopDimensionValue,
 
 		fetchConfiguration: async (ctx: typesQueryCtx) => {
-			return await ctx.runQuery(component.lib.fetchConfiguration, { config });
+			return await ctx.runQuery(component.lib.fetchConfiguration, configReference);
 		},
 	};
 }

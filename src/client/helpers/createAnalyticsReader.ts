@@ -1,6 +1,9 @@
 // LIBRARIES
 import type { ComponentApi } from "../../component/_generated/component.js";
 
+// UTILS
+import { internalAnalyticsConfigReference } from "../utils/configReference";
+
 // TYPES
 import type {
 	typesAnalyticsMetricConfig,
@@ -32,6 +35,8 @@ export function createAnalyticsReader<
 	_metrics: Metrics,
 	config: typesAnalyticsRuntimeConfig,
 ) {
+	const configReference = internalAnalyticsConfigReference(config);
+
 	const fetchMetricTotalsByDimension = async <
 		Name extends typesMetricName<Metrics>,
 	>(
@@ -41,7 +46,7 @@ export function createAnalyticsReader<
 		const rows = await ctx.runQuery(
 			component.lib.fetchMetricTotalsByDimension,
 			{
-				config,
+				...configReference,
 				...args,
 			},
 		);
@@ -54,21 +59,21 @@ export function createAnalyticsReader<
 		args: typesTopDimensionValueArgs<Metrics, Name>,
 	): Promise<string | null> => {
 		return await ctx.runQuery(component.lib.fetchTopDimensionValue, {
-			config,
+			...configReference,
 			...args,
 		});
 	};
 
 	return {
 		fetchConfiguration: async (ctx: typesQueryCtx) => {
-			return await ctx.runQuery(component.lib.fetchConfiguration, { config });
+			return await ctx.runQuery(component.lib.fetchConfiguration, configReference);
 		},
 		fetchSummary: async <Name extends typesMetricName<Metrics>>(
 			ctx: typesQueryCtx,
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchSummary, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -77,7 +82,7 @@ export function createAnalyticsReader<
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricComparison, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -89,7 +94,7 @@ export function createAnalyticsReader<
 			args: typesMetricConversionArgs<Metrics, Numerator, Denominator>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricConversion, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -98,7 +103,7 @@ export function createAnalyticsReader<
 			args: typesMetricEvaluationArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -107,7 +112,7 @@ export function createAnalyticsReader<
 			args: typesDashboardMetricsArgs<Metrics>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -116,7 +121,7 @@ export function createAnalyticsReader<
 			args: typesFunnelConversionArgs,
 		) => {
 			return await ctx.runQuery(component.lib.fetchFunnelConversion, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -125,7 +130,7 @@ export function createAnalyticsReader<
 			args: typesTimeSeriesArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchTimeSeries, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
@@ -134,13 +139,11 @@ export function createAnalyticsReader<
 			args: typesBreakdownArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchBreakdown, {
-				config,
+				...configReference,
 				...args,
 			});
 		},
 		fetchMetricTotalsByDimension,
-		fetchDimensionTotals: fetchMetricTotalsByDimension,
 		fetchTopDimensionValue,
-		fetchTopDimension: fetchTopDimensionValue,
 	};
 }

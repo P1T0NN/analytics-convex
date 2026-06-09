@@ -40,9 +40,6 @@ describe("createAnalyticsApi", () => {
 		type TotalsInput = Parameters<
 			typeof analytics.fetchMetricTotalsByDimension<"productsAdded">
 		>[1];
-		type DimensionTotalsInput = Parameters<
-			typeof analytics.fetchDimensionTotals<"productsAdded">
-		>[1];
 		const validInput: ProductAddedInput = {
 			properties: {
 				category: "Shoes",
@@ -63,10 +60,6 @@ describe("createAnalyticsApi", () => {
 			metric: "productsAdded",
 			dimensionKey: "category",
 			days: 30,
-		};
-		const validDimensionTotalsInput: DimensionTotalsInput = {
-			metric: "productsAdded",
-			dimensionKey: "category",
 		};
 
 		const _invalidInput: ProductAddedInput = {
@@ -91,14 +84,11 @@ describe("createAnalyticsApi", () => {
 		expect(analytics.track).toBeDefined();
 		expect(analytics.fetchSummary).toBeDefined();
 		expect(analytics.fetchMetricTotalsByDimension).toBeDefined();
-		expect(analytics.fetchDimensionTotals).toBeDefined();
 		expect(analytics.fetchTopDimensionValue).toBeDefined();
-		expect(analytics.fetchTopDimension).toBeDefined();
 		expect(validInput.properties.price).toBe(120);
 		expect(validInput.unique?.key).toBe("productAdded:user_1:category_shoes");
 		expect(validSummaryInput.metric).toBe("productsAdded");
 		expect(validTotalsInput.dimensionKey).toBe("category");
-		expect(validDimensionTotalsInput.dimensionKey).toBe("category");
 	});
 
 	it("routes dimension helpers through component queries without reading app db", async () => {
@@ -136,15 +126,6 @@ describe("createAnalyticsApi", () => {
 				throw new Error("app ctx.db should not be accessed");
 			},
 		};
-		const aliasCtx = {
-			runQuery: vi
-				.fn()
-				.mockResolvedValueOnce([{ key: "Shoes", value: 3 }])
-				.mockResolvedValueOnce("Shoes"),
-			get db(): never {
-				throw new Error("app ctx.db should not be accessed");
-			},
-		};
 
 		const totals = await analytics.fetchMetricTotalsByDimension(ctx, {
 			metric: "productsAdded",
@@ -157,23 +138,14 @@ describe("createAnalyticsApi", () => {
 			scope: { type: "organization", id: "org_123" },
 			dimensionKey: "category",
 		});
-		const aliasTotals = await analytics.fetchDimensionTotals(aliasCtx, {
-			metric: "productsAdded",
-			dimensionKey: "category",
-		});
-		const aliasTop = await analytics.fetchTopDimension(aliasCtx, {
-			metric: "productsAdded",
-			dimensionKey: "category",
-		});
 
 		expect(totals).toEqual(new Map([["Shoes", 3]]));
 		expect(top).toBe("Shoes");
-		expect(aliasTotals).toEqual(new Map([["Shoes", 3]]));
-		expect(aliasTop).toBe("Shoes");
 		expect(runQuery).toHaveBeenNthCalledWith(
 			1,
 			component.lib.fetchMetricTotalsByDimension,
 			expect.objectContaining({
+				configHash: expect.any(String),
 				config: expect.objectContaining({
 					events: expect.any(Array),
 					metrics: expect.any(Array),
@@ -189,6 +161,7 @@ describe("createAnalyticsApi", () => {
 			2,
 			component.lib.fetchTopDimensionValue,
 			expect.objectContaining({
+				configHash: expect.any(String),
 				config: expect.objectContaining({
 					events: expect.any(Array),
 					metrics: expect.any(Array),
@@ -196,32 +169,6 @@ describe("createAnalyticsApi", () => {
 				}),
 				metric: "productsAdded",
 				scope: { type: "organization", id: "org_123" },
-				dimensionKey: "category",
-			}),
-		);
-		expect(aliasCtx.runQuery).toHaveBeenNthCalledWith(
-			1,
-			component.lib.fetchMetricTotalsByDimension,
-			expect.objectContaining({
-				config: expect.objectContaining({
-					events: expect.any(Array),
-					metrics: expect.any(Array),
-					settings: expect.any(Object),
-				}),
-				metric: "productsAdded",
-				dimensionKey: "category",
-			}),
-		);
-		expect(aliasCtx.runQuery).toHaveBeenNthCalledWith(
-			2,
-			component.lib.fetchTopDimensionValue,
-			expect.objectContaining({
-				config: expect.objectContaining({
-					events: expect.any(Array),
-					metrics: expect.any(Array),
-					settings: expect.any(Object),
-				}),
-				metric: "productsAdded",
 				dimensionKey: "category",
 			}),
 		);

@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalBuildDashboardMetricsForRange } from "../helpers/evaluateMetricForRange";
@@ -20,7 +20,7 @@ import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	dashboardMetricsResponseValidator,
 	scopeInputValidator,
 } from "../schemas/schemas";
@@ -33,7 +33,7 @@ import {
  */
 export const fetchDashboardMetrics = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		metrics: v.array(v.string()),
 		from: v.number(),
 		to: v.number(),
@@ -43,7 +43,11 @@ export const fetchDashboardMetrics = query({
 	},
 	returns: dashboardMetricsResponseValidator,
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		
+		});
 		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 
 		if (args.metrics.length === 0) {

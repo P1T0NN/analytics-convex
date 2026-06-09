@@ -3,11 +3,9 @@
 import { describe, expect, it } from "vitest";
 import { api } from "../../component/_generated/api";
 import { ANALYTICS_LIMITS } from "../../shared/constants.js";
-import {
-	internalCreateAnalyticsComponentTest,
+import {internalCreateAnalyticsComponentTest,
 	internalPageViewsConfiguration,
-	internalRuntimeConfiguration,
-} from "../../testUtils/componentTestUtils";
+	internalRuntimeConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -72,7 +70,7 @@ describe("analytics hard limits", () => {
 			],
 		});
 
-		const result = await t.query(api.lib.fetchConfiguration, { config });
+		const result = await t.query(api.lib.fetchConfiguration, internalAnalyticsConfigArgs(config));
 		expect(result.metrics[0].dimensions).toEqual(["plan"]);
 	});
 
@@ -111,7 +109,7 @@ describe("analytics hard limits", () => {
 		);
 
 		await expect(
-			t.mutation(api.lib.writeTrack, { config, events }),
+			t.mutation(api.lib.writeTrack, { ...internalAnalyticsConfigArgs(config), events }),
 		).rejects.toThrow(/events/);
 	});
 
@@ -139,12 +137,13 @@ describe("analytics hard limits", () => {
 
 		await expect(
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "note.created",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "note.created",
 				properties: {
 					body: "x".repeat(ANALYTICS_LIMITS.maxPropertyStringLength + 1),
 				},
-			}),
+			}],
+		}),
 		).rejects.toThrow(/body/);
 	});
 
@@ -154,31 +153,34 @@ describe("analytics hard limits", () => {
 
 		await expect(
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 				unique: { key: "" },
-			}),
+			}],
+		}),
 		).rejects.toThrow(/unique\.key/);
 
 		await expect(
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 				unique: {
 					key: "x".repeat(ANALYTICS_LIMITS.maxUniqueKeyLength + 1),
 				},
-			}),
+			}],
+		}),
 		).rejects.toThrow(/unique\.key/);
 
 		await expect(
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 				unique: {
 					key: "daily:user_1",
 					scope: "daily" as "forever",
 				},
-			}),
+			}],
+		}),
 		).rejects.toThrow(/forever/);
 	});
 

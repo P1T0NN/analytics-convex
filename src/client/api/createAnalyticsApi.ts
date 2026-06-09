@@ -5,16 +5,35 @@ import {
 	type GenericDataModel,
 	type GenericMutationCtx,
 } from "convex/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 // HELPERS
 import { internalAuthorize } from "../helpers/authorize";
 import { createAnalyticsReader } from "../helpers/createAnalyticsReader";
 import { createAnalyticsTracker } from "../helpers/createAnalyticsTracker";
 import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
+import { internalAnalyticsConfigReference } from "../utils/configReference";
 
 // SCHEMAS
-import { scopeInputValidator, trackEventInputFields } from "../schemas/schemas";
+import {
+	breakdownResponseValidator,
+	metricComparisonResponseValidator,
+	metricSummaryResponseValidator,
+	scopeInputValidator,
+	timeSeriesResponseValidator,
+	trackEventInputFields,
+	writeTrackResultValidator,
+} from "../../shared/schemas/analyticsSchemas";
+import {
+	dashboardMetricsResponseValidator,
+} from "../../shared/schemas/dashboardSchemas";
+import {
+	funnelConversionResponseValidator,
+} from "../../shared/schemas/funnelSchemas";
+import {
+	metricConversionResponseValidator,
+	metricEvaluationResponseValidator,
+} from "../../shared/schemas/evaluationSchemas";
 
 // TYPES
 import type {
@@ -64,6 +83,7 @@ export function createAnalyticsApi<
 		options.settings,
 		options.funnels,
 	);
+	const configReference = internalAnalyticsConfigReference(configuration);
 
 	const funnelNameValidator =
 		options.funnels && Object.keys(options.funnels).length > 0
@@ -95,56 +115,67 @@ export function createAnalyticsApi<
 		events: v.optional(v.array(v.object(singleTrackEventArgs))),
 	};
 
-	const scopeArg = (scope: unknown) => scope ? { scope: scope as typesAnalyticsScopeInput } : {};
+	const scopeArg = (scope: unknown) =>
+		scope ? { scope: scope as typesAnalyticsScopeInput } : {};
 
 	return {
 		...tracker,
 		...reader,
 		configure: async (ctx: typesMutationCtx) => {
-			await ctx.runMutation(component.lib.writeConfiguration, configuration);
+			await ctx.runMutation(component.lib.writeConfiguration, {
+				events: configuration.events,
+				metrics: configuration.metrics,
+				...(configuration.funnels ? { funnels: configuration.funnels } : {}),
+				settings: configuration.settings,
+			});
 		},
 		writeConfiguration: mutationGeneric({
 			args: {},
-			returns: v.null(),
+			returns: v.object({ configHash: v.string() }),
 			handler: async (ctx) => {
 				await internalAuthorize(options, ctx, { type: "configure" });
-				await ctx.runMutation(component.lib.writeConfiguration, configuration);
-				return null;
+				return await ctx.runMutation(
+					component.lib.writeConfiguration,
+					{
+						events: configuration.events,
+						metrics: configuration.metrics,
+						...(configuration.funnels ? { funnels: configuration.funnels } : {}),
+						settings: configuration.settings,
+					},
+				);
 			},
 		}),
 		writeTrack: mutationGeneric({
 			args: writeTrackArgs,
-			returns: v.any(),
+			returns: writeTrackResultValidator,
 			handler: async (ctx, args) => {
-				if (args.events) {
-					for (const event of args.events) {
-						await internalAuthorize(options, ctx, {
-							type: "track",
-							name: event.name,
-						});
-					}
+				const events =
+					"events" in args && args.events
+						? args.events
+						: (() => {
+								if (!args.name) {
+									throw new ConvexError({
+										code: "BAD_REQUEST",
+										message: 'writeTrack requires either "name" or "events".',
+									});
+								}
 
-					return await ctx.runMutation(component.lib.writeTrack, {
-						config: configuration,
-						events: args.events,
+								const { events: _events, name, ...rest } = args;
+								return [{ name, ...rest }];
+							})();
+
+				const uniqueEventNames = new Set(events.map((event) => event.name));
+
+				for (const name of uniqueEventNames) {
+					await internalAuthorize(options, ctx, {
+						type: "track",
+						name,
 					});
 				}
 
-				if (!args.name) {
-					throw new Error('writeTrack requires either "name" or "events".');
-				}
-
-				const { events: _events, ...event } = args;
-
-				await internalAuthorize(options, ctx, {
-					type: "track",
-					name: args.name,
-				});
-
 				return await ctx.runMutation(component.lib.writeTrack, {
-					config: configuration,
-					...event,
-					name: args.name,
+					...configReference,
+					events,
 				});
 			},
 		}),
@@ -155,7 +186,7 @@ export function createAnalyticsApi<
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: metricComparisonResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -164,7 +195,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchMetricComparison, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -177,7 +208,7 @@ export function createAnalyticsApi<
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: metricConversionResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -186,7 +217,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchMetricConversion, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -198,7 +229,7 @@ export function createAnalyticsApi<
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: metricEvaluationResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -207,7 +238,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -221,7 +252,7 @@ export function createAnalyticsApi<
 				includeComparison: v.optional(v.boolean()),
 				includeEvaluation: v.optional(v.boolean()),
 			},
-			returns: v.any(),
+			returns: dashboardMetricsResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -230,7 +261,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -242,7 +273,7 @@ export function createAnalyticsApi<
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: funnelConversionResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -251,7 +282,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchFunnelConversion, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -265,7 +296,7 @@ export function createAnalyticsApi<
 				scope: v.optional(scopeInputValidator),
 				fill: v.optional(v.boolean()),
 			},
-			returns: v.any(),
+			returns: timeSeriesResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -274,7 +305,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchTimeSeries, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -286,7 +317,7 @@ export function createAnalyticsApi<
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: metricSummaryResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -295,7 +326,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchSummary, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},
@@ -308,7 +339,7 @@ export function createAnalyticsApi<
 				groupBy: v.string(),
 				scope: v.optional(scopeInputValidator),
 			},
-			returns: v.any(),
+			returns: breakdownResponseValidator,
 			handler: async (ctx, args) => {
 				await internalAuthorize(options, ctx, {
 					type: "read",
@@ -317,7 +348,7 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchBreakdown, {
-					config: configuration,
+					...configReference,
 					...args,
 				});
 			},

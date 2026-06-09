@@ -3,11 +3,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "../../component/_generated/api";
 import { ANALYTICS_LIMITS } from "../../shared/constants.js";
-import {
-	DAY_MS,
+import {DAY_MS,
 	internalCreateAnalyticsComponentTest,
-	internalRevenueConfiguration,
-} from "../../testUtils/componentTestUtils";
+	internalRevenueConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -34,7 +32,7 @@ describe("analytics load behavior", () => {
 			}),
 		);
 
-		const scheduled = await t.mutation(api.lib.writeTrack, { config, events });
+		const scheduled = await t.mutation(api.lib.writeTrack, { ...internalAnalyticsConfigArgs(config), events });
 		expect(scheduled).toEqual({
 			scheduled: true,
 			scheduledCount: ANALYTICS_LIMITS.maxTrackBatchSize,
@@ -44,21 +42,17 @@ describe("analytics load behavior", () => {
 
 		const processed = await t.mutation(
 			api.lib.processPendingHighVolumeAnalyticsEvents,
-			{ config },
+			internalAnalyticsConfigArgs(config),
 		);
 		expect(processed.processed).toBe(ANALYTICS_LIMITS.maxTrackBatchSize);
 
-		const summary = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "revenue",
+		const summary = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "revenue",
 			from: now - DAY_MS,
 			to: now + DAY_MS,
 		});
 		expect(summary.value).toBe(ANALYTICS_LIMITS.maxTrackBatchSize);
 
-		const breakdown = await t.query(api.lib.fetchBreakdown, {
-			config,
-			metric: "revenue",
+		const breakdown = await t.query(api.lib.fetchBreakdown, { ...internalAnalyticsConfigArgs(config), metric: "revenue",
 			from: now - DAY_MS,
 			to: now + DAY_MS,
 			groupBy: "plan",

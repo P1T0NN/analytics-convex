@@ -2,10 +2,8 @@
 
 import { describe, expect, it } from "vitest";
 import { api, internal } from "../../component/_generated/api";
-import {
-	internalCreateAnalyticsComponentTest,
-	internalRuntimeConfiguration,
-} from "../../testUtils/componentTestUtils";
+import {internalCreateAnalyticsComponentTest,
+	internalRuntimeConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -88,12 +86,14 @@ async function writeEvent(
 	occurredAt: number,
 ) {
 	await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
-		config,
-		name,
-		occurredAt,
-		properties: {},
-		source: { type: "server" },
-		idempotencyKey: `${name}:${occurredAt}`,
+		...internalAnalyticsConfigArgs(config),
+		events: [{
+			name,
+			occurredAt,
+			properties: {},
+			source: { type: "server" },
+			idempotencyKey: `${name}:${occurredAt}`,
+		}],
 	});
 }
 
@@ -114,9 +114,7 @@ describe("analytics dashboard and funnel queries", () => {
 			await writeEvent(t, config, "reservation.created", now + index);
 		}
 
-		const result = await t.query(api.lib.fetchDashboardMetrics, {
-			config,
-			metrics: [
+		const result = await t.query(api.lib.fetchDashboardMetrics, { ...internalAnalyticsConfigArgs(config), metrics: [
 				"qrScans",
 				"guestActivations",
 				"newReservations",
@@ -171,9 +169,7 @@ describe("analytics dashboard and funnel queries", () => {
 			await writeEvent(t, config, "guest.activated", now + index);
 		}
 
-		const result = await t.query(api.lib.fetchFunnelConversion, {
-			config,
-			funnel: "guestActivation",
+		const result = await t.query(api.lib.fetchFunnelConversion, { ...internalAnalyticsConfigArgs(config), funnel: "guestActivation",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
 		});
@@ -196,9 +192,7 @@ describe("analytics dashboard and funnel queries", () => {
 		const now = Date.now();
 
 		await expect(
-			t.query(api.lib.fetchDashboardMetrics, {
-				config,
-				metrics: ["qrScans", "qrScans"],
+			t.query(api.lib.fetchDashboardMetrics, { ...internalAnalyticsConfigArgs(config), metrics: ["qrScans", "qrScans"],
 				from: now - 86_400_000,
 				to: now + 86_400_000,
 			}),

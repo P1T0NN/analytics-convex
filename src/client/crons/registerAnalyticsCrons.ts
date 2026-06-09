@@ -7,21 +7,14 @@ import type { typesAnalyticsRuntimeConfig } from "../../shared/types/index.js";
 /**
  * Register maintenance cron jobs for analytics.
  *
- * Requires thin wrapper mutations in your app's `convex/analytics/crons.ts`
- * (see README for the snippet). Pass your app's `internal.analytics.crons`
- * as the third argument.
- *
- * @example
- * registerAnalyticsCrons(crons, internal.analytics.crons, config, {
- *   highVolumeBatchIntervalMinutes: 1,
- *   retentionIntervalHours: 24,
- * });
+ * Pass thin wrapper mutations from `createAnalyticsCronHandlers()` as
+ * `internalApi`, or define your own app wrappers that forward `configHash`.
  */
 export function registerAnalyticsCrons(
 	crons: Crons,
 	internalApi: {
-		processPendingHighVolumeAnalyticsEvents: any;
-		purgeStaleAnalyticsEvents: any;
+		processPendingHighVolumeAnalyticsEvents: Parameters<Crons["interval"]>[2];
+		purgeStaleAnalyticsEvents: Parameters<Crons["interval"]>[2];
 	},
 	config: typesAnalyticsRuntimeConfig,
 	options: {
@@ -29,17 +22,23 @@ export function registerAnalyticsCrons(
 		retentionIntervalHours?: number;
 	} = {},
 ) {
+	if (!config.configHash) {
+		throw new Error("Analytics configuration is missing configHash.");
+	}
+
+	const configHash = config.configHash;
+
 	crons.interval(
 		"process high-volume analytics events",
 		{ minutes: options.highVolumeBatchIntervalMinutes ?? 1 },
 		internalApi.processPendingHighVolumeAnalyticsEvents,
-		{ config },
+		{ configHash },
 	);
 
 	crons.interval(
 		"purge stale analytics events",
 		{ hours: options.retentionIntervalHours ?? 24 },
 		internalApi.purgeStaleAnalyticsEvents,
-		{ config },
+		{ configHash },
 	);
 }

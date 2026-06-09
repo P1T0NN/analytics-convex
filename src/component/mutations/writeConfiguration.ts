@@ -5,8 +5,12 @@ import { mutation } from "../_generated/server";
 // CONFIG
 import { internalDefaultSettings } from "../analyticsConfig";
 
+// HELPERS
+import { internalEnsureConfiguration } from "../helpers/resolveConfiguration";
+
 // UTILS
 import { internalValidateConfiguration } from "../validations/validations";
+import { internalCreateConfigurationHash } from "../utils/configurationHash.js";
 
 // SCHEMAS
 import {
@@ -17,10 +21,11 @@ import {
 } from "../schemas/schemas";
 
 /**
- * Deprecated validation-only compatibility mutation.
+ * Validate and register analytics configuration by hash.
  *
- * Runtime config is now passed from app-side analytics setup into component
- * functions, so this does not store anything.
+ * Stores the config in the component database so later calls can pass
+ * only `configHash`. Safe to call on deploy or from your app's
+ * writeConfiguration mutation.
  */
 export const writeConfiguration = mutation({
 	args: {
@@ -29,18 +34,40 @@ export const writeConfiguration = mutation({
 		funnels: v.optional(funnelsConfigValidator),
 		settings: v.optional(settingsPatchValidator),
 	},
-	returns: v.null(),
-	handler: async (_ctx, args) => {
+	returns: v.object({
+		configHash: v.string(),
+	}),
+	handler: async (ctx, args) => {
+		const settings = {
+			...internalDefaultSettings(),
+			...(args.settings ?? {}),
+		};
+
 		internalValidateConfiguration({
 			events: args.events,
 			metrics: args.metrics,
 			funnels: args.funnels,
-			settings: {
-				...internalDefaultSettings(),
-				...(args.settings ?? {}),
+			settings,
+		});
+
+		const configHash = internalCreateConfigurationHash({
+			events: args.events,
+			metrics: args.metrics,
+			funnels: args.funnels ?? {},
+			settings,
+		});
+
+		await internalEnsureConfiguration(ctx, {
+			configHash,
+			config: {
+				events: args.events,
+				metrics: args.metrics,
+				...(args.funnels ? { funnels: args.funnels } : {}),
+				settings,
+				configHash,
 			},
 		});
 
-		return null;
+		return { configHash };
 	},
 });

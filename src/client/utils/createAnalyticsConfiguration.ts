@@ -4,6 +4,8 @@ import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDe
 // UTILS
 import { internalSerializeEvents } from "./serializeEvents";
 import { internalSerializeMetrics } from "./serializeMetrics";
+import { internalSerializeFunnels } from "./serializeFunnels";
+import { internalCreateConfigurationHash } from "../../shared/utils/configurationHashUtils";
 
 // TYPES
 import type {
@@ -11,8 +13,8 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
+	typesAnalyticsRuntimeConfig,
 } from "../../shared/types/index.js";
-import { internalSerializeFunnels } from "./serializeFunnels";
 
 export function internalCreateAnalyticsConfiguration<
 	const Events extends readonly typesAnalyticsEventConfig[],
@@ -25,16 +27,27 @@ export function internalCreateAnalyticsConfiguration<
 	metrics: Metrics,
 	settings?: Partial<typesAnalyticsSettings>,
 	funnels?: typesAnalyticsFunnelsConfig,
-) {
+): typesAnalyticsRuntimeConfig {
+	const serializedEvents = internalSerializeEvents(events);
+	const serializedMetrics = internalSerializeMetrics(metrics);
 	const serializedFunnels = internalSerializeFunnels(funnels);
+	const resolvedSettings = {
+		...internalDefaultAnalyticsSettings(),
+		...(settings ?? {}),
+	};
+
+	const configHash = internalCreateConfigurationHash({
+		events: serializedEvents,
+		metrics: serializedMetrics,
+		funnels: serializedFunnels ?? {},
+		settings: resolvedSettings,
+	});
 
 	return {
-		events: internalSerializeEvents(events),
-		metrics: internalSerializeMetrics(metrics),
+		events: serializedEvents,
+		metrics: serializedMetrics,
 		...(serializedFunnels ? { funnels: serializedFunnels } : {}),
-		settings: {
-			...internalDefaultAnalyticsSettings(),
-			...(settings ?? {}),
-		},
+		settings: resolvedSettings,
+		configHash,
 	};
 }

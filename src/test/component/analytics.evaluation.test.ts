@@ -2,10 +2,8 @@
 
 import { describe, expect, it } from "vitest";
 import { api, internal } from "../../component/_generated/api";
-import {
-	internalCreateAnalyticsComponentTest,
-	internalRuntimeConfiguration,
-} from "../../testUtils/componentTestUtils";
+import {internalCreateAnalyticsComponentTest,
+	internalRuntimeConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -78,12 +76,14 @@ async function writeEvent(
 	occurredAt: number,
 ) {
 	await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
-		config,
-		name,
-		occurredAt,
-		properties: {},
-		source: { type: "server" },
-		idempotencyKey: `${name}:${occurredAt}`,
+		...internalAnalyticsConfigArgs(config),
+		events: [{
+			name,
+			occurredAt,
+			properties: {},
+			source: { type: "server" },
+			idempotencyKey: `${name}:${occurredAt}`,
+		}],
 	});
 }
 
@@ -100,9 +100,7 @@ describe("analytics metric evaluation queries", () => {
 			await writeEvent(t, config, "guest.activated", now + index);
 		}
 
-		const result = await t.query(api.lib.fetchMetricConversion, {
-			config,
-			numeratorMetric: "guestActivations",
+		const result = await t.query(api.lib.fetchMetricConversion, { ...internalAnalyticsConfigArgs(config), numeratorMetric: "guestActivations",
 			denominatorMetric: "qrScans",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
@@ -129,9 +127,7 @@ describe("analytics metric evaluation queries", () => {
 			await writeEvent(t, config, "reservation.created", now + index);
 		}
 
-		const activation = await t.query(api.lib.fetchMetricEvaluation, {
-			config,
-			metric: "guestActivations",
+		const activation = await t.query(api.lib.fetchMetricEvaluation, { ...internalAnalyticsConfigArgs(config), metric: "guestActivations",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
 		});
@@ -146,9 +142,7 @@ describe("analytics metric evaluation queries", () => {
 			denominatorMetric: "qrScans",
 		});
 
-		const cancellations = await t.query(api.lib.fetchMetricEvaluation, {
-			config,
-			metric: "cancelledReservations",
+		const cancellations = await t.query(api.lib.fetchMetricEvaluation, { ...internalAnalyticsConfigArgs(config), metric: "cancelledReservations",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
 		});
@@ -169,9 +163,7 @@ describe("analytics metric evaluation queries", () => {
 		await writeEvent(t, config, "reservation.created", now + 1);
 		await writeEvent(t, config, "reservation.created", now + 2);
 
-		const result = await t.query(api.lib.fetchMetricEvaluation, {
-			config,
-			metric: "newReservations",
+		const result = await t.query(api.lib.fetchMetricEvaluation, { ...internalAnalyticsConfigArgs(config), metric: "newReservations",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
 		});
@@ -209,9 +201,7 @@ describe("analytics metric evaluation queries", () => {
 			await writeEvent(t, config, "qr.scanned", now + index);
 		}
 
-		const result = await t.query(api.lib.fetchMetricEvaluation, {
-			config,
-			metric: "qrScans",
+		const result = await t.query(api.lib.fetchMetricEvaluation, { ...internalAnalyticsConfigArgs(config), metric: "qrScans",
 			from: now - 86_400_000,
 			to: now + 86_400_000,
 		});

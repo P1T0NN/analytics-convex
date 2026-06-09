@@ -8,9 +8,8 @@
 
 - [x] **Type-safe event names** — `createAnalyticsApi` now builds `v.union(v.literal(...))` validators from the registered event and metric names. `writeTrack` only accepts registered event names; `fetchTimeSeries`/`fetchSummary`/`fetchBreakdown` only accept registered metric names. Typos are caught at both compile time and runtime. Requires `as const` on the events/metrics arrays for full literal type inference.
 
-- [x] **Single init call** — `setupAnalytics()` wraps `createAnalyticsApi` + `registerAnalyticsCrons` into one function. Returns mutations, queries, and a `registerCrons(crons)` method. The `convex/crons.ts` step cannot be eliminated (Convex requires app-level cron registration), but it's now a single method on the setup object.
-
-- [x] **`registerAnalyticsCrons` discoverability** — bundled into `setupAnalytics().registerCrons()`. Developers no longer need to import a separate function.
+- [x] **Single init call** — `defineAnalytics()` returns server helpers, client wrappers, runtime `config`, and `registerCrons(crons)`.
+- [x] **`registerAnalyticsCrons` discoverability** — wired via `defineAnalytics().registerCrons()` and `createAnalyticsCronHandlers()`.
 
 ## Documentation
 

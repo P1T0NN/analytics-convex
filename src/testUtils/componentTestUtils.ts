@@ -6,6 +6,7 @@ import schema from "../component/schema";
 
 // DEFAULTS
 import { internalDefaultAnalyticsSettings } from "../shared/utils/analyticsDefaultsUtils";
+import { internalCreateConfigurationHash } from "../shared/utils/configurationHashUtils";
 
 // TYPES
 import type {
@@ -30,19 +31,38 @@ export function internalRuntimeConfiguration(config: {
 	funnels?: typesAnalyticsFunnelsConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 }): typesAnalyticsRuntimeConfig {
+	const settings = {
+		...internalDefaultAnalyticsSettings(),
+		...(config.settings ?? {}),
+	};
+	const funnels = config.funnels ?? {};
+	const configHash = internalCreateConfigurationHash({
+		events: config.events,
+		metrics: config.metrics,
+		funnels,
+		settings,
+	});
+
 	return {
 		events: config.events,
 		metrics: config.metrics,
 		...(config.funnels ? { funnels: config.funnels } : {}),
-		settings: {
-			...internalDefaultAnalyticsSettings(),
-			...(config.settings ?? {}),
-		},
+		settings,
+		configHash,
+	};
+}
+
+export function internalAnalyticsConfigArgs(
+	config: typesAnalyticsRuntimeConfig,
+) {
+	return {
+		configHash: config.configHash!,
+		config,
 	};
 }
 
 export function internalPageViewsConfiguration(): typesAnalyticsRuntimeConfig {
-	return {
+	return internalRuntimeConfiguration({
 		events: [{ name: "page.viewed", label: "Page viewed" }],
 		metrics: [
 			{
@@ -53,8 +73,7 @@ export function internalPageViewsConfiguration(): typesAnalyticsRuntimeConfig {
 				aggregation: "count" as const,
 			},
 		],
-		settings: internalDefaultAnalyticsSettings(),
-	};
+	});
 }
 
 export function internalRevenueConfiguration(

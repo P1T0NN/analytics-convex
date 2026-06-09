@@ -29,7 +29,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "mutation",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -95,6 +95,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             remainingCatchupBatches?: number;
           },
           { processed: number; scheduledNextBatch: boolean },
@@ -106,7 +107,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "mutation",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -172,6 +173,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
           },
           { cutoff?: number; deleted: number; skipped: boolean },
           Name
@@ -183,7 +185,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -249,6 +251,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           groupBy: string;
           metric: string;
@@ -285,7 +288,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -351,6 +354,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
         },
         {
           configHash?: string;
@@ -424,7 +428,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -490,6 +494,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           includeComparison?: boolean;
           includeEvaluation?: boolean;
@@ -558,7 +563,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -624,6 +629,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           funnel: string;
           scope?:
@@ -650,7 +656,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -716,6 +722,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           metric: string;
           scope?:
@@ -752,7 +759,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -818,6 +825,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           denominatorMetric: string;
           from: number;
           numeratorMetric: string;
@@ -842,7 +850,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -908,6 +916,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           metric: string;
           scope?:
@@ -966,7 +975,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1032,6 +1041,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           days?: number;
           dimensionKey: string;
           maxRows?: number;
@@ -1048,7 +1058,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1114,6 +1124,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           from: number;
           metric: string;
           scope?:
@@ -1144,7 +1155,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1210,6 +1221,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           fill?: boolean;
           from: number;
           groupBy?: string;
@@ -1250,7 +1262,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1316,6 +1328,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           days?: number;
           dimensionKey: string;
           metric: string;
@@ -1331,7 +1344,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "mutation",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1397,6 +1410,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
           remainingCatchupBatches?: number;
         },
         { processed: number; scheduledNextBatch: boolean },
@@ -1406,7 +1420,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "mutation",
         "internal",
         {
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1472,6 +1486,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
+          configHash: string;
         },
         { cutoff?: number; deleted: number; skipped: boolean },
         Name
@@ -1544,15 +1559,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
           };
         },
-        null,
+        { configHash: string },
         Name
       >;
       writeTrack: FunctionReference<
         "mutation",
         "internal",
         {
-          actorId?: string;
-          config: {
+          config?: {
             configHash?: string;
             events: Array<{
               label: string;
@@ -1618,7 +1632,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
-          events?: Array<{
+          configHash: string;
+          events: Array<{
             actorId?: string;
             name: string;
             occurredAt?: number;
@@ -1635,20 +1650,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             subject?: { id: string; type: string };
             unique?: { key: string; scope?: "forever" };
           }>;
-          name?: string;
-          occurredAt?: number;
-          organizationId?: string;
-          properties?: Record<string, string | number | boolean | null>;
-          scopes?: Array<{
-            scopeId: string;
-            scopeType: "global" | "organization" | "resource";
-          }>;
-          source?: {
-            name?: string;
-            type: "server" | "client" | "webhook" | "system";
-          };
-          subject?: { id: string; type: string };
-          unique?: { key: string; scope?: "forever" };
         },
         {
           deduped?: boolean;
@@ -1729,7 +1730,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
             };
           },
-          null,
+          { configHash: string },
           Name
         >;
       };
@@ -1738,8 +1739,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "mutation",
           "internal",
           {
-            actorId?: string;
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -1805,7 +1805,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
-            events?: Array<{
+            configHash: string;
+            events: Array<{
               actorId?: string;
               name: string;
               occurredAt?: number;
@@ -1822,20 +1823,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               subject?: { id: string; type: string };
               unique?: { key: string; scope?: "forever" };
             }>;
-            name?: string;
-            occurredAt?: number;
-            organizationId?: string;
-            properties?: Record<string, string | number | boolean | null>;
-            scopes?: Array<{
-              scopeId: string;
-              scopeType: "global" | "organization" | "resource";
-            }>;
-            source?: {
-              name?: string;
-              type: "server" | "client" | "webhook" | "system";
-            };
-            subject?: { id: string; type: string };
-            unique?: { key: string; scope?: "forever" };
           },
           {
             deduped?: boolean;
@@ -1853,7 +1840,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -1919,6 +1906,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             groupBy: string;
             metric: string;
@@ -1957,7 +1945,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2023,6 +2011,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
           },
           {
             configHash?: string;
@@ -2098,7 +2087,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2164,6 +2153,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             includeComparison?: boolean;
             includeEvaluation?: boolean;
@@ -2234,7 +2224,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2300,6 +2290,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             funnel: string;
             scope?:
@@ -2328,7 +2319,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2394,6 +2385,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             metric: string;
             scope?:
@@ -2432,7 +2424,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2498,6 +2490,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             denominatorMetric: string;
             from: number;
             numeratorMetric: string;
@@ -2524,7 +2517,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2590,6 +2583,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             metric: string;
             scope?:
@@ -2654,7 +2648,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2720,6 +2714,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             days?: number;
             dimensionKey: string;
             maxRows?: number;
@@ -2738,7 +2733,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2804,6 +2799,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             from: number;
             metric: string;
             scope?:
@@ -2836,7 +2832,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -2902,6 +2898,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             fill?: boolean;
             from: number;
             groupBy?: string;
@@ -2944,7 +2941,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            config: {
+            config?: {
               configHash?: string;
               events: Array<{
                 label: string;
@@ -3010,6 +3007,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
+            configHash: string;
             days?: number;
             dimensionKey: string;
             metric: string;

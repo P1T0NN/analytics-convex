@@ -2,12 +2,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../../component/_generated/api";
-import {
-	DAY_MS,
+import {DAY_MS,
 	internalCreateAnalyticsComponentTest,
 	internalPageViewsConfiguration,
-	internalRevenueConfiguration,
-} from "../../testUtils/componentTestUtils";
+	internalRevenueConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -32,16 +30,18 @@ describe("analytics unique events", () => {
 		const now = Date.now();
 
 		const first = await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 			occurredAt: now,
 			unique: { key: "guestView:guest_1:hospitality_1" },
+		}],
 		});
 		const second = await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 			occurredAt: now + DAY_MS,
 			unique: { key: "guestView:guest_1:hospitality_1" },
+		}],
 		});
 
 		expect(first).toEqual({ scheduled: true, scheduledCount: 1 });
@@ -54,9 +54,7 @@ describe("analytics unique events", () => {
 
 		await flushScheduledAnalytics(t);
 
-		const result = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "pageViews",
+		const result = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "pageViews",
 			from: now - DAY_MS,
 			to: now + 2 * DAY_MS,
 		});
@@ -68,9 +66,7 @@ describe("analytics unique events", () => {
 		const config = internalPageViewsConfiguration();
 		const now = Date.now();
 
-		const result = await t.mutation(api.lib.writeTrack, {
-			config,
-			events: [
+		const result = await t.mutation(api.lib.writeTrack, { ...internalAnalyticsConfigArgs(config), events: [
 				{
 					name: "page.viewed",
 					occurredAt: now,
@@ -98,9 +94,7 @@ describe("analytics unique events", () => {
 
 		await flushScheduledAnalytics(t);
 
-		const summary = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "pageViews",
+		const summary = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "pageViews",
 			from: now - DAY_MS,
 			to: now + DAY_MS,
 		});
@@ -113,21 +107,21 @@ describe("analytics unique events", () => {
 		const now = Date.now();
 
 		await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 			occurredAt: now,
+		}],
 		});
 		await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 			occurredAt: now + 1,
+		}],
 		});
 
 		await flushScheduledAnalytics(t);
 
-		const summary = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "pageViews",
+		const summary = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "pageViews",
 			from: now - DAY_MS,
 			to: now + DAY_MS,
 		});
@@ -141,17 +135,19 @@ describe("analytics unique events", () => {
 
 		const results = await Promise.all([
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 				occurredAt: now,
 				unique: { key: "activation:user_1:resource_1" },
-			}),
+			}],
+		}),
 			t.mutation(api.lib.writeTrack, {
-				config,
-				name: "page.viewed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "page.viewed",
 				occurredAt: now + 1,
 				unique: { key: "activation:user_1:resource_1" },
-			}),
+			}],
+		}),
 		]);
 
 		expect(results.filter((result) => result.scheduled)).toHaveLength(1);
@@ -159,9 +155,7 @@ describe("analytics unique events", () => {
 
 		await flushScheduledAnalytics(t);
 
-		const summary = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "pageViews",
+		const summary = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "pageViews",
 			from: now - DAY_MS,
 			to: now + DAY_MS,
 		});
@@ -177,18 +171,20 @@ describe("analytics unique events", () => {
 		});
 
 		await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "purchase.completed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "purchase.completed",
 			occurredAt: now,
 			properties: { amount: 10, plan: "pro" },
 			unique: { key: "conversion:user_1:campaign_1" },
+		}],
 		});
 		const duplicate = await t.mutation(api.lib.writeTrack, {
-			config,
-			name: "purchase.completed",
+			...internalAnalyticsConfigArgs(config),
+			events: [{ name: "purchase.completed",
 			occurredAt: now + DAY_MS,
 			properties: { amount: 15, plan: "pro" },
 			unique: { key: "conversion:user_1:campaign_1" },
+		}],
 		});
 
 		expect(duplicate).toMatchObject({
@@ -201,13 +197,11 @@ describe("analytics unique events", () => {
 
 		const processed = await t.mutation(
 			api.lib.processPendingHighVolumeAnalyticsEvents,
-			{ config },
+			internalAnalyticsConfigArgs(config),
 		);
 		expect(processed.processed).toBe(1);
 
-		const summary = await t.query(api.lib.fetchSummary, {
-			config,
-			metric: "revenue",
+		const summary = await t.query(api.lib.fetchSummary, { ...internalAnalyticsConfigArgs(config), metric: "revenue",
 			from: now - DAY_MS,
 			to: now + 2 * DAY_MS,
 		});

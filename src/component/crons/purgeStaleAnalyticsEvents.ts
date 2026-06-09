@@ -6,10 +6,10 @@ import { mutation } from "../_generated/server";
 import { DAY_MS } from "../../shared/constants.js";
 
 // HELPERS
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // SCHEMAS
-import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
+import { configReferenceFields } from "../schemas/schemas";
 
 const DELETABLE_HIGH_VOLUME_STATUSES = [
 	undefined,
@@ -28,7 +28,7 @@ const DELETABLE_HIGH_VOLUME_STATUSES = [
  */
 export const purgeStaleAnalyticsEvents = mutation({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 	},
 	returns: v.object({
 		deleted: v.number(),
@@ -36,7 +36,10 @@ export const purgeStaleAnalyticsEvents = mutation({
 		skipped: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		});
 
 		if (config.settings.rawEventRetentionDays <= 0) {
 			return { deleted: 0, skipped: true };

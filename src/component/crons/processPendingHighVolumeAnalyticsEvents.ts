@@ -4,14 +4,14 @@ import { mutation } from "../_generated/server";
 import { api } from "../_generated/api";
 
 // HELPERS
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 import { internalAggregateEvent } from "../helpers/aggregateEvent";
 
 // UTILS
 import { internalToAggregateInput } from "../utils/analyticsEventPayloads";
 
 // SCHEMAS
-import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
+import { configReferenceFields } from "../schemas/schemas";
 
 /**
  * Batch-aggregate pending high-volume events.
@@ -24,7 +24,7 @@ import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
  */
 export const processPendingHighVolumeAnalyticsEvents = mutation({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		remainingCatchupBatches: v.optional(v.number()),
 	},
 	returns: v.object({
@@ -32,7 +32,10 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 		scheduledNextBatch: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		});
 		const remainingCatchupBatches =
 			args.remainingCatchupBatches ??
 			config.settings.highVolumeMaxCatchupBatches;
@@ -75,7 +78,7 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 				0,
 				api.lib.processPendingHighVolumeAnalyticsEvents,
 				{
-					config: args.config,
+					configHash: config.configHash!,
 					remainingCatchupBatches: remainingCatchupBatches - 1,
 				},
 			);

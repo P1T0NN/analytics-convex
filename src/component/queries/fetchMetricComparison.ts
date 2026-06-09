@@ -2,12 +2,10 @@
 import { v } from "convex/values";
 import { query } from "../_generated/server";
 
-// CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
-
 // HELPERS
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
+import { internalGetMetricTotalsForRanges } from "../helpers/rollupReads";
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
 
 // UTILS
 import { internalResolveScope } from "../utils/shared/scopeUtils";
@@ -16,7 +14,7 @@ import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	rangeValidator,
 	resolvedScopeValidator,
 	scopeInputValidator,
@@ -39,7 +37,7 @@ import {
  */
 export const fetchMetricComparison = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		metric: v.string(),
 		from: v.number(),
 		to: v.number(),
@@ -64,27 +62,26 @@ export const fetchMetricComparison = query({
 		const previousFrom = args.from - rangeMs;
 		const previousTo = args.from;
 
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		});
 		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 		internalAssertDateRange({ from: previousFrom, to: previousTo }, config.settings);
 
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
 		const scope = internalResolveScope(args.scope);
 
-		const [current, previous] = await Promise.all([
-			internalGetMetricTotalForRange(ctx, config, {
-				metric: args.metric,
-				scope,
-				from: args.from,
-				to: args.to,
-			}),
-			internalGetMetricTotalForRange(ctx, config, {
-				metric: args.metric,
-				scope,
-				from: previousFrom,
-				to: previousTo,
-			}),
-		]);
+		const totals = await internalGetMetricTotalsForRanges(ctx, config, {
+			metric: args.metric,
+			scope,
+			ranges: [
+				{ key: "current", from: args.from, to: args.to },
+				{ key: "previous", from: previousFrom, to: previousTo },
+			],
+		});
+		const current = totals.get("current") ?? 0;
+		const previous = totals.get("previous") ?? 0;
 
 		const delta = current - previous;
 		const deltaPercent = previous !== 0 ? (delta / previous) * 100 : undefined;

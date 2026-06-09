@@ -8,7 +8,6 @@ import type {
 // API
 export { createAnalyticsApi } from "./api/createAnalyticsApi";
 export { defineAnalytics } from "./api/defineAnalytics";
-export { setupAnalytics } from "./api/setupAnalytics";
 
 // BUILDERS
 export { event } from "./builders/event";
@@ -16,12 +15,8 @@ export { count, sum } from "./builders/metric";
 export { property } from "./builders/property";
 
 // HELPERS
-export { configureAnalytics } from "./helpers/configureAnalytics";
 export { createAnalyticsReader } from "./helpers/createAnalyticsReader";
 export { createAnalyticsTracker } from "./helpers/createAnalyticsTracker";
-export { trackAnalytics } from "./helpers/trackAnalytics";
-export { trackAnalyticsEvent } from "./helpers/trackAnalyticsEvent";
-export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 
 // PURE UTILS
 export {
@@ -53,6 +48,7 @@ export {
 
 // CRONS
 export { registerAnalyticsCrons } from "./crons/registerAnalyticsCrons";
+export { createAnalyticsCronHandlers } from "./crons/createAnalyticsCronHandlers";
 
 // TYPES
 export {

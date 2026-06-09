@@ -19,6 +19,7 @@ import type * as helpers_incrementDailyMetric from "../helpers/incrementDailyMet
 import type * as helpers_internalWriteAnalyticsEvent from "../helpers/internalWriteAnalyticsEvent.js";
 import type * as helpers_metricTotalCache from "../helpers/metricTotalCache.js";
 import type * as helpers_prepareTrackEvent from "../helpers/prepareTrackEvent.js";
+import type * as helpers_resolveConfiguration from "../helpers/resolveConfiguration.js";
 import type * as helpers_rollupReads from "../helpers/rollupReads.js";
 import type * as helpers_upsertMetricRollupForEvent from "../helpers/upsertMetricRollupForEvent.js";
 import type * as http from "../http.js";
@@ -77,6 +78,7 @@ const fullApi: ApiFromModules<{
   "helpers/internalWriteAnalyticsEvent": typeof helpers_internalWriteAnalyticsEvent;
   "helpers/metricTotalCache": typeof helpers_metricTotalCache;
   "helpers/prepareTrackEvent": typeof helpers_prepareTrackEvent;
+  "helpers/resolveConfiguration": typeof helpers_resolveConfiguration;
   "helpers/rollupReads": typeof helpers_rollupReads;
   "helpers/upsertMetricRollupForEvent": typeof helpers_upsertMetricRollupForEvent;
   http: typeof http;

@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
@@ -16,7 +16,7 @@ import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	rangeValidator,
 	resolvedScopeValidator,
 	scopeInputValidator,
@@ -38,7 +38,7 @@ import {
  */
 export const fetchSummary = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		metric: v.string(),
 		from: v.number(),
 		to: v.number(),
@@ -53,7 +53,11 @@ export const fetchSummary = query({
 		range: rangeValidator,
 	}),
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		
+		});
 		internalAssertDateRange(args, config.settings);
 
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);

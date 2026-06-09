@@ -3,47 +3,35 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { internal } from "../_generated/api";
 
-// CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
-
 // HELPERS
 import { internalClaimUniqueEvent, internalWithoutUniqueClaim } from "../helpers/claimUniqueEvent";
 import { internalPrepareTrackEvent } from "../helpers/prepareTrackEvent";
+import { internalEnsureConfiguration } from "../helpers/resolveConfiguration";
 
 // VALIDATIONS
 import { internalValidateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
-	trackEventInputFields,
+	configReferenceFields,
 	trackEventInputValidator,
 } from "../schemas/schemas";
 
 // TYPES
-import type {
-	typesPreparedTrackEventInput,
-	typesTrackEventInput,
-} from "../../shared/types/index.js";
+import type { typesPreparedTrackEventInput } from "../../shared/types/index.js";
 
 /**
  * Validate and schedule one or more analytics events.
  *
- * Accepts either a single event (via `name` + fields) or a batch (via
- * `events` array). Returns immediately after scheduling. The actual DB
- * insert and rollup aggregation happen asynchronously via an internal
- * mutation. Idempotency keys prevent double-counting on retries.
+ * Accepts a batch via the `events` array. Returns immediately after
+ * scheduling. The actual DB insert and rollup aggregation happen
+ * asynchronously via an internal mutation. Idempotency keys prevent
+ * double-counting on retries.
  *
  * @example
- * // Single event
  * await ctx.runMutation(components.analytics.lib.writeTrack, {
- *   name: "feature.used",
- *   actorId: user._id,
- *   properties: { feature: "search" },
- * });
- *
- * // Batch
- * await ctx.runMutation(components.analytics.lib.writeTrack, {
+ *   configHash: analytics.config.configHash,
+ *   config: analytics.config,
  *   events: [
  *     { name: "page.viewed", properties: { path: "/" } },
  *     { name: "feature.used", properties: { feature: "export" } },
@@ -52,10 +40,8 @@ import type {
  */
 export const writeTrack = mutation({
 	args: {
-		config: analyticsRuntimeConfigValidator,
-		name: v.optional(v.string()),
-		...trackEventInputFields,
-		events: v.optional(v.array(trackEventInputValidator)),
+		...configReferenceFields,
+		events: v.array(trackEventInputValidator),
 	},
 	returns: v.object({
 		scheduled: v.boolean(),
@@ -64,76 +50,53 @@ export const writeTrack = mutation({
 		dedupedCount: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalEnsureConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		});
 
-		if (args.events) {
-			internalValidateTrackBatchLimits(args.events.length);
+		internalValidateTrackBatchLimits(args.events.length);
 
-			const events = args.events.map((input) =>
-				internalPrepareTrackEvent(config, input),
-			);
-			const acceptedEvents: typesPreparedTrackEventInput[] = [];
-			let dedupedCount = 0;
+		const events = args.events.map((input) =>
+			internalPrepareTrackEvent(config, input),
+		);
 
-			for (const event of events) {
-				const claim = await internalClaimUniqueEvent(ctx, event);
-				if (!claim.claimed) {
+		const seenUniqueKeys = new Set<string>();
+		const eventsToClaim: typesPreparedTrackEventInput[] = [];
+		let dedupedCount = 0;
+
+		for (const event of events) {
+			const uniqueKey = event.unique?.key;
+			if (uniqueKey) {
+				if (seenUniqueKeys.has(uniqueKey)) {
 					dedupedCount += 1;
 					continue;
 				}
-
-				acceptedEvents.push(internalWithoutUniqueClaim(event));
+				seenUniqueKeys.add(uniqueKey);
 			}
-
-			if (acceptedEvents.length === 0) {
-				return {
-					scheduled: false,
-					scheduledCount: 0,
-					...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
-				};
-			}
-
-			await ctx.scheduler.runAfter(
-				0,
-				internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
-				{
-					config: args.config,
-					events: acceptedEvents,
-				},
-			);
-
-			return {
-				scheduled: true,
-				scheduledCount: acceptedEvents.length,
-				...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
-			};
+			eventsToClaim.push(event);
 		}
 
-		if (!args.name) {
-			throw new Error('writeTrack requires either "name" or "events".');
+		const claimResults = await Promise.all(
+			eventsToClaim.map((event) => internalClaimUniqueEvent(ctx, event)),
+		);
+
+		const acceptedEvents: typesPreparedTrackEventInput[] = [];
+
+		for (let index = 0; index < eventsToClaim.length; index += 1) {
+			if (!claimResults[index]?.claimed) {
+				dedupedCount += 1;
+				continue;
+			}
+
+			acceptedEvents.push(internalWithoutUniqueClaim(eventsToClaim[index]!));
 		}
 
-		const input: typesTrackEventInput = {
-			name: args.name,
-			occurredAt: args.occurredAt,
-			actorId: args.actorId,
-			organizationId: args.organizationId,
-			subject: args.subject,
-			scopes: args.scopes,
-			properties: args.properties,
-			source: args.source,
-			unique: args.unique,
-		};
-
-		const event = internalPrepareTrackEvent(config, input);
-		const claim = await internalClaimUniqueEvent(ctx, event);
-
-		if (!claim.claimed) {
+		if (acceptedEvents.length === 0) {
 			return {
 				scheduled: false,
 				scheduledCount: 0,
-				deduped: true,
-				dedupedCount: 1,
+				...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
 			};
 		}
 
@@ -141,14 +104,15 @@ export const writeTrack = mutation({
 			0,
 			internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 			{
-				config: args.config,
-				...internalWithoutUniqueClaim(event),
+				configHash: config.configHash!,
+				events: acceptedEvents,
 			},
 		);
 
 		return {
 			scheduled: true,
-			scheduledCount: 1,
+			scheduledCount: acceptedEvents.length,
+			...(dedupedCount > 0 ? { deduped: true, dedupedCount } : {}),
 		};
 	},
 });

@@ -1,17 +1,25 @@
-// UTILS
-import { internalHumanizeKey } from "./utils/common/stringUtils.js";
-import { internalCreateConfigurationHash } from "./utils/configurationHash.js";
-
 // DEFAULTS
 import { internalDefaultAnalyticsSettings } from "../shared/utils/analyticsDefaultsUtils.js";
+
+// UTILS
+import { internalHumanizeKey } from "./utils/common/stringUtils.js";
+import { internalCreateConfigurationHash } from "../shared/utils/configurationHashUtils.js";
 
 // TYPES
 import type {
 	typesAnalyticsSettings,
-	typesAnalyticsConfigState,
 	typesAnalyticsPropertyType,
+	typesAnalyticsConfigState,
 	typesAnalyticsRuntimeConfig,
 } from "../shared/types/index.js";
+
+const normalizedConfigCache = new Map<string, typesAnalyticsConfigState>();
+
+export function internalTryGetCachedConfiguration(
+	configHash: string,
+): typesAnalyticsConfigState | undefined {
+	return normalizedConfigCache.get(configHash);
+}
 
 export function internalDefaultSettings(): typesAnalyticsSettings {
 	return internalDefaultAnalyticsSettings();
@@ -47,7 +55,21 @@ export function internalNormalizeConfig(
 		...config.settings,
 	};
 
-	return {
+	const configHash =
+		config.configHash ??
+		internalCreateConfigurationHash({
+			events,
+			metrics,
+			funnels,
+			settings,
+		});
+
+	const cached = normalizedConfigCache.get(configHash);
+	if (cached) {
+		return cached;
+	}
+
+	const state: typesAnalyticsConfigState = {
 		events,
 		metrics,
 		funnels,
@@ -57,13 +79,9 @@ export function internalNormalizeConfig(
 			Object.entries(funnels).map(([name, funnel]) => [name, funnel]),
 		),
 		settings,
-		configHash:
-			config.configHash ??
-			internalCreateConfigurationHash({
-				events,
-				metrics,
-				funnels,
-				settings,
-			}),
+		configHash,
 	};
+
+	normalizedConfigCache.set(configHash, state);
+	return state;
 }

@@ -9,6 +9,7 @@ import { getAnalyticsRanking } from "../../shared/utils/analyticsRankingUtils";
 import { internalStartOfUtcDay } from "../utils/common/dateUtils";
 
 // TYPES
+import type { QueryCtx } from "../_generated/server";
 import type {
 	typesAnalyticsConfigState,
 	typesAnalyticsScope,
@@ -20,7 +21,7 @@ const DEFAULT_TOTAL_DAYS = 30;
 const DEFAULT_MAX_TOTAL_ROWS = 20_000;
 
 export async function internalCollectDailyMetricRows(
-	ctx: any,
+	ctx: Pick<QueryCtx, "db">,
 	args: {
 		metric: string;
 		scope: typesAnalyticsScope;
@@ -32,7 +33,7 @@ export async function internalCollectDailyMetricRows(
 ) {
 	const rows = await ctx.db
 		.query("analyticsDailyMetrics")
-		.withIndex("by_metric_scope_dimension_bucket", (q: any) =>
+		.withIndex("by_metric_scope_dimension_bucket", (q) =>
 			q
 				.eq("metric", args.metric)
 				.eq("scopeType", args.scope.type)
@@ -56,8 +57,25 @@ export async function internalCollectDailyMetricRows(
 	return rows;
 }
 
+export function internalSumDailyMetricRowsForRange(
+	rows: Array<{ bucketStart: number; value: number }>,
+	from: number,
+	to: number,
+) {
+	const fromDay = internalStartOfUtcDay(from);
+	const toDay = internalStartOfUtcDay(to);
+
+	return rows.reduce((total, row) => {
+		if (row.bucketStart < fromDay || row.bucketStart > toDay) {
+			return total;
+		}
+
+		return total + row.value;
+	}, 0);
+}
+
 export async function internalGetMetricTotalForRange(
-	ctx: any,
+	ctx: Pick<QueryCtx, "db">,
 	config: typesAnalyticsConfigState,
 	args: {
 		metric: string;
@@ -76,7 +94,43 @@ export async function internalGetMetricTotalForRange(
 		settings: config.settings,
 	});
 
-	return rows.reduce((total: number, row: any) => total + row.value, 0);
+	return internalSumDailyMetricRowsForRange(rows, args.from, args.to);
+}
+
+export async function internalGetMetricTotalsForRanges(
+	ctx: Pick<QueryCtx, "db">,
+	config: typesAnalyticsConfigState,
+	args: {
+		metric: string;
+		scope: typesAnalyticsScope;
+		ranges: Array<{ key: string; from: number; to: number }>;
+		dimensionKey?: string;
+	},
+) {
+	if (args.ranges.length === 0) {
+		return new Map<string, number>();
+	}
+
+	const minFrom = Math.min(...args.ranges.map((range) => range.from));
+	const maxTo = Math.max(...args.ranges.map((range) => range.to));
+	const rows = await internalCollectDailyMetricRows(ctx, {
+		metric: args.metric,
+		scope: args.scope,
+		dimensionKey: args.dimensionKey ?? TOTAL_DIMENSION,
+		from: minFrom,
+		to: maxTo,
+		settings: config.settings,
+	});
+
+	const totals = new Map<string, number>();
+	for (const range of args.ranges) {
+		totals.set(
+			range.key,
+			internalSumDailyMetricRowsForRange(rows, range.from, range.to),
+		);
+	}
+
+	return totals;
 }
 
 /**
@@ -86,7 +140,7 @@ export async function internalGetMetricTotalForRange(
  * App code should use analytics.fetchMetricTotalsByDimension(ctx, ...).
  */
 export async function internalGetAnalyticsMetricTotalsByDimension(
-	ctx: any,
+	ctx: Pick<QueryCtx, "db">,
 	args: {
 		metric: string;
 		scopeType: typesAnalyticsScopeType;
@@ -117,7 +171,7 @@ export async function internalGetAnalyticsMetricTotalsByDimension(
 
 	const rows = await ctx.db
 		.query("analyticsDailyMetrics")
-		.withIndex("by_metric_scope_dimension_bucket", (q: any) =>
+		.withIndex("by_metric_scope_dimension_bucket", (q) =>
 			q
 				.eq("metric", args.metric)
 				.eq("scopeType", args.scopeType)
@@ -157,7 +211,7 @@ export async function internalGetAnalyticsMetricTotalsByDimension(
  * App code should use analytics.fetchTopDimensionValue(ctx, ...).
  */
 export async function internalGetAnalyticsTopDimensionValue(
-	ctx: any,
+	ctx: Pick<QueryCtx, "db">,
 	args: {
 		metric: string;
 		scopeType: typesAnalyticsScopeType;

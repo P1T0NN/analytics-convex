@@ -2,14 +2,15 @@
 import type { GenericDataModel, GenericMutationCtx } from "convex/server";
 import type { ComponentApi } from "../../component/_generated/component.js";
 
-// HELPERS
-import { trackAnalytics } from "./trackAnalytics";
+// UTILS
+import { internalAnalyticsConfigReference } from "../utils/configReference";
 
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsRuntimeConfig,
 	typesTrackEventInput,
+	typesTrackEventsInput,
 	typesTypedTrackBatchInputForEvents,
 	typesTypedTrackEventInputForEvents,
 	typesTypedTrackEventOptions,
@@ -57,6 +58,8 @@ export function createAnalyticsTracker<
 	_events: Events,
 	config: typesAnalyticsRuntimeConfig,
 ) {
+	const configReference = internalAnalyticsConfigReference(config);
+
 	const track: typesAnalyticsTrackHelper<Events> = async (
 		ctx: typesMutationCtx,
 		nameOrInput:
@@ -64,27 +67,25 @@ export function createAnalyticsTracker<
 			| typesUnifiedTrackInputForEvents<Events>,
 		input?: typesTypedTrackEventOptions<Events, Events[number]["name"]>,
 	) => {
+		let events: typesTrackEventsInput;
+
 		if (typeof nameOrInput === "string") {
-			const event = {
-				...input,
-				name: nameOrInput,
-			} as typesTrackEventInput<Events[number]["name"]>;
-
-			return await trackAnalytics(ctx, component, event, config);
+			events = [
+				{
+					...input,
+					name: nameOrInput,
+				} as typesTrackEventInput<Events[number]["name"]>,
+			];
+		} else if (isBatchTrackInput(nameOrInput)) {
+			events = [...nameOrInput.events] as typesTrackEventInput[];
+		} else {
+			events = [nameOrInput as typesTrackEventInput];
 		}
 
-		if (isBatchTrackInput(nameOrInput)) {
-			const events = [...nameOrInput.events] as typesTrackEventInput[];
-
-			return await trackAnalytics(ctx, component, { events }, config);
-		}
-
-		return await trackAnalytics(
-			ctx,
-			component,
-			nameOrInput as typesTrackEventInput,
-			config,
-		);
+		return await ctx.runMutation(component.lib.writeTrack, {
+			...configReference,
+			events,
+		});
 	};
 
 	return {

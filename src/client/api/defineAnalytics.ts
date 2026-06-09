@@ -1,5 +1,5 @@
 // LIBRARIES
-import type { Auth } from "convex/server";
+import type { Auth, Crons, FunctionReference } from "convex/server";
 import type { ComponentApi } from "../../component/_generated/component.js";
 
 // API
@@ -14,8 +14,8 @@ import { internalCreateAnalyticsServerHelpers } from "../helpers/createAnalytics
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
-// DEFAULTS
-import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDefaultsUtils";
+// UTILS
+import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // TYPES
 import type {
@@ -77,9 +77,7 @@ export function defineAnalytics<
 		) => Promise<void>;
 	},
 ) {
-	const events = Object.values(
-		options.events,
-	) as unknown as readonly typesMapValue<Events>[];
+	const events = Object.values(options.events) as unknown as readonly typesMapValue<Events>[];
 	const metricBuilders =
 		typeof options.metrics === "function"
 			? options.metrics(internalCreateAnalyticsMetricBuilders<Events>())
@@ -88,15 +86,12 @@ export function defineAnalytics<
 		metric.build(name),
 	) as unknown as typesMetricConfigsForMap<Events, Metrics>;
 
-	const config = {
-		events: events as any,
-		metrics: metrics as any,
-		...(options.funnels ? { funnels: options.funnels } : {}),
-		settings: {
-			...internalDefaultAnalyticsSettings(),
-			...(options.settings ?? {}),
-		},
-	};
+	const config = internalCreateAnalyticsConfiguration(
+		events,
+		metrics,
+		options.settings,
+		options.funnels,
+	);
 
 	return {
 		...internalCreateAnalyticsServerHelpers(
@@ -117,8 +112,21 @@ export function defineAnalytics<
 		config,
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
 		registerCrons(
-			crons: any,
-			internalApi: any,
+			crons: Crons,
+			internalApi: {
+				processPendingHighVolumeAnalyticsEvents: FunctionReference<
+					"mutation",
+					"internal",
+					{ configHash: string; remainingCatchupBatches?: number },
+					unknown
+				>;
+				purgeStaleAnalyticsEvents: FunctionReference<
+					"mutation",
+					"internal",
+					{ configHash: string },
+					unknown
+				>;
+			},
 			cronOptions?: {
 				highVolumeBatchIntervalMinutes?: number;
 				retentionIntervalHours?: number;

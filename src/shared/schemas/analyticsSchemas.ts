@@ -70,3 +70,103 @@ export const trackEventInputValidator = v.object({
 	name: v.string(),
 	...trackEventInputFields,
 });
+
+export const writeTrackResultValidator = v.object({
+	scheduled: v.boolean(),
+	scheduledCount: v.number(),
+	deduped: v.optional(v.boolean()),
+	dedupedCount: v.optional(v.number()),
+});
+
+export const resolvedScopeValidator = v.union(
+	v.object({
+		type: v.literal("global"),
+		id: v.string(),
+	}),
+	v.object({
+		type: v.literal("organization"),
+		id: v.string(),
+	}),
+	v.object({
+		type: v.literal("resource"),
+		resourceType: v.string(),
+		resourceId: v.string(),
+		id: v.string(),
+	}),
+);
+
+export const rangeValidator = v.object({
+	from: v.number(),
+	to: v.number(),
+});
+
+export const chartConfigValidator = v.record(
+	v.string(),
+	v.object({ label: v.string() }),
+);
+
+export const unitValidator = v.union(
+	v.literal("count"),
+	v.literal("currency"),
+	v.literal("bytes"),
+);
+
+export const metricSummaryResponseValidator = v.object({
+	metric: v.string(),
+	label: v.string(),
+	unit: unitValidator,
+	scope: resolvedScopeValidator,
+	value: v.number(),
+	range: rangeValidator,
+});
+
+export const metricComparisonResponseValidator = v.object({
+	metric: v.string(),
+	label: v.string(),
+	unit: unitValidator,
+	scope: resolvedScopeValidator,
+	current: v.number(),
+	previous: v.number(),
+	delta: v.number(),
+	deltaPercent: v.optional(v.number()),
+	range: v.object({
+		current: rangeValidator,
+		previous: rangeValidator,
+	}),
+});
+
+export const breakdownResponseValidator = v.object({
+	data: v.array(
+		v.object({
+			key: v.string(),
+			value: v.number(),
+		}),
+	),
+	config: chartConfigValidator,
+	meta: v.object({
+		metric: v.string(),
+		label: v.string(),
+		unit: unitValidator,
+		scope: resolvedScopeValidator,
+		groupBy: v.string(),
+		omittedSeriesCount: v.number(),
+		range: rangeValidator,
+	}),
+});
+
+export const timeSeriesResponseValidator = v.object({
+	data: v.array(v.record(v.string(), v.number())),
+	x: v.literal("date"),
+	config: chartConfigValidator,
+	meta: v.object({
+		metric: v.string(),
+		label: v.string(),
+		unit: unitValidator,
+		scope: resolvedScopeValidator,
+		groupBy: v.optional(v.string()),
+		seriesKeys: v.array(v.string()),
+		omittedSeriesCount: v.number(),
+		xValueType: v.literal("timestamp"),
+		range: rangeValidator,
+	}),
+});

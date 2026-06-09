@@ -4,7 +4,7 @@ import {
 	internalReadMetricTotalFromCache,
 	type typesMetricTotalRequest,
 } from "./metricTotalCache";
-import { internalGetMetricTotalForRange } from "./rollupReads";
+import { internalGetMetricTotalsForRanges } from "./rollupReads";
 
 // SHARED
 import {
@@ -242,22 +242,19 @@ export async function internalBuildPeriodComparison(
 	},
 ) {
 	const rangeMs = args.to - args.from;
-	const [value, previous] = await Promise.all([
-		internalGetMetricTotalForRange(ctx, config, {
-			metric: args.metric,
-			scope: args.scope,
-			from: args.from,
-			to: args.to,
-		}),
-		internalGetMetricTotalForRange(ctx, config, {
-			metric: args.metric,
-			scope: args.scope,
-			from: args.from - rangeMs,
-			to: args.from,
-		}),
-	]);
+	const totals = await internalGetMetricTotalsForRanges(ctx, config, {
+		metric: args.metric,
+		scope: args.scope,
+		ranges: [
+			{ key: "current", from: args.from, to: args.to },
+			{ key: "previous", from: args.from - rangeMs, to: args.from },
+		],
+	});
 
-	return buildComparisonBlock({ value, previous });
+	return buildComparisonBlock({
+		value: totals.get("current") ?? 0,
+		previous: totals.get("previous") ?? 0,
+	});
 }
 
 export function internalCollectDashboardMetricTotalRequests(args: {

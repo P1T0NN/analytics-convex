@@ -3,11 +3,11 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	eventConfigValidator,
 	funnelsConfigValidator,
 	metricConfigValidator,
@@ -19,7 +19,7 @@ import {
  */
 export const fetchConfiguration = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 	},
 	returns: v.object({
 		events: v.array(eventConfigValidator),
@@ -28,8 +28,11 @@ export const fetchConfiguration = query({
 		settings: settingsValidator,
 		configHash: v.optional(v.string()),
 	}),
-	handler: async (_ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+	handler: async (ctx, args) => {
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		});
 
 		return {
 			events: config.events,

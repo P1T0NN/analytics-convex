@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalGetAnalyticsMetricTotalsByDimension } from "../helpers/rollupReads";
@@ -15,7 +15,7 @@ import { internalAssertAllowedDimension } from "../validations/validations";
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	scopeInputValidator,
 } from "../schemas/schemas";
 
@@ -28,7 +28,7 @@ import {
  */
 export const fetchMetricTotalsByDimension = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		metric: v.string(),
 		scope: v.optional(scopeInputValidator),
 		dimensionKey: v.string(),
@@ -42,7 +42,11 @@ export const fetchMetricTotalsByDimension = query({
 		}),
 	),
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		
+		});
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
 		internalAssertAllowedDimension(metricConfig, args.dimensionKey);
 

@@ -1,5 +1,11 @@
+// CONSTANTS
+import { TOTAL_DIMENSION } from "../../shared/constants.js";
+
 // HELPERS
-import { internalGetMetricTotalForRange } from "./rollupReads";
+import {
+	internalCollectDailyMetricRows,
+	internalSumDailyMetricRowsForRange,
+} from "./rollupReads";
 
 // TYPES
 import type { QueryCtx } from "../_generated/server";
@@ -37,16 +43,32 @@ export async function internalFetchMetricTotalsBatch(
 		}
 	}
 
+	const byMetric = new Map<string, typesMetricTotalRequest[]>();
+	for (const request of unique.values()) {
+		const metricRequests = byMetric.get(request.metric) ?? [];
+		metricRequests.push(request);
+		byMetric.set(request.metric, metricRequests);
+	}
+
 	await Promise.all(
-		[...unique.values()].map(async (request) => {
-			const key = internalMetricTotalCacheKey(scope, request);
-			const value = await internalGetMetricTotalForRange(ctx, config, {
-				metric: request.metric,
+		[...byMetric.entries()].map(async ([metric, metricRequests]) => {
+			const minFrom = Math.min(...metricRequests.map((request) => request.from));
+			const maxTo = Math.max(...metricRequests.map((request) => request.to));
+			const rows = await internalCollectDailyMetricRows(ctx, {
+				metric,
 				scope,
-				from: request.from,
-				to: request.to,
+				dimensionKey: TOTAL_DIMENSION,
+				from: minFrom,
+				to: maxTo,
+				settings: config.settings,
 			});
-			cache.set(key, value);
+
+			for (const request of metricRequests) {
+				cache.set(
+					internalMetricTotalCacheKey(scope, request),
+					internalSumDailyMetricRowsForRange(rows, request.from, request.to),
+				);
+			}
 		}),
 	);
 

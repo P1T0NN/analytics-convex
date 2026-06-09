@@ -12,7 +12,6 @@ export async function internalIncrementDailyMetric(
 		dimensionValue: string;
 		shard: number;
 		delta: number;
-		now: number;
 	},
 ) {
 	const existing = await ctx.db
@@ -33,7 +32,6 @@ export async function internalIncrementDailyMetric(
 	if (existing) {
 		await ctx.db.patch("analyticsDailyMetrics", existing._id, {
 			value: existing.value + args.delta,
-			updatedAt: args.now,
 		});
 		return;
 	}
@@ -48,6 +46,5 @@ export async function internalIncrementDailyMetric(
 		dimensionValue: args.dimensionValue,
 		shard: args.shard,
 		value: args.delta,
-		updatedAt: args.now,
 	});
 }

@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
@@ -19,7 +19,7 @@ import { computeConversionRatePercent } from "../../shared/utils/analyticsEvalua
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	funnelConversionResponseValidator,
 	scopeInputValidator,
 } from "../schemas/schemas";
@@ -29,7 +29,7 @@ import {
  */
 export const fetchFunnelConversion = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		funnel: v.string(),
 		from: v.number(),
 		to: v.number(),
@@ -37,7 +37,11 @@ export const fetchFunnelConversion = query({
 	},
 	returns: funnelConversionResponseValidator,
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		
+		});
 		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 
 		const funnelConfig = internalGetFunnelConfigOrThrow(config, args.funnel);

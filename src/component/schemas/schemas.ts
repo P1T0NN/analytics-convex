@@ -126,6 +126,11 @@ export const analyticsRuntimeConfigValidator = v.object({
 	configHash: v.optional(v.string()),
 });
 
+export const configReferenceFields = {
+	configHash: v.string(),
+	config: v.optional(analyticsRuntimeConfigValidator),
+};
+
 export const resolvedScopeValidator = v.union(
 	v.object({
 		type: v.literal("global"),

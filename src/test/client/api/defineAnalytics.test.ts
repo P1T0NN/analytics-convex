@@ -55,9 +55,7 @@ describe("defineAnalytics", () => {
 		expect(analytics.fetchBreakdown).toBeDefined();
 		expect(analytics.fetchMetricComparison).toBeDefined();
 		expect(analytics.fetchMetricTotalsByDimension).toBeDefined();
-		expect(analytics.fetchDimensionTotals).toBeDefined();
 		expect(analytics.fetchTopDimensionValue).toBeDefined();
-		expect(analytics.fetchTopDimension).toBeDefined();
 		expect(validTotalsInput.dimensionKey).toBe("category");
 
 		// Client exports (under .client) - Convex function references

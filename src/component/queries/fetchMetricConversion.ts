@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
@@ -17,7 +17,7 @@ import { computeConversionRatePercent } from "../../shared/utils/analyticsEvalua
 
 // SCHEMAS
 import {
-	analyticsRuntimeConfigValidator,
+	configReferenceFields,
 	scopeInputValidator,
 } from "../schemas/schemas";
 import { metricConversionResponseValidator } from "../../shared/schemas/evaluationSchemas.js";
@@ -27,7 +27,7 @@ import { metricConversionResponseValidator } from "../../shared/schemas/evaluati
  */
 export const fetchMetricConversion = query({
 	args: {
-		config: analyticsRuntimeConfigValidator,
+		...configReferenceFields,
 		numeratorMetric: v.string(),
 		denominatorMetric: v.string(),
 		from: v.number(),
@@ -36,7 +36,11 @@ export const fetchMetricConversion = query({
 	},
 	returns: metricConversionResponseValidator,
 	handler: async (ctx, args) => {
-		const config = internalNormalizeConfig(args.config);
+		const config = await internalResolveConfiguration(ctx, {
+			configHash: args.configHash,
+			config: args.config,
+		
+		});
 		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 
 		internalGetMetricConfigOrThrow(config, args.numeratorMetric);

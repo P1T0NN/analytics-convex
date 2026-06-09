@@ -20,20 +20,18 @@ export async function internalUpsertMetricRollupForEvent(
 	metric: typesAnalyticsMetricConfigRuntime,
 	bucketStart?: number,
 	scopes?: typesAnalyticsMetricScope[],
-	now?: number,
 ) {
-	const timestamp = now ?? Date.now();
-
-	for (const increment of internalGetMetricRollupIncrements(
+	const increments = internalGetMetricRollupIncrements(
 		config,
 		event,
 		metric,
 		bucketStart,
 		scopes,
-	)) {
-		await internalIncrementDailyMetric(ctx, {
-			...increment,
-			now: timestamp,
-		});
-	}
+	);
+
+	await Promise.all(
+		increments.map((increment) =>
+			internalIncrementDailyMetric(ctx, increment),
+		),
+	);
 }

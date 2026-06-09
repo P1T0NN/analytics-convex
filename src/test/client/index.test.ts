@@ -34,7 +34,7 @@ describe("package root exports", () => {
 	it("keeps safe public utilities available", () => {
 		expect(analytics.defineAnalytics).toBeDefined();
 		expect(analytics.createAnalyticsApi).toBeDefined();
-		expect(analytics.trackAnalytics).toBeDefined();
+		expect(analytics.createAnalyticsCronHandlers).toBeDefined();
 		expect(analytics.getAnalyticsRanking).toBeDefined();
 		expect(analytics.compareScores).toBeDefined();
 		expect(analytics.evaluateMetricLabel).toBeDefined();
