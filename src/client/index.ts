@@ -25,6 +25,18 @@ export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 
 // PURE UTILS
 export {
+	ANALYTICS_METRIC_LABELS,
+	computeConversionRatePercent,
+	evaluateMetricLabel,
+	type typesAnalyticsMetricLabel,
+	type typesMetricComparisonEvaluationConfig,
+	type typesMetricConversionEvaluationConfig,
+	type typesMetricEvaluationConfig,
+	type typesMetricEvaluationReason,
+	type typesMetricEvaluationResult,
+	type typesMetricInverseRateEvaluationConfig,
+} from "../shared/analyticsEvaluation";
+export {
 	compareScores,
 	getAnalyticsRanking,
 	type typesAnalyticsRankingDirection,
@@ -67,6 +79,8 @@ export {
 	type typesAnalyticsTrafficMode,
 	type typesAnalyticsUnit,
 	type typesAnalyticsUnique,
+	type typesAnalyticsFunnelConfig,
+	type typesAnalyticsFunnelsConfig,
 	type typesCreateAnalyticsApiOptions,
 	type typesCreateAnalyticsApiOptionsForConfig,
 	type typesTrackEventInput,

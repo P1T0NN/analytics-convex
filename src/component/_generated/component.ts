@@ -37,11 +37,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -82,11 +106,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -127,11 +175,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -197,11 +269,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -232,11 +328,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             properties?: Record<string, "string" | "number" | "boolean">;
             requiredProperties?: Array<string>;
           }>;
+          funnels?: Record<string, { label: string; steps: Array<string> }>;
           metrics: Array<{
             adminOnly?: boolean;
             aggregation: "count" | "sum";
             description?: string;
             dimensions?: Array<string>;
+            evaluation?:
+              | {
+                  badGrowthPercent: number;
+                  excellentGrowthPercent: number;
+                  goodGrowthPercent: number;
+                  kind: "comparison";
+                  minVolumeForComparison?: number;
+                }
+              | {
+                  badRatePercent: number;
+                  denominatorMetric: string;
+                  excellentRatePercent: number;
+                  goodRatePercent: number;
+                  kind: "conversion";
+                  minDenominator?: number;
+                }
+              | {
+                  badRatePercent: number;
+                  denominatorMetric: string;
+                  goodRatePercent: number;
+                  kind: "inverseRate";
+                  minDenominator?: number;
+                };
             eventNames: Array<string>;
             label: string;
             name: string;
@@ -260,6 +380,209 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      fetchDashboardMetrics: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          from: number;
+          includeComparison?: boolean;
+          includeEvaluation?: boolean;
+          metrics: Array<string>;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+          to: number;
+        },
+        {
+          metrics: Record<
+            string,
+            {
+              comparison?: {
+                current: number;
+                delta: number;
+                deltaPercent?: number;
+                previous: number;
+              };
+              conversion?: {
+                denominator: number;
+                denominatorMetric: string;
+                numerator: number;
+                ratePercent?: number;
+              };
+              evaluation?: {
+                label:
+                  | "neutral"
+                  | "activity"
+                  | "good"
+                  | "excellent"
+                  | "bad"
+                  | "clear";
+                reason:
+                  | "no_evaluation_config"
+                  | "below_min_volume"
+                  | "below_min_denominator"
+                  | "zero_previous"
+                  | "zero_previous_and_current"
+                  | "zero_denominator_with_numerator"
+                  | "zero_denominator_and_numerator"
+                  | "zero_inverse_rate"
+                  | "comparison_growth"
+                  | "conversion_rate"
+                  | "inverse_rate";
+              };
+              label: string;
+              unit: "count" | "currency" | "bytes";
+              value: number;
+            }
+          >;
+          range: { from: number; to: number };
+          scope: any;
+        },
+        Name
+      >;
+      fetchFunnelConversion: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          from: number;
+          funnel: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+          to: number;
+        },
+        {
+          denominator: number;
+          denominatorMetric: string;
+          funnel: string;
+          label: string;
+          numerator: number;
+          numeratorMetric: string;
+          range: { from: number; to: number };
+          ratePercent?: number;
+          scope: any;
+          steps: Array<string>;
+        },
+        Name
+      >;
       fetchMetricComparison: FunctionReference<
         "query",
         "internal",
@@ -272,11 +595,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -330,6 +677,201 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      fetchMetricConversion: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          denominatorMetric: string;
+          from: number;
+          numeratorMetric: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+          to: number;
+        },
+        {
+          denominator: number;
+          denominatorMetric: string;
+          numerator: number;
+          numeratorMetric: string;
+          range: { from: number; to: number };
+          ratePercent?: number;
+          scope: any;
+        },
+        Name
+      >;
+      fetchMetricEvaluation: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            metrics: Array<{
+              adminOnly?: boolean;
+              aggregation: "count" | "sum";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          from: number;
+          metric: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+          to: number;
+        },
+        {
+          comparison?: {
+            current: number;
+            delta: number;
+            deltaPercent?: number;
+            previous: number;
+          };
+          conversion?: {
+            denominator: number;
+            denominatorMetric?: string;
+            numerator: number;
+            ratePercent?: number;
+          };
+          evaluation: {
+            label:
+              | "neutral"
+              | "activity"
+              | "good"
+              | "excellent"
+              | "bad"
+              | "clear";
+            reason:
+              | "no_evaluation_config"
+              | "below_min_volume"
+              | "below_min_denominator"
+              | "zero_previous"
+              | "zero_previous_and_current"
+              | "zero_denominator_with_numerator"
+              | "zero_denominator_and_numerator"
+              | "zero_inverse_rate"
+              | "comparison_growth"
+              | "conversion_rate"
+              | "inverse_rate";
+          };
+          label: string;
+          metric: string;
+          range: { from: number; to: number };
+          scope: any;
+          unit: "count" | "currency" | "bytes";
+          value: number;
+        },
+        Name
+      >;
       fetchMetricTotalsByDimension: FunctionReference<
         "query",
         "internal",
@@ -342,11 +884,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -392,11 +958,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -456,11 +1046,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -530,11 +1144,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -579,11 +1217,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -622,11 +1284,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -662,11 +1348,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             properties?: Record<string, "string" | "number" | "boolean">;
             requiredProperties?: Array<string>;
           }>;
+          funnels?: Record<string, { label: string; steps: Array<string> }>;
           metrics: Array<{
             adminOnly?: boolean;
             aggregation: "count" | "sum";
             description?: string;
             dimensions?: Array<string>;
+            evaluation?:
+              | {
+                  badGrowthPercent: number;
+                  excellentGrowthPercent: number;
+                  goodGrowthPercent: number;
+                  kind: "comparison";
+                  minVolumeForComparison?: number;
+                }
+              | {
+                  badRatePercent: number;
+                  denominatorMetric: string;
+                  excellentRatePercent: number;
+                  goodRatePercent: number;
+                  kind: "conversion";
+                  minDenominator?: number;
+                }
+              | {
+                  badRatePercent: number;
+                  denominatorMetric: string;
+                  goodRatePercent: number;
+                  kind: "inverseRate";
+                  minDenominator?: number;
+                };
             eventNames: Array<string>;
             label: string;
             name: string;
@@ -704,11 +1414,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -783,11 +1517,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -827,11 +1585,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -909,11 +1691,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -981,11 +1787,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -1016,11 +1846,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               properties?: Record<string, "string" | "number" | "boolean">;
               requiredProperties?: Array<string>;
             }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
             metrics: Array<{
               adminOnly?: boolean;
               aggregation: "count" | "sum";
               description?: string;
               dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  };
               eventNames: Array<string>;
               label: string;
               name: string;
@@ -1045,6 +1899,213 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+      fetchDashboardMetrics: {
+        fetchDashboardMetrics: FunctionReference<
+          "query",
+          "internal",
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            from: number;
+            includeComparison?: boolean;
+            includeEvaluation?: boolean;
+            metrics: Array<string>;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+            to: number;
+          },
+          {
+            metrics: Record<
+              string,
+              {
+                comparison?: {
+                  current: number;
+                  delta: number;
+                  deltaPercent?: number;
+                  previous: number;
+                };
+                conversion?: {
+                  denominator: number;
+                  denominatorMetric: string;
+                  numerator: number;
+                  ratePercent?: number;
+                };
+                evaluation?: {
+                  label:
+                    | "neutral"
+                    | "activity"
+                    | "good"
+                    | "excellent"
+                    | "bad"
+                    | "clear";
+                  reason:
+                    | "no_evaluation_config"
+                    | "below_min_volume"
+                    | "below_min_denominator"
+                    | "zero_previous"
+                    | "zero_previous_and_current"
+                    | "zero_denominator_with_numerator"
+                    | "zero_denominator_and_numerator"
+                    | "zero_inverse_rate"
+                    | "comparison_growth"
+                    | "conversion_rate"
+                    | "inverse_rate";
+                };
+                label: string;
+                unit: "count" | "currency" | "bytes";
+                value: number;
+              }
+            >;
+            range: { from: number; to: number };
+            scope: any;
+          },
+          Name
+        >;
+      };
+      fetchFunnelConversion: {
+        fetchFunnelConversion: FunctionReference<
+          "query",
+          "internal",
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            from: number;
+            funnel: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+            to: number;
+          },
+          {
+            denominator: number;
+            denominatorMetric: string;
+            funnel: string;
+            label: string;
+            numerator: number;
+            numeratorMetric: string;
+            range: { from: number; to: number };
+            ratePercent?: number;
+            scope: any;
+            steps: Array<string>;
+          },
+          Name
+        >;
+      };
       fetchMetricComparison: {
         fetchMetricComparison: FunctionReference<
           "query",
@@ -1058,11 +2119,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -1117,6 +2202,205 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+      fetchMetricConversion: {
+        fetchMetricConversion: FunctionReference<
+          "query",
+          "internal",
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            denominatorMetric: string;
+            from: number;
+            numeratorMetric: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+            to: number;
+          },
+          {
+            denominator: number;
+            denominatorMetric: string;
+            numerator: number;
+            numeratorMetric: string;
+            range: { from: number; to: number };
+            ratePercent?: number;
+            scope: any;
+          },
+          Name
+        >;
+      };
+      fetchMetricEvaluation: {
+        fetchMetricEvaluation: FunctionReference<
+          "query",
+          "internal",
+          {
+            config: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              metrics: Array<{
+                adminOnly?: boolean;
+                aggregation: "count" | "sum";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            from: number;
+            metric: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+            to: number;
+          },
+          {
+            comparison?: {
+              current: number;
+              delta: number;
+              deltaPercent?: number;
+              previous: number;
+            };
+            conversion?: {
+              denominator: number;
+              denominatorMetric?: string;
+              numerator: number;
+              ratePercent?: number;
+            };
+            evaluation: {
+              label:
+                | "neutral"
+                | "activity"
+                | "good"
+                | "excellent"
+                | "bad"
+                | "clear";
+              reason:
+                | "no_evaluation_config"
+                | "below_min_volume"
+                | "below_min_denominator"
+                | "zero_previous"
+                | "zero_previous_and_current"
+                | "zero_denominator_with_numerator"
+                | "zero_denominator_and_numerator"
+                | "zero_inverse_rate"
+                | "comparison_growth"
+                | "conversion_rate"
+                | "inverse_rate";
+            };
+            label: string;
+            metric: string;
+            range: { from: number; to: number };
+            scope: any;
+            unit: "count" | "currency" | "bytes";
+            value: number;
+          },
+          Name
+        >;
+      };
       fetchMetricTotalsByDimension: {
         fetchMetricTotalsByDimension: FunctionReference<
           "query",
@@ -1130,11 +2414,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -1182,11 +2490,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -1248,11 +2580,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;
@@ -1324,11 +2680,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 properties?: Record<string, "string" | "number" | "boolean">;
                 requiredProperties?: Array<string>;
               }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
               metrics: Array<{
                 adminOnly?: boolean;
                 aggregation: "count" | "sum";
                 description?: string;
                 dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    };
                 eventNames: Array<string>;
                 label: string;
                 name: string;

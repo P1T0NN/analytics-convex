@@ -62,7 +62,15 @@ export function createAnalyticsApi<
 		options.events,
 		options.metrics,
 		options.settings,
+		options.funnels,
 	);
+
+	const funnelNameValidator =
+		options.funnels && Object.keys(options.funnels).length > 0
+			? v.union(
+					...Object.keys(options.funnels).map((name) => v.literal(name)),
+				)
+			: v.string();
 
 	const tracker = createAnalyticsTracker(
 		component,
@@ -156,6 +164,93 @@ export function createAnalyticsApi<
 					...scopeArg(args.scope),
 				});
 				return await ctx.runQuery(component.lib.fetchMetricComparison, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		metricConversion: queryGeneric({
+			args: {
+				numeratorMetric: metricNameValidator,
+				denominatorMetric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "metricConversion",
+					metric: args.numeratorMetric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchMetricConversion, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		metricEvaluation: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "metricEvaluation",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		dashboardMetrics: queryGeneric({
+			args: {
+				metrics: v.array(metricNameValidator),
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+				includeComparison: v.optional(v.boolean()),
+				includeEvaluation: v.optional(v.boolean()),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "dashboardMetrics",
+					metrics: args.metrics,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
+					config: configuration,
+					...args,
+				});
+			},
+		}),
+		funnelConversion: queryGeneric({
+			args: {
+				funnel: funnelNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: v.any(),
+			handler: async (ctx, args) => {
+				await authorize(options, ctx, {
+					type: "read",
+					query: "funnelConversion",
+					funnel: args.funnel,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchFunnelConversion, {
 					config: configuration,
 					...args,
 				});

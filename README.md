@@ -378,6 +378,7 @@ accumulate indefinitely.
 | `dimensions`    | `string[]`                                      | Properties available for `groupBy` in queries                                     |
 | `trafficMode`   | `"lowVolume" \| "mediumVolume" \| "highVolume"` | Optional per-metric override                                                      |
 | `adminOnly`     | `boolean`                                       | If `true`, the `authorize` callback receives `adminOnly` info for access control  |
+| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules for comparison, conversion, or inverse rate    |
 
 ### Settings
 
@@ -430,6 +431,9 @@ or ingestion workers.
 | Breakdown items                          |                                100 max |
 | Raw event retention                      | 3,650 days max, or `0` to keep forever |
 | Raw event deletes per retention run      |                             10,000 max |
+| Funnels per configuration                |                                     50 |
+| Steps per funnel                         |                                     10 |
+| Metrics per dashboard batch query        |                                     24 |
 
 ---
 
@@ -625,6 +629,203 @@ const result = await analytics.fetchMetricComparison(ctx, {
 // }
 ```
 
+### Metric conversion
+
+Compute a rollup-based conversion rate between two metrics over the same range.
+Use this for funnel steps such as scan → activation or reservation → confirmation.
+
+```ts
+const result = await analytics.fetchMetricConversion(ctx, {
+	numeratorMetric: "guestActivations",
+	denominatorMetric: "qrScans",
+	from,
+	to,
+	scope: { type: "organization", id: ownerScopeId },
+});
+
+// result: {
+//   numerator: 42,
+//   denominator: 100,
+//   ratePercent: 42,
+//   range: { from, to },
+//   scope,
+// }
+```
+
+### Metric evaluation
+
+Returns a dashboard health label for one metric. Labels are computed at query
+time from rollup totals and the metric's `.evaluation()` config — they are not
+stored in rollup tables.
+
+```ts
+guestActivations: count("Guest activations")
+	.from("guest.activated")
+	.evaluation({
+		kind: "conversion",
+		denominatorMetric: "qrScans",
+		excellentRatePercent: 50,
+		goodRatePercent: 20,
+		badRatePercent: 10,
+		minDenominator: 5,
+	}),
+
+newReservations: count("New reservations")
+	.from("reservation.created")
+	.evaluation({
+		kind: "comparison",
+		excellentGrowthPercent: 25,
+		goodGrowthPercent: 5,
+		badGrowthPercent: -5,
+		minVolumeForComparison: 10,
+	}),
+
+cancelledReservations: count("Cancelled reservations")
+	.from("reservation.cancelled")
+	.evaluation({
+		kind: "inverseRate",
+		denominatorMetric: "newReservations",
+		goodRatePercent: 10,
+		badRatePercent: 25,
+	}),
+```
+
+```ts
+const result = await analytics.fetchMetricEvaluation(ctx, {
+	metric: "guestActivations",
+	from,
+	to,
+});
+
+// result: {
+//   value: 42,
+//   evaluation: { label: "excellent", reason: "conversion_rate" },
+//   conversion: {
+//     numerator: 42,
+//     denominator: 100,
+//     ratePercent: 42,
+//     denominatorMetric: "qrScans",
+//   },
+// }
+```
+
+Supported labels: `neutral`, `activity`, `good`, `excellent`, `bad`, `clear`.
+
+Standard edge-case behavior:
+
+| Case | Label |
+|------|-------|
+| `previous = 0`, `current > 0` | `activity` |
+| `previous = 0`, `current = 0` | `neutral` |
+| below `minVolumeForComparison` | `neutral` |
+| conversion denominator below `minDenominator` | `neutral` |
+| conversion denominator `0`, numerator `> 0` | `activity` |
+| inverse rate `0%` | `clear` |
+| no `.evaluation()` config on metric | `neutral` |
+
+For UI reuse outside Convex queries, import the pure helper:
+
+```ts
+import {
+	ANALYTICS_METRIC_LABELS,
+	evaluateMetricLabel,
+} from "@piton-/analytics-convex";
+
+const label = evaluateMetricLabel({
+	kind: "comparison",
+	comparison: { current, previous, delta, deltaPercent },
+	config: metric.evaluation,
+});
+```
+
+### Migrating from app-side label logic
+
+If your app currently does this manually:
+
+- hardcoded growth thresholds on `fetchMetricComparison().deltaPercent`
+- hand-rolled `numerator / denominator` funnel math
+- badge labels like `Excellent` / `Bad` in frontend constants
+
+Move thresholds into `.evaluation()` on each metric in `convex/analytics.ts`,
+then replace custom logic with:
+
+- `analytics.fetchMetricEvaluation(ctx, { metric, from, to, scope? })` for card
+  labels
+- `analytics.fetchDashboardMetrics(ctx, { metrics, from, to, scope?, includeComparison?, includeEvaluation? })`
+  for full dashboard cards in one query
+- `analytics.fetchMetricConversion(ctx, { numeratorMetric, denominatorMetric, from, to, scope? })`
+  for funnel rates
+- `analytics.fetchFunnelConversion(ctx, { funnel, from, to, scope? })` when the
+  funnel is declared in `defineAnalytics({ funnels })`
+
+Keep product-specific display strings in your UI if you want. The library owns
+the math, guardrails, and label reasons via `evaluation.reason`.
+
+### Dashboard batch reads
+
+Load multiple dashboard cards in one rollup-optimized query instead of one
+request per metric.
+
+```ts
+const dashboard = await analytics.fetchDashboardMetrics(ctx, {
+	metrics: ["qrScans", "guestActivations", "newReservations"],
+	from,
+	to,
+	scope: { type: "organization", id: ownerScopeId },
+	includeComparison: true,
+	includeEvaluation: true,
+});
+
+// dashboard.metrics.guestActivations: {
+//   value: 42,
+//   label: "Guest activations",
+//   unit: "count",
+//   comparison?: { current, previous, delta, deltaPercent? },
+//   evaluation?: { label, reason },
+//   conversion?: { numerator, denominator, ratePercent, denominatorMetric },
+// }
+```
+
+Rollup reads are deduped across metrics, comparison periods, and evaluation
+denominators. Labels remain query-time only.
+
+### Funnels
+
+Define named funnels in `defineAnalytics` so conversion between the first and
+last step is a single query:
+
+```ts
+const analytics = defineAnalytics(components.analytics, {
+	events,
+	metrics,
+	funnels: {
+		guestActivation: {
+			label: "Scan to activation",
+			steps: ["qrScans", "guestActivations"],
+		},
+	},
+});
+```
+
+```ts
+const funnel = await analytics.fetchFunnelConversion(ctx, {
+	funnel: "guestActivation",
+	from,
+	to,
+});
+
+// funnel: {
+//   label: "Scan to activation",
+//   steps: ["qrScans", "guestActivations"],
+//   numeratorMetric: "guestActivations",
+//   denominatorMetric: "qrScans",
+//   numerator, denominator, ratePercent,
+// }
+```
+
+Funnel steps must reference configured metrics. Each funnel needs at least two
+unique steps. Conversion is always last step ÷ first step over the same range.
+
 ---
 
 ## Traffic modes
@@ -687,11 +888,31 @@ conflicts on rollups, increase the relevant shard count or move that metric to
 ## Scopes
 
 Scopes let you partition analytics data for multi-tenant or multi-resource use
-cases.
+cases. There are three scope types and three ways to attach them to an event.
+The flexibility is intentional, but most apps should stay on the happy path
+below and treat the explicit `scopes` array as an advanced feature.
+
+### Choosing a scope (happy path)
+
+Follow this order and you will rarely need anything else:
+
+1. Do nothing — every event is always counted under `global`.
+2. Set `organizationId` for true tenant or organization ownership.
+3. Set `subject` for the primary resource the event is about (the one thing the
+   event happened to).
+4. Only reach for the explicit `scopes` array when you need an extra reporting
+   partition that is not the org or the subject.
+
+In other words: `organizationId` and `subject` are the normal tools, and
+`scopes` is the escape hatch. You do not need to set all three.
+
+> Cost note: every scope on an event multiplies how many rollup rows that event
+> writes, across each metric and dimension. Adding scopes is cheap to write but
+> not free — keep the list short and intentional.
 
 ### Global scope
 
-Default — aggregates across all events.
+Default — aggregates across all events. You never have to set this.
 
 ```ts
 {
@@ -701,7 +922,7 @@ Default — aggregates across all events.
 
 ### Organization scope
 
-Aggregates events by organization.
+Aggregates events by organization. Use this for real tenant ownership.
 
 ```ts
 { type: "organization", id: "org_abc123" }
@@ -710,11 +931,29 @@ Aggregates events by organization.
 ### Resource scope
 
 Aggregates events by a resource type + ID pair. Useful for per-project,
-per-workspace, or per-product metrics.
+per-workspace, or per-product metrics. For the primary resource an event is
+about, prefer `subject` (see below) over an explicit resource scope.
 
 ```ts
 { type: "resource", resourceType: "project", id: "proj_xyz" }
 ```
+
+### Tracking shape vs query shape
+
+These two shapes describe the same thing but are used in different places, so
+don't mix them up:
+
+- Tracking events use `{ scopeType, scopeId }` in the `scopes` array.
+- Queries use `{ type, id }` (and `resourceType` for resource scopes) in the
+  `scope` parameter.
+
+Prefer the exported helpers over hand-building either shape, so the tracking
+scope and the query scope always resolve to the same ID:
+
+- `createAnalyticsResourceScope(resourceType, id)` → tracking scope.
+- `createAnalyticsResourceScopeInput(resourceType, id)` → query scope.
+
+### Advanced: explicit scopes
 
 Use the exported helpers when a project needs stable compound scope IDs, such as
 owner-role analytics:
@@ -736,6 +975,11 @@ const totals = await analytics.fetchDimensionTotals(ctx, {
 	dimensionKey: "hospitalityId",
 });
 ```
+
+> Use `organizationId` for a compound ID like `hospitalityOwner:userId` only
+> when you genuinely want to query it as an organization-like partition. If it
+> is really a separate resource dimension, model it as a resource scope instead
+> of overloading the organization scope.
 
 For new resource-style scopes, create the tracking scope and query input from
 the same resource type + ID:
@@ -869,6 +1113,10 @@ const top5 = getAnalyticsRanking({
 | `fetchSummary`                 | Single aggregated total for a metric over a date range  |
 | `fetchBreakdown`               | Top dimension values ranked by total                    |
 | `fetchMetricComparison`        | Compare metric between current and previous period      |
+| `fetchMetricConversion`        | Rollup-based conversion rate between two metrics        |
+| `fetchMetricEvaluation`        | Query-time dashboard health label for one metric        |
+| `fetchDashboardMetrics`        | Batch dashboard read for multiple metrics in one query  |
+| `fetchFunnelConversion`        | Rollup-based conversion for a named funnel            |
 | `fetchMetricTotalsByDimension` | Aggregated dimension totals for app-side helpers        |
 | `fetchTopDimensionValue`       | Single highest-value dimension entry for app helpers    |
 
@@ -890,8 +1138,10 @@ const top5 = getAnalyticsRanking({
 | `createAnalyticsTracker(component, events)`                  | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                                |
 | `event(name, options)`                                       | Define an analytics event with typed properties                                                                                            |
 | `property.string/number/boolean(options?)`                   | Define event property types, optionally required                                                                                           |
-| `count(label)`                                               | Build a count metric with `.from(...)` and `.by(...)`; use through the `defineAnalytics` metrics callback for event-aware autocomplete     |
-| `sum(label, unit?)`                                          | Build a sum metric with `.from(...)`, `.value(...)`, and `.by(...)`; the typed callback restricts `.value(...)` to number properties       |
+| `count(label)`                                               | Build a count metric with `.from(...)`, `.by(...)`, and optional `.evaluation(...)` |
+| `sum(label, unit?)`                                          | Build a sum metric with `.from(...)`, `.value(...)`, `.by(...)`, and optional `.evaluation(...)` |
+| `evaluateMetricLabel(result, config)`                        | Pure label evaluation helper for UI reuse                                                                           |
+| `ANALYTICS_METRIC_LABELS`                                    | Default display map for metric labels; apps may override in UI                                                      |
 | `configureAnalytics(ctx, component, options)`                | Legacy validation-only helper; normal usage does not require configure                                                                     |
 | `trackAnalytics(ctx, component, input, config)`              | Lower-level direct helper; normally use `analytics.writeTrack`                                                                             |
 | `trackAnalyticsEvent(ctx, component, input, config)`         | Lower-level direct single-event helper                                                                                                     |

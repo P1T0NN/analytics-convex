@@ -13,6 +13,7 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsRuntimeConfig,
 	typesAnalyticsSettings,
+	typesAnalyticsFunnelsConfig,
 } from "../component/types/types";
 
 export const DAY_MS = 86_400_000;
@@ -26,11 +27,13 @@ export function createAnalyticsComponentTest(
 export function runtimeConfiguration(config: {
 	events: typesAnalyticsEventConfig[];
 	metrics: typesAnalyticsMetricConfig[];
+	funnels?: typesAnalyticsFunnelsConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 }): typesAnalyticsRuntimeConfig {
 	return {
 		events: config.events,
 		metrics: config.metrics,
+		...(config.funnels ? { funnels: config.funnels } : {}),
 		settings: {
 			...defaultAnalyticsSettings(),
 			...(config.settings ?? {}),

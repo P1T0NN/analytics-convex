@@ -50,6 +50,32 @@ export const eventConfigValidator = v.object({
 	requiredProperties: v.optional(v.array(v.string())),
 });
 
+export {
+	funnelConfigValidator,
+	funnelsConfigValidator,
+	funnelConversionResponseValidator,
+} from "../../shared/analyticsFunnelSchemas.js";
+
+export {
+	dashboardMetricItemValidator,
+	dashboardMetricsResponseValidator,
+} from "../../shared/analyticsDashboardSchemas.js";
+
+export {
+	metricComparisonEvaluationConfigValidator,
+	metricConversionEvaluationConfigValidator,
+	metricConversionResponseValidator,
+	metricEvaluationConfigValidator,
+	metricEvaluationReasonValidator,
+	metricEvaluationResponseValidator,
+	metricEvaluationResultValidator,
+	metricInverseRateEvaluationConfigValidator,
+	metricLabelValidator,
+} from "../../shared/analyticsEvaluationSchemas.js";
+
+import { metricEvaluationConfigValidator } from "../../shared/analyticsEvaluationSchemas.js";
+import { funnelsConfigValidator } from "../../shared/analyticsFunnelSchemas.js";
+
 export const metricConfigValidator = v.object({
 	name: v.string(),
 	label: v.string(),
@@ -61,6 +87,7 @@ export const metricConfigValidator = v.object({
 	dimensions: v.optional(v.array(v.string())),
 	trafficMode: v.optional(trafficModeValidator),
 	adminOnly: v.optional(v.boolean()),
+	evaluation: v.optional(metricEvaluationConfigValidator),
 });
 
 export const settingsValidator = v.object({
@@ -94,6 +121,7 @@ export const settingsPatchValidator = v.object({
 export const analyticsRuntimeConfigValidator = v.object({
 	events: v.array(eventConfigValidator),
 	metrics: v.array(metricConfigValidator),
+	funnels: v.optional(funnelsConfigValidator),
 	settings: settingsValidator,
 	configHash: v.optional(v.string()),
 });

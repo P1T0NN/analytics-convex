@@ -37,6 +37,18 @@ export type typesAnalyticsEventConfig = {
 	requiredProperties?: string[];
 };
 
+export type {
+	typesAnalyticsMetricLabel,
+	typesMetricComparisonEvaluationConfig,
+	typesMetricConversionEvaluationConfig,
+	typesMetricEvaluationConfig,
+	typesMetricEvaluationReason,
+	typesMetricEvaluationResult,
+	typesMetricInverseRateEvaluationConfig,
+} from "../../shared/analyticsEvaluation.js";
+
+import type { typesMetricEvaluationConfig } from "../../shared/analyticsEvaluation.js";
+
 export type typesAnalyticsMetricConfig = {
 	name: string;
 	label: string;
@@ -48,6 +60,7 @@ export type typesAnalyticsMetricConfig = {
 	dimensions?: string[];
 	trafficMode?: typesAnalyticsTrafficMode;
 	adminOnly?: boolean;
+	evaluation?: typesMetricEvaluationConfig;
 };
 
 export type typesAnalyticsMetricScope = {
@@ -146,13 +159,26 @@ export type typesAnalyticsConfigState = {
 	eventByName: Map<string, typesAnalyticsEventConfig>;
 	metrics: typesAnalyticsMetricConfig[];
 	metricByName: Map<string, typesAnalyticsMetricConfig>;
+	funnels: typesAnalyticsFunnelsConfig;
+	funnelByName: Map<string, typesAnalyticsFunnelConfig>;
 	settings: typesAnalyticsSettings;
 	configHash?: string;
 };
 
+export type typesAnalyticsFunnelConfig = {
+	label: string;
+	steps: string[];
+};
+
+export type typesAnalyticsFunnelsConfig = Record<
+	string,
+	typesAnalyticsFunnelConfig
+>;
+
 export type typesAnalyticsRuntimeConfig = {
 	events: typesAnalyticsEventConfig[];
 	metrics: typesAnalyticsMetricConfig[];
+	funnels?: typesAnalyticsFunnelsConfig;
 	settings: typesAnalyticsSettings;
 	configHash?: string;
 };

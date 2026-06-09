@@ -23,6 +23,18 @@ export { fetchBreakdown } from "./queries/fetchBreakdown.js";
 /** Compare a metric between current and previous period. */
 export { fetchMetricComparison } from "./queries/fetchMetricComparison.js";
 
+/** Rollup-based conversion between two metrics over the same range. */
+export { fetchMetricConversion } from "./queries/fetchMetricConversion.js";
+
+/** Query-time metric health label for dashboard cards. */
+export { fetchMetricEvaluation } from "./queries/fetchMetricEvaluation.js";
+
+/** Batch dashboard read for multiple metrics over one date range. */
+export { fetchDashboardMetrics } from "./queries/fetchDashboardMetrics.js";
+
+/** Rollup-based conversion for a named funnel (first step → last step). */
+export { fetchFunnelConversion } from "./queries/fetchFunnelConversion.js";
+
 /** Aggregated totals by dimension value. */
 export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimension.js";
 

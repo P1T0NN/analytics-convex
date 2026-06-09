@@ -6,11 +6,13 @@ import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsMetricConfig,
 	typesAnalyticsSettings,
+	typesAnalyticsFunnelsConfig,
 } from "../types/types.js";
 
 type typesConfigurationHashInput = {
 	events: typesAnalyticsEventConfig[];
 	metrics: typesAnalyticsMetricConfig[];
+	funnels: typesAnalyticsFunnelsConfig;
 	settings: typesAnalyticsSettings;
 };
 

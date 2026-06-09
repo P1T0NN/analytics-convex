@@ -41,6 +41,7 @@ export function normalizeConfig(
 			| undefined,
 	}));
 	const metrics = config.metrics.map((metric) => ({ ...metric }));
+	const funnels = config.funnels ?? {};
 	const settings = {
 		...defaultSettings(),
 		...config.settings,
@@ -49,14 +50,19 @@ export function normalizeConfig(
 	return {
 		events,
 		metrics,
+		funnels,
 		eventByName: new Map(events.map((event) => [event.name, event])),
 		metricByName: new Map(metrics.map((metric) => [metric.name, metric])),
+		funnelByName: new Map(
+			Object.entries(funnels).map(([name, funnel]) => [name, funnel]),
+		),
 		settings,
 		configHash:
 			config.configHash ??
 			createConfigurationHash({
 				events,
 				metrics,
+				funnels,
 				settings,
 			}),
 	};

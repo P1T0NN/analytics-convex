@@ -27,6 +27,18 @@ export type typesAnalyticsEventConfig<Name extends string = string> = {
 	requiredProperties?: readonly string[];
 };
 
+export type {
+	typesAnalyticsMetricLabel,
+	typesMetricComparisonEvaluationConfig,
+	typesMetricConversionEvaluationConfig,
+	typesMetricEvaluationConfig,
+	typesMetricEvaluationReason,
+	typesMetricEvaluationResult,
+	typesMetricInverseRateEvaluationConfig,
+} from "../../shared/analyticsEvaluation";
+
+import type { typesMetricEvaluationConfig } from "../../shared/analyticsEvaluation";
+
 export type typesAnalyticsMetricConfig<
 	Name extends string = string,
 	EventName extends string = string,
@@ -41,6 +53,7 @@ export type typesAnalyticsMetricConfig<
 	dimensions?: readonly string[];
 	trafficMode?: typesAnalyticsTrafficMode;
 	adminOnly?: boolean;
+	evaluation?: typesMetricEvaluationConfig;
 };
 
 export type typesAnalyticsSettings = {
@@ -188,8 +201,18 @@ export type typesAnalyticsOperation =
 	| { type: "track"; name: string }
 	| {
 			type: "read";
-			query: "timeSeries" | "summary" | "breakdown" | "metricComparison";
-			metric: string;
+			query:
+				| "timeSeries"
+				| "summary"
+				| "breakdown"
+				| "metricComparison"
+				| "metricConversion"
+				| "metricEvaluation"
+				| "dashboardMetrics"
+				| "funnelConversion";
+			metric?: string;
+			metrics?: string[];
+			funnel?: string;
 			scope?: typesAnalyticsScopeInput;
 	  };
 
@@ -199,6 +222,16 @@ export type typesCreateAnalyticsApiOptions<
 > = typesCreateAnalyticsApiOptionsForConfig<
 	readonly typesAnalyticsEventConfig<EventName>[],
 	readonly typesAnalyticsMetricConfig<MetricName, EventName>[]
+>;
+
+export type typesAnalyticsFunnelConfig = {
+	label: string;
+	steps: string[];
+};
+
+export type typesAnalyticsFunnelsConfig = Record<
+	string,
+	typesAnalyticsFunnelConfig
 >;
 
 export type typesCreateAnalyticsApiOptionsForConfig<
@@ -211,6 +244,7 @@ export type typesCreateAnalyticsApiOptionsForConfig<
 > = {
 	events: Events;
 	metrics: Metrics;
+	funnels?: typesAnalyticsFunnelsConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 	authorize?: (
 		ctx: { auth: Auth },
@@ -236,7 +270,9 @@ export type typesAnalyticsRuntimeConfig = {
 		dimensions?: string[];
 		trafficMode?: typesAnalyticsTrafficMode;
 		adminOnly?: boolean;
+		evaluation?: import("../../shared/analyticsEvaluation").typesMetricEvaluationConfig;
 	}>;
+	funnels?: typesAnalyticsFunnelsConfig;
 	settings: typesAnalyticsSettings;
 	configHash?: string;
 };

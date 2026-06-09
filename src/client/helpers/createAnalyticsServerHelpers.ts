@@ -10,11 +10,16 @@ import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsMetricConfig,
 	typesAnalyticsSettings,
+	typesAnalyticsFunnelsConfig,
 	typesTrackEventInput,
 	typesTrackEventsInput,
 } from "../types/types";
 import type {
 	typesBreakdownArgs,
+	typesDashboardMetricsArgs,
+	typesFunnelConversionArgs,
+	typesMetricConversionArgs,
+	typesMetricEvaluationArgs,
 	typesMetricName,
 	typesMetricRangeArgs,
 	typesMetricTotalsByDimensionArgs,
@@ -41,8 +46,14 @@ export function createAnalyticsServerHelpers<
 	events: readonly typesAnalyticsEventConfig[],
 	metrics: Metrics,
 	settings?: Partial<typesAnalyticsSettings>,
+	funnels?: typesAnalyticsFunnelsConfig,
 ) {
-	const config = createAnalyticsConfiguration(events, metrics, settings);
+	const config = createAnalyticsConfiguration(
+		events,
+		metrics,
+		settings,
+		funnels,
+	);
 
 	const fetchMetricTotalsByDimension = async <
 		Name extends typesMetricName<Metrics>,
@@ -79,6 +90,7 @@ export function createAnalyticsServerHelpers<
 			await ctx.runMutation(component.lib.writeConfiguration, {
 				events: config.events,
 				metrics: config.metrics,
+				...(config.funnels ? { funnels: config.funnels } : {}),
 				settings: {
 					...config.settings,
 					...(settings ?? {}),
@@ -128,6 +140,49 @@ export function createAnalyticsServerHelpers<
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricComparison, {
+				config,
+				...args,
+			});
+		},
+
+		fetchMetricConversion: async <
+			Numerator extends typesMetricName<Metrics>,
+			Denominator extends typesMetricName<Metrics>,
+		>(
+			ctx: typesQueryCtx,
+			args: typesMetricConversionArgs<Metrics, Numerator, Denominator>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchMetricConversion, {
+				config,
+				...args,
+			});
+		},
+
+		fetchMetricEvaluation: async <Name extends typesMetricName<Metrics>>(
+			ctx: typesQueryCtx,
+			args: typesMetricEvaluationArgs<Metrics, Name>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
+				config,
+				...args,
+			});
+		},
+
+		fetchDashboardMetrics: async (
+			ctx: typesQueryCtx,
+			args: typesDashboardMetricsArgs<Metrics>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
+				config,
+				...args,
+			});
+		},
+
+		fetchFunnelConversion: async (
+			ctx: typesQueryCtx,
+			args: typesFunnelConversionArgs,
+		) => {
+			return await ctx.runQuery(component.lib.fetchFunnelConversion, {
 				config,
 				...args,
 			});

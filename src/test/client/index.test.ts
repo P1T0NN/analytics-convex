@@ -37,6 +37,8 @@ describe("package root exports", () => {
 		expect(analytics.trackAnalytics).toBeDefined();
 		expect(analytics.getAnalyticsRanking).toBeDefined();
 		expect(analytics.compareScores).toBeDefined();
+		expect(analytics.evaluateMetricLabel).toBeDefined();
+		expect(analytics.ANALYTICS_METRIC_LABELS).toBeDefined();
 		expect(analytics.uniqueEventValidator).toBeDefined();
 	});
 });

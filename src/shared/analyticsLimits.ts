@@ -24,4 +24,7 @@ export const ANALYTICS_LIMITS = {
 	maxBreakdownItems: 100,
 	maxRawEventRetentionDays: 3_650,
 	maxRawEventDeletesPerRun: 10_000,
+	maxFunnelsPerConfiguration: 50,
+	maxFunnelSteps: 10,
+	maxDashboardMetricsPerQuery: 24,
 } as const;

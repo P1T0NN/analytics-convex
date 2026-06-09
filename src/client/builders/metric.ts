@@ -5,6 +5,7 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsTrafficMode,
 	typesAnalyticsUnit,
+	typesMetricEvaluationConfig,
 } from "../types/types";
 
 type typesMetricBuilderState = {
@@ -17,6 +18,7 @@ type typesMetricBuilderState = {
 	description?: string;
 	trafficMode?: typesAnalyticsTrafficMode;
 	adminOnly?: boolean;
+	evaluation?: typesMetricEvaluationConfig;
 };
 
 export type typesAnalyticsEventMap = Record<string, typesAnalyticsEventConfig>;
@@ -118,6 +120,9 @@ export type typesAnalyticsMetricBuilder<
 	adminOnly(
 		adminOnly?: boolean,
 	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
+	evaluation(
+		evaluation: typesMetricEvaluationConfig,
+	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
 	build(name: string): typesAnalyticsMetricConfig<
 		string,
 		typesEventNameForMap<Events>
@@ -169,6 +174,10 @@ class AnalyticsMetricBuilder {
 		return this.with({ adminOnly });
 	}
 
+	evaluation(evaluation: typesMetricEvaluationConfig) {
+		return this.with({ evaluation });
+	}
+
 	build(name: string): typesAnalyticsMetricConfig {
 		return {
 			name,
@@ -191,6 +200,7 @@ class AnalyticsMetricBuilder {
 			...(this.state.adminOnly !== undefined
 				? { adminOnly: this.state.adminOnly }
 				: {}),
+			...(this.state.evaluation ? { evaluation: this.state.evaluation } : {}),
 		};
 	}
 

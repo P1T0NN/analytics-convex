@@ -15,5 +15,6 @@ export function serializeMetrics(
 		...(metric.dimensions ? { dimensions: [...metric.dimensions] } : {}),
 		...(metric.trafficMode ? { trafficMode: metric.trafficMode } : {}),
 		...(metric.adminOnly === undefined ? {} : { adminOnly: metric.adminOnly }),
+		...(metric.evaluation ? { evaluation: metric.evaluation } : {}),
 	}));
 }

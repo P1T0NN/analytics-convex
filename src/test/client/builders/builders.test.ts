@@ -44,6 +44,32 @@ describe("analytics builders", () => {
 		});
 
 		expect(
+			count("Guest activations")
+				.from("guest.activated")
+				.evaluation({
+					kind: "conversion",
+					denominatorMetric: "qrScans",
+					excellentRatePercent: 50,
+					goodRatePercent: 20,
+					badRatePercent: 10,
+				})
+				.build("guestActivations"),
+		).toEqual({
+			name: "guestActivations",
+			label: "Guest activations",
+			unit: "count",
+			eventNames: ["guest.activated"],
+			aggregation: "count",
+			evaluation: {
+				kind: "conversion",
+				denominatorMetric: "qrScans",
+				excellentRatePercent: 50,
+				goodRatePercent: 20,
+				badRatePercent: 10,
+			},
+		});
+
+		expect(
 			sum("Product value added", "currency")
 				.from("product.added")
 				.value("price")

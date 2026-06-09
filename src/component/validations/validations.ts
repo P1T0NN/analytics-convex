@@ -18,6 +18,7 @@ import type {
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
 	typesAnalyticsSettings,
+	typesAnalyticsFunnelsConfig,
 } from "../types/types.js";
 
 export function assertNonEmptyString(value: string, field: string) {
@@ -125,6 +126,7 @@ export function validateConfiguration(args: {
 	events: typesAnalyticsEventConfig[];
 	metrics: typesAnalyticsMetricConfig[];
 	settings: typesAnalyticsSettings;
+	funnels?: typesAnalyticsFunnelsConfig;
 }) {
 	validateConfigurationLimits(args);
 

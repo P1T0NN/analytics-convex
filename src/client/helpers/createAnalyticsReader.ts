@@ -8,6 +8,10 @@ import type {
 } from "../types/types";
 import type {
 	typesBreakdownArgs,
+	typesDashboardMetricsArgs,
+	typesFunnelConversionArgs,
+	typesMetricConversionArgs,
+	typesMetricEvaluationArgs,
 	typesMetricName,
 	typesMetricRangeArgs,
 	typesMetricTotalsByDimensionArgs,
@@ -73,6 +77,45 @@ export function createAnalyticsReader<
 			args: typesMetricRangeArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricComparison, {
+				config,
+				...args,
+			});
+		},
+		fetchMetricConversion: async <
+			Numerator extends typesMetricName<Metrics>,
+			Denominator extends typesMetricName<Metrics>,
+		>(
+			ctx: typesQueryCtx,
+			args: typesMetricConversionArgs<Metrics, Numerator, Denominator>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchMetricConversion, {
+				config,
+				...args,
+			});
+		},
+		fetchMetricEvaluation: async <Name extends typesMetricName<Metrics>>(
+			ctx: typesQueryCtx,
+			args: typesMetricEvaluationArgs<Metrics, Name>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
+				config,
+				...args,
+			});
+		},
+		fetchDashboardMetrics: async (
+			ctx: typesQueryCtx,
+			args: typesDashboardMetricsArgs<Metrics>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchDashboardMetrics, {
+				config,
+				...args,
+			});
+		},
+		fetchFunnelConversion: async (
+			ctx: typesQueryCtx,
+			args: typesFunnelConversionArgs,
+		) => {
+			return await ctx.runQuery(component.lib.fetchFunnelConversion, {
 				config,
 				...args,
 			});

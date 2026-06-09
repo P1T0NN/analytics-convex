@@ -15,7 +15,9 @@ import type * as crons_purgeStaleAnalyticsEvents from "../crons/purgeStaleAnalyt
 import type * as errors_errors from "../errors/errors.js";
 import type * as helpers_aggregateEvent from "../helpers/aggregateEvent.js";
 import type * as helpers_claimUniqueEvent from "../helpers/claimUniqueEvent.js";
+import type * as helpers_evaluateMetricForRange from "../helpers/evaluateMetricForRange.js";
 import type * as helpers_incrementDailyMetric from "../helpers/incrementDailyMetric.js";
+import type * as helpers_metricTotalCache from "../helpers/metricTotalCache.js";
 import type * as helpers_prepareTrackEvent from "../helpers/prepareTrackEvent.js";
 import type * as helpers_rollupReads from "../helpers/rollupReads.js";
 import type * as helpers_upsertMetricRollupForEvent from "../helpers/upsertMetricRollupForEvent.js";
@@ -26,7 +28,11 @@ import type * as mutations_writeConfiguration from "../mutations/writeConfigurat
 import type * as mutations_writeTrack from "../mutations/writeTrack.js";
 import type * as queries_fetchBreakdown from "../queries/fetchBreakdown.js";
 import type * as queries_fetchConfiguration from "../queries/fetchConfiguration.js";
+import type * as queries_fetchDashboardMetrics from "../queries/fetchDashboardMetrics.js";
+import type * as queries_fetchFunnelConversion from "../queries/fetchFunnelConversion.js";
 import type * as queries_fetchMetricComparison from "../queries/fetchMetricComparison.js";
+import type * as queries_fetchMetricConversion from "../queries/fetchMetricConversion.js";
+import type * as queries_fetchMetricEvaluation from "../queries/fetchMetricEvaluation.js";
 import type * as queries_fetchMetricTotalsByDimension from "../queries/fetchMetricTotalsByDimension.js";
 import type * as queries_fetchSummary from "../queries/fetchSummary.js";
 import type * as queries_fetchTimeSeries from "../queries/fetchTimeSeries.js";
@@ -45,6 +51,7 @@ import type * as utils_getRollupIncrementKey from "../utils/getRollupIncrementKe
 import type * as utils_getTopSeriesKeys from "../utils/getTopSeriesKeys.js";
 import type * as utils_hashString from "../utils/hashString.js";
 import type * as utils_listDailyBuckets from "../utils/listDailyBuckets.js";
+import type * as utils_shared_funnelUtils from "../utils/shared/funnelUtils.js";
 import type * as utils_shared_metricUtils from "../utils/shared/metricUtils.js";
 import type * as utils_shared_scopeUtils from "../utils/shared/scopeUtils.js";
 import type * as utils_shared_shardUtils from "../utils/shared/shardUtils.js";
@@ -68,7 +75,9 @@ const fullApi: ApiFromModules<{
   "errors/errors": typeof errors_errors;
   "helpers/aggregateEvent": typeof helpers_aggregateEvent;
   "helpers/claimUniqueEvent": typeof helpers_claimUniqueEvent;
+  "helpers/evaluateMetricForRange": typeof helpers_evaluateMetricForRange;
   "helpers/incrementDailyMetric": typeof helpers_incrementDailyMetric;
+  "helpers/metricTotalCache": typeof helpers_metricTotalCache;
   "helpers/prepareTrackEvent": typeof helpers_prepareTrackEvent;
   "helpers/rollupReads": typeof helpers_rollupReads;
   "helpers/upsertMetricRollupForEvent": typeof helpers_upsertMetricRollupForEvent;
@@ -79,7 +88,11 @@ const fullApi: ApiFromModules<{
   "mutations/writeTrack": typeof mutations_writeTrack;
   "queries/fetchBreakdown": typeof queries_fetchBreakdown;
   "queries/fetchConfiguration": typeof queries_fetchConfiguration;
+  "queries/fetchDashboardMetrics": typeof queries_fetchDashboardMetrics;
+  "queries/fetchFunnelConversion": typeof queries_fetchFunnelConversion;
   "queries/fetchMetricComparison": typeof queries_fetchMetricComparison;
+  "queries/fetchMetricConversion": typeof queries_fetchMetricConversion;
+  "queries/fetchMetricEvaluation": typeof queries_fetchMetricEvaluation;
   "queries/fetchMetricTotalsByDimension": typeof queries_fetchMetricTotalsByDimension;
   "queries/fetchSummary": typeof queries_fetchSummary;
   "queries/fetchTimeSeries": typeof queries_fetchTimeSeries;
@@ -98,6 +111,7 @@ const fullApi: ApiFromModules<{
   "utils/getTopSeriesKeys": typeof utils_getTopSeriesKeys;
   "utils/hashString": typeof utils_hashString;
   "utils/listDailyBuckets": typeof utils_listDailyBuckets;
+  "utils/shared/funnelUtils": typeof utils_shared_funnelUtils;
   "utils/shared/metricUtils": typeof utils_shared_metricUtils;
   "utils/shared/scopeUtils": typeof utils_shared_scopeUtils;
   "utils/shared/shardUtils": typeof utils_shared_shardUtils;

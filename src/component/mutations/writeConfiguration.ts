@@ -11,6 +11,7 @@ import { validateConfiguration } from "../validations/validations";
 // SCHEMAS
 import {
 	eventConfigValidator,
+	funnelsConfigValidator,
 	metricConfigValidator,
 	settingsPatchValidator,
 } from "../schemas/schemas";
@@ -25,6 +26,7 @@ export const writeConfiguration = mutation({
 	args: {
 		events: v.array(eventConfigValidator),
 		metrics: v.array(metricConfigValidator),
+		funnels: v.optional(funnelsConfigValidator),
 		settings: v.optional(settingsPatchValidator),
 	},
 	returns: v.null(),
@@ -32,6 +34,7 @@ export const writeConfiguration = mutation({
 		validateConfiguration({
 			events: args.events,
 			metrics: args.metrics,
+			funnels: args.funnels,
 			settings: {
 				...defaultSettings(),
 				...(args.settings ?? {}),

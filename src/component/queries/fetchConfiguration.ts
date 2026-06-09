@@ -9,6 +9,7 @@ import { normalizeConfig } from "../analyticsConfig";
 import {
 	analyticsRuntimeConfigValidator,
 	eventConfigValidator,
+	funnelsConfigValidator,
 	metricConfigValidator,
 	settingsValidator,
 } from "../schemas/schemas";
@@ -23,6 +24,7 @@ export const fetchConfiguration = query({
 	returns: v.object({
 		events: v.array(eventConfigValidator),
 		metrics: v.array(metricConfigValidator),
+		funnels: v.optional(funnelsConfigValidator),
 		settings: settingsValidator,
 		configHash: v.optional(v.string()),
 	}),
@@ -32,6 +34,9 @@ export const fetchConfiguration = query({
 		return {
 			events: config.events,
 			metrics: config.metrics,
+			...(Object.keys(config.funnels).length > 0
+				? { funnels: config.funnels }
+				: {}),
 			settings: config.settings,
 			configHash: config.configHash,
 		};

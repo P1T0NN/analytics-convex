@@ -62,6 +62,41 @@ export type typesMetricTotalsByDimensionArgs<
 	maxRows?: number;
 };
 
+export type typesMetricConversionArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+	Numerator extends typesMetricName<Metrics>,
+	Denominator extends typesMetricName<Metrics>,
+> = {
+	numeratorMetric: Numerator;
+	denominatorMetric: Denominator;
+	from: number;
+	to: number;
+	scope?: typesAnalyticsScopeInput;
+};
+
+export type typesMetricEvaluationArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+	Name extends typesMetricName<Metrics>,
+> = typesMetricRangeArgs<Metrics, Name>;
+
+export type typesDashboardMetricsArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+> = {
+	metrics: typesMetricName<Metrics>[];
+	from: number;
+	to: number;
+	scope?: typesAnalyticsScopeInput;
+	includeComparison?: boolean;
+	includeEvaluation?: boolean;
+};
+
+export type typesFunnelConversionArgs = {
+	funnel: string;
+	from: number;
+	to: number;
+	scope?: typesAnalyticsScopeInput;
+};
+
 export type typesTopDimensionValueArgs<
 	Metrics extends readonly typesAnalyticsMetricConfig[],
 	Name extends typesMetricName<Metrics>,

@@ -23,6 +23,7 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsOperation,
 	typesAnalyticsSettings,
+	typesAnalyticsFunnelsConfig,
 } from "../types/types";
 import type {
 	typesAnalyticsMetricBuilder,
@@ -68,6 +69,7 @@ export function defineAnalytics<
 	options: {
 		events: Events;
 		metrics: typesAnalyticsMetricsInput<Events, Metrics>;
+		funnels?: typesAnalyticsFunnelsConfig;
 		settings?: Partial<typesAnalyticsSettings>;
 		authorize?: (
 			ctx: { auth: Auth },
@@ -89,6 +91,7 @@ export function defineAnalytics<
 	const config = {
 		events: events as any,
 		metrics: metrics as any,
+		...(options.funnels ? { funnels: options.funnels } : {}),
 		settings: {
 			...defaultAnalyticsSettings(),
 			...(options.settings ?? {}),
@@ -101,10 +104,12 @@ export function defineAnalytics<
 			events,
 			metrics,
 			options.settings,
+			options.funnels,
 		),
 		client: createAnalyticsApi(component, {
 			events,
 			metrics,
+			...(options.funnels ? { funnels: options.funnels } : {}),
 			...(options.settings ? { settings: options.settings } : {}),
 			...(options.authorize ? { authorize: options.authorize } : {}),
 		}),

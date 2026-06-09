@@ -12,6 +12,7 @@ import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsMetricConfig,
 	typesAnalyticsPropertyType,
+	typesAnalyticsFunnelsConfig,
 } from "../types/types.js";
 
 function assertPropertyConfigLimits(
@@ -72,6 +73,7 @@ function assertMetricPropertyReferences(
 export function validateConfigurationLimits(args: {
 	events: typesAnalyticsEventConfig[];
 	metrics: typesAnalyticsMetricConfig[];
+	funnels?: typesAnalyticsFunnelsConfig;
 }) {
 	assertAtMost(
 		args.events.length,
@@ -85,6 +87,9 @@ export function validateConfigurationLimits(args: {
 	);
 
 	const eventByName = new Map(args.events.map((event) => [event.name, event]));
+	const metricNames = new Set(args.metrics.map((metric) => metric.name));
+
+	validateFunnelLimits(args.funnels ?? {}, metricNames);
 
 	for (const event of args.events) {
 		assertStringLength(
@@ -134,5 +139,130 @@ export function validateConfigurationLimits(args: {
 			`metric "${metric.name}".dimensions`,
 		);
 		assertMetricPropertyReferences(metric, eventByName);
+		assertMetricEvaluationReferences(metric, args.metrics);
+	}
+}
+
+function validateFunnelLimits(
+	funnels: typesAnalyticsFunnelsConfig,
+	metricNames: Set<string>,
+) {
+	const funnelNames = Object.keys(funnels);
+	assertAtMost(
+		funnelNames.length,
+		ANALYTICS_LIMITS.maxFunnelsPerConfiguration,
+		"funnels",
+	);
+
+	for (const funnelName of funnelNames) {
+		assertStringLength(
+			funnelName,
+			ANALYTICS_LIMITS.maxIdentifierLength,
+			`funnel "${funnelName}".name`,
+		);
+
+		const funnel = funnels[funnelName];
+		assertStringLength(
+			funnel.label,
+			ANALYTICS_LIMITS.maxLabelLength,
+			`funnel "${funnelName}".label`,
+		);
+		assertAtMost(
+			funnel.steps.length,
+			ANALYTICS_LIMITS.maxFunnelSteps,
+			`funnel "${funnelName}".steps`,
+		);
+
+		if (funnel.steps.length < 2) {
+			badRequest(
+				`Funnel "${funnelName}" must include at least two metric steps.`,
+			);
+		}
+
+		const stepNames = new Set<string>();
+		for (const step of funnel.steps) {
+			assertStringLength(
+				step,
+				ANALYTICS_LIMITS.maxIdentifierLength,
+				`funnel "${funnelName}" step "${step}"`,
+			);
+
+			if (!metricNames.has(step)) {
+				badRequest(
+					`Funnel "${funnelName}" step "${step}" references unknown metric "${step}".`,
+				);
+			}
+
+			if (stepNames.has(step)) {
+				badRequest(
+					`Funnel "${funnelName}" step "${step}" is duplicated.`,
+				);
+			}
+
+			stepNames.add(step);
+		}
+	}
+}
+
+function assertMetricEvaluationReferences(
+	metric: typesAnalyticsMetricConfig,
+	metrics: typesAnalyticsMetricConfig[],
+) {
+	const evaluation = metric.evaluation;
+	if (!evaluation) return;
+
+	const metricNames = new Set(metrics.map((entry) => entry.name));
+
+	if (
+		evaluation.kind === "conversion" ||
+		evaluation.kind === "inverseRate"
+	) {
+		if (!metricNames.has(evaluation.denominatorMetric)) {
+			badRequest(
+				`Metric "${metric.name}" evaluation references unknown denominator metric "${evaluation.denominatorMetric}".`,
+			);
+		}
+
+		if (evaluation.denominatorMetric === metric.name) {
+			badRequest(
+				`Metric "${metric.name}" evaluation denominatorMetric must reference a different metric.`,
+			);
+		}
+	}
+
+	if (evaluation.kind === "comparison") {
+		if (evaluation.excellentGrowthPercent < evaluation.goodGrowthPercent) {
+			badRequest(
+				`Metric "${metric.name}" evaluation excellentGrowthPercent must be >= goodGrowthPercent.`,
+			);
+		}
+
+		if (evaluation.goodGrowthPercent < evaluation.badGrowthPercent) {
+			badRequest(
+				`Metric "${metric.name}" evaluation goodGrowthPercent must be >= badGrowthPercent.`,
+			);
+		}
+	}
+
+	if (evaluation.kind === "conversion") {
+		if (evaluation.excellentRatePercent < evaluation.goodRatePercent) {
+			badRequest(
+				`Metric "${metric.name}" evaluation excellentRatePercent must be >= goodRatePercent.`,
+			);
+		}
+
+		if (evaluation.goodRatePercent < evaluation.badRatePercent) {
+			badRequest(
+				`Metric "${metric.name}" evaluation goodRatePercent must be >= badRatePercent.`,
+			);
+		}
+	}
+
+	if (evaluation.kind === "inverseRate") {
+		if (evaluation.goodRatePercent > evaluation.badRatePercent) {
+			badRequest(
+				`Metric "${metric.name}" evaluation goodRatePercent must be <= badRatePercent for inverseRate.`,
+			);
+		}
 	}
 }
