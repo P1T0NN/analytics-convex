@@ -181,4 +181,50 @@ describe("analytics metric evaluation queries", () => {
 			reason: "below_min_volume",
 		});
 	});
+
+	it("evaluates goal metric labels and returns goal block", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalRuntimeConfiguration({
+			events: [{ name: "qr.scanned", label: "QR scanned" }],
+			metrics: [
+				{
+					name: "qrScans",
+					label: "QR scans",
+					unit: "count",
+					eventNames: ["qr.scanned"],
+					aggregation: "count",
+					evaluation: {
+						kind: "goal",
+						targetValue: 500,
+						excellentPercentOfGoal: 100,
+						goodPercentOfGoal: 75,
+						badPercentOfGoal: 50,
+					},
+				},
+			],
+		});
+		const now = Date.now();
+
+		for (let index = 0; index < 375; index += 1) {
+			await writeEvent(t, config, "qr.scanned", now + index);
+		}
+
+		const result = await t.query(api.lib.fetchMetricEvaluation, {
+			config,
+			metric: "qrScans",
+			from: now - 86_400_000,
+			to: now + 86_400_000,
+		});
+
+		expect(result.value).toBe(375);
+		expect(result.evaluation).toEqual({
+			label: "good",
+			reason: "goal_progress",
+		});
+		expect(result.goal).toEqual({
+			targetValue: 500,
+			value: 375,
+			percentOfGoal: 75,
+		});
+	});
 });

@@ -22,6 +22,8 @@ export const metricEvaluationReasonValidator = v.union(
 	v.literal("comparison_growth"),
 	v.literal("conversion_rate"),
 	v.literal("inverse_rate"),
+	v.literal("goal_progress"),
+	v.literal("zero_target"),
 );
 
 export const metricComparisonEvaluationConfigValidator = v.object({
@@ -49,10 +51,20 @@ export const metricInverseRateEvaluationConfigValidator = v.object({
 	minDenominator: v.optional(v.number()),
 });
 
+export const metricGoalEvaluationConfigValidator = v.object({
+	kind: v.literal("goal"),
+	targetValue: v.number(),
+	excellentPercentOfGoal: v.number(),
+	goodPercentOfGoal: v.number(),
+	badPercentOfGoal: v.number(),
+	minValueForEvaluation: v.optional(v.number()),
+});
+
 export const metricEvaluationConfigValidator = v.union(
 	metricComparisonEvaluationConfigValidator,
 	metricConversionEvaluationConfigValidator,
 	metricInverseRateEvaluationConfigValidator,
+	metricGoalEvaluationConfigValidator,
 );
 
 export const metricComparisonInputValidator = v.object({
@@ -66,6 +78,12 @@ export const metricConversionInputValidator = v.object({
 	numerator: v.number(),
 	denominator: v.number(),
 	ratePercent: v.optional(v.number()),
+});
+
+export const metricGoalInputValidator = v.object({
+	targetValue: v.number(),
+	value: v.number(),
+	percentOfGoal: v.optional(v.number()),
 });
 
 export const metricEvaluationResultValidator = v.object({
@@ -93,6 +111,7 @@ export const metricEvaluationResponseValidator = v.object({
 			denominatorMetric: v.optional(v.string()),
 		}),
 	),
+	goal: v.optional(metricGoalInputValidator),
 });
 
 export const metricConversionResponseValidator = v.object({

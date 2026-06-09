@@ -196,7 +196,7 @@ These wrapped functions **do** run your `authorize` callback.
 
 | Export | Use |
 | ------ | --- |
-| `evaluateMetricLabel`, `computeConversionRatePercent` | Label math in UI (same rules as `fetchMetricEvaluation`) |
+| `evaluateMetricLabel`, `computeConversionRatePercent`, `computePercentOfGoal` | Label math in UI (same rules as `fetchMetricEvaluation`) |
 | `ANALYTICS_METRIC_LABELS` | Default display strings for labels |
 | `getAnalyticsRanking`, `compareScores` | Sort/rank by score with tie-breakers |
 | `createAnalyticsScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScopeInput` | Build consistent scope IDs |
@@ -453,7 +453,7 @@ accumulate indefinitely.
 | `dimensions`    | `string[]`                                      | Properties available for `groupBy` in queries                                     |
 | `trafficMode`   | `"lowVolume" \| "mediumVolume" \| "highVolume"` | Optional per-metric override                                                      |
 | `adminOnly`     | `boolean`                                       | If `true`, the `authorize` callback receives `adminOnly` info for access control  |
-| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules for comparison, conversion, or inverse rate    |
+| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules: `comparison`, `conversion`, `inverseRate`, or `goal` |
 
 ### Settings
 
@@ -763,7 +763,30 @@ cancelledReservations: count("Cancelled reservations")
 		goodRatePercent: 10,
 		badRatePercent: 25,
 	}),
+
+qrScans: count("QR scans")
+	.from("qr.scanned")
+	.evaluation({
+		kind: "goal",
+		targetValue: 500,
+		excellentPercentOfGoal: 100,
+		goodPercentOfGoal: 75,
+		badPercentOfGoal: 50,
+		minValueForEvaluation: 0,
+	}),
 ```
+
+**Evaluation kinds:**
+
+| Kind | Answers | Key fields |
+| ---- | ------- | ---------- |
+| `comparison` | Did we grow vs last period? | `excellentGrowthPercent`, `goodGrowthPercent`, `badGrowthPercent` |
+| `conversion` | What % converted? | `denominatorMetric`, rate percent thresholds |
+| `inverseRate` | Is the rate low enough? | `denominatorMetric`, lower is better |
+| `goal` | Did we hit the target for this range? | `targetValue`, percent-of-goal thresholds |
+
+`targetValue` is the absolute goal for the **queried date range** (`from`–`to`). It is
+not auto-prorated to calendar months in v1 — set the target for the window you query.
 
 ```ts
 const result = await analytics.fetchMetricEvaluation(ctx, {
@@ -781,10 +804,12 @@ const result = await analytics.fetchMetricEvaluation(ctx, {
 //     ratePercent: 42,
 //     denominatorMetric: "qrScans",
 //   },
+//   goal?: { targetValue, value, percentOfGoal? },
 // }
 ```
 
 Supported labels: `neutral`, `activity`, `good`, `excellent`, `bad`, `clear`.
+(`activity` is not used for `goal` evaluation.)
 
 Standard edge-case behavior:
 
@@ -796,13 +821,17 @@ Standard edge-case behavior:
 | conversion denominator below `minDenominator` | `neutral` |
 | conversion denominator `0`, numerator `> 0` | `activity` |
 | inverse rate `0%` | `clear` |
+| goal `targetValue === 0` | `neutral` |
+| goal `value === 0`, `targetValue > 0` | `bad` (when `0 <= badPercentOfGoal`) |
+| goal below `minValueForEvaluation` | `neutral` |
 | no `.evaluation()` config on metric | `neutral` |
 
-For UI reuse outside Convex queries, import the pure helper:
+For UI reuse outside Convex queries, import the pure helpers:
 
 ```ts
 import {
 	ANALYTICS_METRIC_LABELS,
+	computePercentOfGoal,
 	evaluateMetricLabel,
 } from "@piton-/analytics-convex";
 
@@ -858,6 +887,7 @@ const dashboard = await analytics.fetchDashboardMetrics(ctx, {
 //   comparison?: { current, previous, delta, deltaPercent? },
 //   evaluation?: { label, reason },
 //   conversion?: { numerator, denominator, ratePercent, denominatorMetric },
+//   goal?: { targetValue, value, percentOfGoal? },
 // }
 ```
 
@@ -1306,6 +1336,14 @@ type typesMetricEvaluationConfig =
       goodRatePercent: number;
       badRatePercent: number;
       minDenominator?: number;
+    }
+  | {
+      kind: "goal";
+      targetValue: number;
+      excellentPercentOfGoal: number;
+      goodPercentOfGoal: number;
+      badPercentOfGoal: number;
+      minValueForEvaluation?: number;
     };
 
 type typesMetricEvaluationResult = {
@@ -1321,7 +1359,9 @@ type typesMetricEvaluationResult = {
     | "zero_inverse_rate"
     | "comparison_growth"
     | "conversion_rate"
-    | "inverse_rate";
+    | "inverse_rate"
+    | "goal_progress"
+    | "zero_target";
 };
 ```
 
@@ -1405,7 +1445,7 @@ Everything below is safe to import in consumer apps.
 | Builders | `event`, `property`, `count`, `sum` |
 | Tracking | `trackAnalytics`, `trackAnalyticsEvent`, `trackAnalyticsEvents` |
 | Readers / trackers | `createAnalyticsReader`, `createAnalyticsTracker`, `configureAnalytics` |
-| Evaluation | `evaluateMetricLabel`, `computeConversionRatePercent`, `ANALYTICS_METRIC_LABELS` |
+| Evaluation | `evaluateMetricLabel`, `computeConversionRatePercent`, `computePercentOfGoal`, `ANALYTICS_METRIC_LABELS` |
 | Ranking | `getAnalyticsRanking`, `compareScores` |
 | Scopes | `createAnalyticsScopeId`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeInput` |
 | Constants | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_SCOPE_SEPARATOR`, `ANALYTICS_RESOURCE_SCOPE_SEPARATOR` |

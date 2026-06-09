@@ -65,6 +65,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -134,6 +142,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -203,6 +219,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -297,6 +321,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -356,6 +388,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   goodRatePercent: number;
                   kind: "inverseRate";
                   minDenominator?: number;
+                }
+              | {
+                  badPercentOfGoal: number;
+                  excellentPercentOfGoal: number;
+                  goodPercentOfGoal: number;
+                  kind: "goal";
+                  minValueForEvaluation?: number;
+                  targetValue: number;
                 };
             eventNames: Array<string>;
             label: string;
@@ -420,6 +460,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -487,7 +535,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   | "zero_inverse_rate"
                   | "comparison_growth"
                   | "conversion_rate"
-                  | "inverse_rate";
+                  | "inverse_rate"
+                  | "goal_progress"
+                  | "zero_target";
+              };
+              goal?: {
+                percentOfGoal?: number;
+                targetValue: number;
+                value: number;
               };
               label: string;
               unit: "count" | "currency" | "bytes";
@@ -539,6 +594,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -623,6 +686,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -717,6 +788,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -799,6 +878,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -861,8 +948,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "zero_inverse_rate"
               | "comparison_growth"
               | "conversion_rate"
-              | "inverse_rate";
+              | "inverse_rate"
+              | "goal_progress"
+              | "zero_target";
           };
+          goal?: { percentOfGoal?: number; targetValue: number; value: number };
           label: string;
           metric: string;
           range: { from: number; to: number };
@@ -912,6 +1002,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -986,6 +1084,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1074,6 +1180,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1172,6 +1286,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1245,6 +1367,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1312,6 +1442,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1376,6 +1514,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   goodRatePercent: number;
                   kind: "inverseRate";
                   minDenominator?: number;
+                }
+              | {
+                  badPercentOfGoal: number;
+                  excellentPercentOfGoal: number;
+                  goodPercentOfGoal: number;
+                  kind: "goal";
+                  minValueForEvaluation?: number;
+                  targetValue: number;
                 };
             eventNames: Array<string>;
             label: string;
@@ -1442,6 +1588,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1545,6 +1699,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1613,6 +1775,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -1719,6 +1889,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -1815,6 +1993,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -1874,6 +2060,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     goodRatePercent: number;
                     kind: "inverseRate";
                     minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
                   };
               eventNames: Array<string>;
               label: string;
@@ -1940,6 +2134,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2007,7 +2209,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "zero_inverse_rate"
                     | "comparison_growth"
                     | "conversion_rate"
-                    | "inverse_rate";
+                    | "inverse_rate"
+                    | "goal_progress"
+                    | "zero_target";
+                };
+                goal?: {
+                  percentOfGoal?: number;
+                  targetValue: number;
+                  value: number;
                 };
                 label: string;
                 unit: "count" | "currency" | "bytes";
@@ -2061,6 +2270,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2147,6 +2364,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2243,6 +2468,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2327,6 +2560,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2389,7 +2630,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "zero_inverse_rate"
                 | "comparison_growth"
                 | "conversion_rate"
-                | "inverse_rate";
+                | "inverse_rate"
+                | "goal_progress"
+                | "zero_target";
+            };
+            goal?: {
+              percentOfGoal?: number;
+              targetValue: number;
+              value: number;
             };
             label: string;
             metric: string;
@@ -2442,6 +2690,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2518,6 +2774,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2608,6 +2872,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;
@@ -2708,6 +2980,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                       goodRatePercent: number;
                       kind: "inverseRate";
                       minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
                     };
                 eventNames: Array<string>;
                 label: string;

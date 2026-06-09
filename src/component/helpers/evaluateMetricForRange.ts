@@ -9,6 +9,7 @@ import { internalGetMetricTotalForRange } from "./rollupReads";
 // SHARED
 import {
 	computeConversionRatePercent,
+	computePercentOfGoal,
 	evaluateMetricLabel,
 } from "../../shared/utils/analyticsEvaluationUtils";
 
@@ -50,6 +51,11 @@ type typesMetricEvaluationBuildResult = {
 		denominator: number;
 		ratePercent?: number;
 		denominatorMetric?: string;
+	};
+	goal?: {
+		targetValue: number;
+		value: number;
+		percentOfGoal?: number;
 	};
 };
 
@@ -104,6 +110,27 @@ export function internalBuildMetricEvaluationFromCache(
 			evaluation: evaluateMetricLabel({
 				kind: "comparison",
 				comparison,
+				config: args.evaluation,
+			}),
+		};
+	}
+
+	if (args.evaluation.kind === "goal") {
+		const goal = {
+			value,
+			targetValue: args.evaluation.targetValue,
+			percentOfGoal: computePercentOfGoal({
+				value,
+				targetValue: args.evaluation.targetValue,
+			}),
+		};
+
+		return {
+			value,
+			goal,
+			evaluation: evaluateMetricLabel({
+				kind: "goal",
+				goal,
 				config: args.evaluation,
 			}),
 		};
@@ -330,6 +357,11 @@ export async function internalBuildDashboardMetricsForRange(
 				ratePercent?: number;
 				denominatorMetric: string;
 			};
+			goal?: {
+				targetValue: number;
+				value: number;
+				percentOfGoal?: number;
+			};
 		}
 	> = {};
 
@@ -382,6 +414,10 @@ export async function internalBuildDashboardMetricsForRange(
 					denominatorMetric:
 						evaluationResult.conversion.denominatorMetric ?? "",
 				};
+			}
+
+			if (evaluationResult.goal) {
+				item.goal = evaluationResult.goal;
 			}
 		}
 

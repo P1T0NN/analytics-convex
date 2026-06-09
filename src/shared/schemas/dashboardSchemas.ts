@@ -21,6 +21,13 @@ export const dashboardMetricItemValidator = v.object({
 			denominatorMetric: v.string(),
 		}),
 	),
+	goal: v.optional(
+		v.object({
+			targetValue: v.number(),
+			value: v.number(),
+			percentOfGoal: v.optional(v.number()),
+		}),
+	),
 });
 
 export const dashboardMetricsResponseValidator = v.object({

@@ -26,6 +26,7 @@ export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 // PURE UTILS
 export {
 	computeConversionRatePercent,
+	computePercentOfGoal,
 	evaluateMetricLabel,
 } from "../shared/utils/analyticsEvaluationUtils";
 export {
@@ -83,6 +84,7 @@ export {
 	type typesCreateAnalyticsApiOptions,
 	type typesCreateAnalyticsApiOptionsForConfig,
 	type typesDashboardMetricConversion,
+	type typesDashboardMetricGoal,
 	type typesDashboardMetricItem,
 	type typesDashboardMetricsResponse,
 	type typesFunnelConversionResponse,
@@ -95,9 +97,12 @@ export {
 	type typesMetricConversionResponse,
 	type typesMetricEvaluationConfig,
 	type typesMetricEvaluationConversion,
+	type typesMetricEvaluationGoal,
 	type typesMetricEvaluationReason,
 	type typesMetricEvaluationResponse,
 	type typesMetricEvaluationResult,
+	type typesMetricGoalEvaluationConfig,
+	type typesMetricGoalInput,
 	type typesMetricInverseRateEvaluationConfig,
 	type typesMetricSummaryResponse,
 	type typesTrackEventInput,

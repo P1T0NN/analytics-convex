@@ -65,6 +65,7 @@ export const fetchMetricEvaluation = query({
 			evaluation: result.evaluation,
 			...(result.comparison ? { comparison: result.comparison } : {}),
 			...(result.conversion ? { conversion: result.conversion } : {}),
+			...(result.goal ? { goal: result.goal } : {}),
 		};
 	},
 });

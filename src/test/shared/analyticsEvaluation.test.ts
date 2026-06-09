@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { evaluateMetricLabel } from "../../shared/utils/analyticsEvaluationUtils";
+import {
+	computePercentOfGoal,
+	evaluateMetricLabel,
+} from "../../shared/utils/analyticsEvaluationUtils";
+
+const goalConfig = {
+	kind: "goal" as const,
+	targetValue: 500,
+	excellentPercentOfGoal: 100,
+	goodPercentOfGoal: 75,
+	badPercentOfGoal: 50,
+	minValueForEvaluation: 0,
+};
+
+describe("computePercentOfGoal", () => {
+	it("returns percent of target when target is positive", () => {
+		expect(
+			computePercentOfGoal({ value: 250, targetValue: 500 }),
+		).toBe(50);
+	});
+
+	it("returns undefined when target is zero", () => {
+		expect(computePercentOfGoal({ value: 10, targetValue: 0 })).toBeUndefined();
+	});
+});
 
 describe("evaluateMetricLabel", () => {
 	it("evaluates comparison growth thresholds", () => {
@@ -138,5 +162,65 @@ describe("evaluateMetricLabel", () => {
 				conversion: { numerator: 30, denominator: 100, ratePercent: 30 },
 			}),
 		).toEqual({ label: "bad", reason: "inverse_rate" });
+	});
+
+	it("evaluates goal progress thresholds", () => {
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 500, targetValue: 500, percentOfGoal: 100 },
+			}),
+		).toEqual({ label: "excellent", reason: "goal_progress" });
+
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 375, targetValue: 500, percentOfGoal: 75 },
+			}),
+		).toEqual({ label: "good", reason: "goal_progress" });
+
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 250, targetValue: 500, percentOfGoal: 50 },
+			}),
+		).toEqual({ label: "bad", reason: "goal_progress" });
+
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 300, targetValue: 500, percentOfGoal: 60 },
+			}),
+		).toEqual({ label: "neutral", reason: "goal_progress" });
+	});
+
+	it("handles goal edge cases", () => {
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 0, targetValue: 0 },
+			}),
+		).toEqual({ label: "neutral", reason: "zero_target" });
+
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: goalConfig,
+				goal: { value: 0, targetValue: 500, percentOfGoal: 0 },
+			}),
+		).toEqual({ label: "bad", reason: "goal_progress" });
+
+		expect(
+			evaluateMetricLabel({
+				kind: "goal",
+				config: { ...goalConfig, minValueForEvaluation: 10 },
+				goal: { value: 5, targetValue: 500, percentOfGoal: 1 },
+			}),
+		).toEqual({ label: "neutral", reason: "below_min_volume" });
 	});
 });

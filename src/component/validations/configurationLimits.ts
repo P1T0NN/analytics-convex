@@ -265,4 +265,42 @@ function assertMetricEvaluationReferences(
 			);
 		}
 	}
+
+	if (evaluation.kind === "goal") {
+		if (evaluation.targetValue <= 0) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation targetValue must be > 0.`,
+			);
+		}
+
+		if (evaluation.excellentPercentOfGoal < 0) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation excellentPercentOfGoal must be >= 0.`,
+			);
+		}
+
+		if (evaluation.goodPercentOfGoal < 0) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation goodPercentOfGoal must be >= 0.`,
+			);
+		}
+
+		if (evaluation.badPercentOfGoal < 0) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation badPercentOfGoal must be >= 0.`,
+			);
+		}
+
+		if (evaluation.excellentPercentOfGoal < evaluation.goodPercentOfGoal) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation excellentPercentOfGoal must be >= goodPercentOfGoal.`,
+			);
+		}
+
+		if (evaluation.goodPercentOfGoal < evaluation.badPercentOfGoal) {
+			internalBadRequest(
+				`Metric "${metric.name}" evaluation goodPercentOfGoal must be >= badPercentOfGoal.`,
+			);
+		}
+	}
 }

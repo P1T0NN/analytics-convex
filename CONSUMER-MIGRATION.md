@@ -20,6 +20,7 @@ evaluation, batch dashboard reads, and named funnels.
 | `fetchMetricEvaluation` | Value + label + comparison/conversion for one card | Custom badge logic + `fetchMetricComparison` + manual math |
 | `fetchDashboardMetrics` | Multiple cards in one optimized query | N × `fetchSummary` / `fetchMetricEvaluation` loops |
 | `funnels` + `fetchFunnelConversion` | Named first→last step conversion | Hardcoded funnel metric pairs in app code |
+| `goal` evaluation kind | Absolute target vs rollup total for range | App-side presence/volume threshold logic |
 
 **Unchanged:** idempotency (retry-safe same payload), rollup-only dashboard reads, scopes,
 traffic modes, time series, breakdown, dimension helpers.
@@ -122,14 +123,19 @@ cancelledReservations: count("Cancelled reservations")
 | `comparison` | Period-over-period growth | `excellentGrowthPercent`, `goodGrowthPercent`, `badGrowthPercent`, optional `minVolumeForComparison` |
 | `conversion` | Higher rate is better | `denominatorMetric`, `excellentRatePercent`, `goodRatePercent`, `badRatePercent`, optional `minDenominator` |
 | `inverseRate` | Lower rate is better (cancellations, churn) | `denominatorMetric`, `goodRatePercent`, `badRatePercent`, optional `minDenominator` |
+| `goal` | Hit an absolute target for the queried range | `targetValue`, `excellentPercentOfGoal`, `goodPercentOfGoal`, `badPercentOfGoal`, optional `minValueForEvaluation` |
+
+`targetValue` is the goal for the **`from`–`to` window** you query — not auto-prorated
+to calendar months in v1.
 
 ### Labels and reasons
 
 **Labels:** `neutral` | `activity` | `good` | `excellent` | `bad` | `clear`
 
 **Reasons (examples):** `conversion_rate`, `comparison_growth`, `inverse_rate`,
-`below_min_volume`, `below_min_denominator`, `zero_previous`, `zero_previous_and_current`,
-`zero_denominator_with_numerator`, `no_evaluation_config`, etc.
+`goal_progress`, `zero_target`, `below_min_volume`, `below_min_denominator`,
+`zero_previous`, `zero_previous_and_current`, `zero_denominator_with_numerator`,
+`no_evaluation_config`, etc.
 
 Labels are **computed at query time from rollups** — never stored in DB.
 
@@ -143,10 +149,53 @@ Labels are **computed at query time from rollups** — never stored in DB.
 | conversion denominator below `minDenominator` | `neutral` |
 | conversion denominator `0`, numerator `> 0` | `activity` |
 | inverse rate `0%` | `clear` |
+| goal `targetValue === 0` | `neutral` |
+| goal `value === 0`, `targetValue > 0` | `bad` (when `0 <= badPercentOfGoal`) |
+| goal below `minValueForEvaluation` | `neutral` |
 | no `.evaluation()` config on metric | `neutral` |
 
 **Refactor:** Move threshold constants from frontend/backend into `.evaluation()`. UI may
 still override display strings; library owns math + edge cases.
+
+### Goal evaluation — absolute targets (`kind: "goal"`) — v0.1.25+
+
+Use when a dashboard card should compare the metric total for a date range against a
+**fixed target**, not period growth or conversion rate.
+
+**Before (app-side presence label):**
+
+```ts
+// convex/analytics.ts — no evaluation on qrScans
+qrScans: count("QR scans").from("qr.scanned").by("accommodationId", "scanType"),
+
+// UI: custom getPresenceAnalyticsLabel(value) → activity/neutral only
+```
+
+**After (goal in library):**
+
+```ts
+qrScans: count("QR scans")
+  .from("qr.scanned")
+  .by("accommodationId", "scanType")
+  .evaluation({
+    kind: "goal",
+    targetValue: 1000,
+    excellentPercentOfGoal: 100,
+    goodPercentOfGoal: 80,
+    badPercentOfGoal: 50,
+  }),
+```
+
+```ts
+// UI: dashboard.metrics.qrScans.evaluation.label from fetchDashboardMetrics
+// Optional: dashboard.metrics.qrScans.goal?.percentOfGoal
+```
+
+Pure UI helper (same rules as queries):
+
+```ts
+import { computePercentOfGoal, evaluateMetricLabel } from "@piton-/analytics-convex";
+```
 
 ---
 
@@ -196,6 +245,7 @@ const result = await analytics.fetchMetricEvaluation(ctx, {
 //   evaluation: { label: "excellent", reason: "conversion_rate" },
 //   comparison?: { current, previous, delta, deltaPercent? },
 //   conversion?: { numerator, denominator, ratePercent, denominatorMetric },
+//   goal?: { targetValue, value, percentOfGoal? },
 // }
 ```
 
@@ -505,8 +555,10 @@ Suggested `.evaluation()` mapping:
 
 | Metric | Kind | Denominator / notes |
 | ------ | ---- | ------------------- |
+| `qrScans` | `goal` | Platform scan volume target for the queried range |
+| `hospitalityViews` | `goal` | Discovery volume target |
 | `guestActivations` | `conversion` | `qrScans` |
-| `newReservations` | `comparison` | period-over-period growth |
+| `newReservations` | `comparison` or `goal` | Growth vs target depending on product choice |
 | `cancelledReservations` | `inverseRate` | `newReservations` |
 
 Suggested funnels:

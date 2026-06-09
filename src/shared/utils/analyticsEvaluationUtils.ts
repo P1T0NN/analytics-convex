@@ -6,6 +6,8 @@ import type {
 	typesMetricConversionInput,
 	typesMetricEvaluationInput,
 	typesMetricEvaluationResult,
+	typesMetricGoalEvaluationConfig,
+	typesMetricGoalInput,
 	typesMetricInverseRateEvaluationConfig,
 } from "../types/evaluation.js";
 
@@ -135,6 +137,46 @@ function evaluateInverseRateLabel(
 	return { label: "neutral", reason: "inverse_rate" };
 }
 
+function evaluateGoalLabel(
+	goal: typesMetricGoalInput,
+	config: typesMetricGoalEvaluationConfig,
+): typesMetricEvaluationResult {
+	const minValue = config.minValueForEvaluation ?? 0;
+
+	if (goal.value < minValue) {
+		return { label: "neutral", reason: "below_min_volume" };
+	}
+
+	if (goal.targetValue === 0) {
+		return { label: "neutral", reason: "zero_target" };
+	}
+
+	const percentOfGoal =
+		goal.percentOfGoal ??
+		computePercentOfGoal({
+			value: goal.value,
+			targetValue: goal.targetValue,
+		});
+
+	if (percentOfGoal === undefined) {
+		return { label: "neutral", reason: "zero_target" };
+	}
+
+	if (percentOfGoal >= config.excellentPercentOfGoal) {
+		return { label: "excellent", reason: "goal_progress" };
+	}
+
+	if (percentOfGoal >= config.goodPercentOfGoal) {
+		return { label: "good", reason: "goal_progress" };
+	}
+
+	if (percentOfGoal <= config.badPercentOfGoal) {
+		return { label: "bad", reason: "goal_progress" };
+	}
+
+	return { label: "neutral", reason: "goal_progress" };
+}
+
 /**
  * Evaluate a dashboard metric label from comparison or conversion inputs.
  *
@@ -150,7 +192,20 @@ export function evaluateMetricLabel(
 			return evaluateConversionLabel(input.conversion, input.config);
 		case "inverseRate":
 			return evaluateInverseRateLabel(input.conversion, input.config);
+		case "goal":
+			return evaluateGoalLabel(input.goal, input.config);
 	}
+}
+
+export function computePercentOfGoal(args: {
+	value: number;
+	targetValue: number;
+}) {
+	if (args.targetValue === 0) {
+		return undefined;
+	}
+
+	return (args.value / args.targetValue) * 100;
 }
 
 export function computeConversionRatePercent(args: {

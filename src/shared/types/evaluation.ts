@@ -14,7 +14,9 @@ export type typesMetricEvaluationReason =
 	| "zero_inverse_rate"
 	| "comparison_growth"
 	| "conversion_rate"
-	| "inverse_rate";
+	| "inverse_rate"
+	| "goal_progress"
+	| "zero_target";
 
 export type typesMetricComparisonEvaluationConfig = {
 	kind: "comparison";
@@ -41,10 +43,20 @@ export type typesMetricInverseRateEvaluationConfig = {
 	minDenominator?: number;
 };
 
+export type typesMetricGoalEvaluationConfig = {
+	kind: "goal";
+	targetValue: number;
+	excellentPercentOfGoal: number;
+	goodPercentOfGoal: number;
+	badPercentOfGoal: number;
+	minValueForEvaluation?: number;
+};
+
 export type typesMetricEvaluationConfig =
 	| typesMetricComparisonEvaluationConfig
 	| typesMetricConversionEvaluationConfig
-	| typesMetricInverseRateEvaluationConfig;
+	| typesMetricInverseRateEvaluationConfig
+	| typesMetricGoalEvaluationConfig;
 
 export type typesMetricComparisonInput = {
 	current: number;
@@ -57,6 +69,12 @@ export type typesMetricConversionInput = {
 	numerator: number;
 	denominator: number;
 	ratePercent?: number;
+};
+
+export type typesMetricGoalInput = {
+	value: number;
+	targetValue: number;
+	percentOfGoal?: number;
 };
 
 export type typesMetricEvaluationResult = {
@@ -79,4 +97,9 @@ export type typesMetricEvaluationInput =
 			kind: "inverseRate";
 			conversion: typesMetricConversionInput;
 			config: typesMetricInverseRateEvaluationConfig;
+	  }
+	| {
+			kind: "goal";
+			goal: typesMetricGoalInput;
+			config: typesMetricGoalEvaluationConfig;
 	  };

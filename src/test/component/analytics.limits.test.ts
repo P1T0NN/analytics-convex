@@ -181,4 +181,52 @@ describe("analytics hard limits", () => {
 			}),
 		).rejects.toThrow(/forever/);
 	});
+
+	it("rejects invalid goal evaluation configs", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+
+		await expect(
+			t.mutation(api.lib.writeConfiguration, {
+				events: [{ name: "qr.scanned", label: "QR scanned" }],
+				metrics: [
+					{
+						name: "qrScans",
+						label: "QR scans",
+						unit: "count",
+						eventNames: ["qr.scanned"],
+						aggregation: "count",
+						evaluation: {
+							kind: "goal",
+							targetValue: 0,
+							excellentPercentOfGoal: 100,
+							goodPercentOfGoal: 75,
+							badPercentOfGoal: 50,
+						},
+					},
+				],
+			}),
+		).rejects.toThrow(/targetValue must be > 0/);
+
+		await expect(
+			t.mutation(api.lib.writeConfiguration, {
+				events: [{ name: "qr.scanned", label: "QR scanned" }],
+				metrics: [
+					{
+						name: "qrScans",
+						label: "QR scans",
+						unit: "count",
+						eventNames: ["qr.scanned"],
+						aggregation: "count",
+						evaluation: {
+							kind: "goal",
+							targetValue: 500,
+							excellentPercentOfGoal: 50,
+							goodPercentOfGoal: 75,
+							badPercentOfGoal: 40,
+						},
+					},
+				],
+			}),
+		).rejects.toThrow(/excellentPercentOfGoal must be >= goodPercentOfGoal/);
+	});
 });

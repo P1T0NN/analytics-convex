@@ -49,6 +49,12 @@ export type typesMetricEvaluationConversion = {
 	denominatorMetric?: string;
 };
 
+export type typesMetricEvaluationGoal = {
+	targetValue: number;
+	value: number;
+	percentOfGoal?: number;
+};
+
 export type typesMetricEvaluationResponse = {
 	metric: string;
 	label: string;
@@ -59,6 +65,7 @@ export type typesMetricEvaluationResponse = {
 	evaluation: typesMetricEvaluationResult;
 	comparison?: typesMetricComparisonInput;
 	conversion?: typesMetricEvaluationConversion;
+	goal?: typesMetricEvaluationGoal;
 };
 
 export type typesDashboardMetricConversion = {
@@ -68,6 +75,12 @@ export type typesDashboardMetricConversion = {
 	denominatorMetric: string;
 };
 
+export type typesDashboardMetricGoal = {
+	targetValue: number;
+	value: number;
+	percentOfGoal?: number;
+};
+
 export type typesDashboardMetricItem = {
 	value: number;
 	label: string;
@@ -75,6 +88,7 @@ export type typesDashboardMetricItem = {
 	comparison?: typesMetricComparisonInput;
 	evaluation?: typesMetricEvaluationResult;
 	conversion?: typesDashboardMetricConversion;
+	goal?: typesDashboardMetricGoal;
 };
 
 export type typesDashboardMetricsResponse = {

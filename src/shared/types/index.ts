@@ -41,6 +41,8 @@ export {
 	type typesMetricEvaluationInput,
 	type typesMetricEvaluationReason,
 	type typesMetricEvaluationResult,
+	type typesMetricGoalEvaluationConfig,
+	type typesMetricGoalInput,
 	type typesMetricInverseRateEvaluationConfig,
 } from "./evaluation.js";
 
@@ -56,12 +58,14 @@ export {
 export {
 	type typesAnalyticsDateRange,
 	type typesDashboardMetricConversion,
+	type typesDashboardMetricGoal,
 	type typesDashboardMetricItem,
 	type typesDashboardMetricsResponse,
 	type typesFunnelConversionResponse,
 	type typesMetricComparisonResponse,
 	type typesMetricConversionResponse,
 	type typesMetricEvaluationConversion,
+	type typesMetricEvaluationGoal,
 	type typesMetricEvaluationResponse,
 	type typesMetricSummaryResponse,
 } from "./queries.js";
