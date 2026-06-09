@@ -1,17 +1,17 @@
 // UTILS
-import { hashString } from "./hashString.js";
+import { internalHashString } from "./hashString.js";
 
 // TYPES
 import type {
-	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
 type typesConfigurationHashInput = {
-	events: typesAnalyticsEventConfig[];
-	metrics: typesAnalyticsMetricConfig[];
+	events: typesAnalyticsEventConfigRuntime[];
+	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels: typesAnalyticsFunnelsConfig;
 	settings: typesAnalyticsSettings;
 };
@@ -38,13 +38,13 @@ function normalizeForHash(value: unknown): unknown {
 	return value;
 }
 
-export function serializeConfigurationForHash(
+export function internalSerializeConfigurationForHash(
 	input: typesConfigurationHashInput,
 ) {
 	return JSON.stringify(normalizeForHash(input));
 }
 
-export function createConfigurationHash(input: typesConfigurationHashInput) {
-	const serialized = serializeConfigurationForHash(input);
-	return `v1:${serialized.length}:${hashString(serialized).toString(36)}`;
+export function internalCreateConfigurationHash(input: typesConfigurationHashInput) {
+	const serialized = internalSerializeConfigurationForHash(input);
+	return `v1:${serialized.length}:${internalHashString(serialized).toString(36)}`;
 }

@@ -1,5 +1,5 @@
 // UTILS
-import { hashString } from "../hashString";
+import { internalHashString } from "../hashString";
 
 // TYPES
 import type {
@@ -7,9 +7,9 @@ import type {
 	typesAnalyticsMetricScope,
 	typesAnalyticsSettings,
 	typesAnalyticsTrafficMode,
-} from "../../types/types";
+} from "../../../shared/types/index.js";
 
-export function getMetricShard(
+export function internalGetMetricShard(
 	event: typesAnalyticsAggregateEventInput,
 	args: {
 		metric: string;
@@ -22,7 +22,7 @@ export function getMetricShard(
 	if (args.shardCount <= 1) return 0;
 
 	return (
-		hashString(
+		internalHashString(
 			[
 				event.eventId,
 				args.metric,
@@ -35,7 +35,7 @@ export function getMetricShard(
 	);
 }
 
-export function getShardCount(
+export function internalGetShardCount(
 	settings: typesAnalyticsSettings,
 	mode: typesAnalyticsTrafficMode,
 ) {

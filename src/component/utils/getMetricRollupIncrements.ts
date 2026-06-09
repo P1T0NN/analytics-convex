@@ -1,19 +1,19 @@
 // CONSTANTS
-import { TOTAL_DIMENSION } from "../constants";
+import { TOTAL_DIMENSION } from "../../shared/constants.js";
 
 // UTILS
-import { getMetricDelta, getTrafficMode } from "./shared/metricUtils";
-import { getScopesForEvent } from "./shared/scopeUtils";
-import { getShardCount, getMetricShard } from "./shared/shardUtils";
-import { startOfUtcDay } from "./common/dateUtils";
+import { internalGetMetricDelta, internalGetTrafficMode } from "./shared/metricUtils";
+import { internalGetScopesForEvent } from "./shared/scopeUtils";
+import { internalGetShardCount, internalGetMetricShard } from "./shared/shardUtils";
+import { internalStartOfUtcDay } from "./common/dateUtils";
 
 // TYPES
 import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsMetricScope,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 export type typesMetricRollupIncrement = {
 	metric: string;
@@ -25,20 +25,20 @@ export type typesMetricRollupIncrement = {
 	delta: number;
 };
 
-export function getMetricRollupIncrements(
+export function internalGetMetricRollupIncrements(
 	config: typesAnalyticsConfigState,
 	event: typesAnalyticsAggregateEventInput,
-	metric: typesAnalyticsMetricConfig,
+	metric: typesAnalyticsMetricConfigRuntime,
 	bucketStart?: number,
 	scopes?: typesAnalyticsMetricScope[],
 ): typesMetricRollupIncrement[] {
-	const delta = getMetricDelta(metric, event.properties);
+	const delta = internalGetMetricDelta(metric, event.properties);
 	if (delta === null) return [];
 
-	const bucket = bucketStart ?? startOfUtcDay(event.occurredAt);
-	const eventScopes = scopes ?? getScopesForEvent(event);
-	const trafficMode = getTrafficMode(config.settings, metric);
-	const shardCount = getShardCount(config.settings, trafficMode);
+	const bucket = bucketStart ?? internalStartOfUtcDay(event.occurredAt);
+	const eventScopes = scopes ?? internalGetScopesForEvent(event);
+	const trafficMode = internalGetTrafficMode(config.settings, metric);
+	const shardCount = internalGetShardCount(config.settings, trafficMode);
 	const increments: typesMetricRollupIncrement[] = [];
 
 	for (const scope of eventScopes) {
@@ -48,7 +48,7 @@ export function getMetricRollupIncrements(
 			scope,
 			dimensionKey: TOTAL_DIMENSION,
 			dimensionValue: TOTAL_DIMENSION,
-			shard: getMetricShard(event, {
+			shard: internalGetMetricShard(event, {
 				metric: metric.name,
 				scope,
 				dimensionKey: TOTAL_DIMENSION,
@@ -76,7 +76,7 @@ export function getMetricRollupIncrements(
 				scope,
 				dimensionKey,
 				dimensionValue,
-				shard: getMetricShard(event, {
+				shard: internalGetMetricShard(event, {
 					metric: metric.name,
 					scope,
 					dimensionKey,

@@ -3,11 +3,11 @@ import type { ComponentApi } from "../../../component/_generated/component";
 
 // HELPERS
 import { createAnalyticsTracker } from "../../../client/helpers/createAnalyticsTracker";
-import { createAnalyticsConfiguration } from "../../../client/utils/createAnalyticsConfiguration";
+import { internalCreateAnalyticsConfiguration } from "../../../client/utils/createAnalyticsConfiguration";
 import type {
 	typesTypedTrackBatchInputForEvents,
 	typesTypedTrackEventInputForEvents,
-} from "../../../client/types/types";
+} from "../../../shared/types/index.js";
 
 describe("createAnalyticsTracker", () => {
 	it("infers event-specific property types", () => {
@@ -28,7 +28,7 @@ describe("createAnalyticsTracker", () => {
 		const { track } = createAnalyticsTracker(
 			component,
 			events,
-			createAnalyticsConfiguration(events, []),
+			internalCreateAnalyticsConfiguration(events, []),
 		);
 
 		type ProductAddedInput = Parameters<typeof track<"product.added">>[2];

@@ -2,18 +2,18 @@
 
 import { describe, expect, it } from "vitest";
 import { api } from "../../component/_generated/api";
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 import {
-	createAnalyticsComponentTest,
-	pageViewsConfiguration,
-	runtimeConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalPageViewsConfiguration,
+	internalRuntimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
 describe("analytics hard limits", () => {
 	it("rejects metric configs with too many dimensions", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const dimensions = Array.from(
 			{ length: ANALYTICS_LIMITS.maxDimensionsPerMetric + 1 },
 			(_, index) => `dimension${index}`,
@@ -46,9 +46,9 @@ describe("analytics hard limits", () => {
 	});
 
 	it("allows mixed-event count metrics when a dimension exists on one event", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 
-		const config = runtimeConfiguration({
+		const config = internalRuntimeConfiguration({
 			events: [
 				{
 					name: "trial.started",
@@ -77,7 +77,7 @@ describe("analytics hard limits", () => {
 	});
 
 	it("rejects unsafe runtime settings", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 
 		await expect(
 			t.mutation(api.lib.writeConfiguration, {
@@ -99,8 +99,8 @@ describe("analytics hard limits", () => {
 	});
 
 	it("rejects batches larger than the hard batch limit", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 
 		const events = Array.from(
 			{ length: ANALYTICS_LIMITS.maxTrackBatchSize + 1 },
@@ -116,9 +116,9 @@ describe("analytics hard limits", () => {
 	});
 
 	it("rejects oversized property payloads", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 
-		const config = runtimeConfiguration({
+		const config = internalRuntimeConfiguration({
 			events: [
 				{
 					name: "note.created",
@@ -149,8 +149,8 @@ describe("analytics hard limits", () => {
 	});
 
 	it("rejects invalid unique event configuration", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 
 		await expect(
 			t.mutation(api.lib.writeTrack, {

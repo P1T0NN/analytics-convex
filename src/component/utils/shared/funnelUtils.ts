@@ -1,19 +1,19 @@
 // UTILS
-import { badRequest } from "../../errors/errors";
+import { internalBadRequest } from "../../errors/errors";
 
 // TYPES
 import type {
 	typesAnalyticsConfigState,
 	typesAnalyticsFunnelConfig,
-} from "../../types/types.js";
+} from "../../../shared/types/index.js";
 
-export function getFunnelConfigOrThrow(
+export function internalGetFunnelConfigOrThrow(
 	config: typesAnalyticsConfigState,
 	funnel: string,
 ): typesAnalyticsFunnelConfig {
 	const funnelConfig = config.funnelByName.get(funnel);
 	if (!funnelConfig) {
-		badRequest(`Unknown analytics funnel "${funnel}".`);
+		internalBadRequest(`Unknown analytics funnel "${funnel}".`);
 	}
 
 	return funnelConfig;

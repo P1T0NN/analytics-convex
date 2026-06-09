@@ -3,11 +3,11 @@ import type { GenericDataModel, GenericMutationCtx } from "convex/server";
 import type { ComponentApi } from "../../component/_generated/component.js";
 
 // UTILS
-import { serializeEvents } from "../utils/serializeEvents";
-import { serializeMetrics } from "../utils/serializeMetrics";
+import { internalSerializeEvents } from "../utils/serializeEvents";
+import { internalSerializeMetrics } from "../utils/serializeMetrics";
 
 // TYPES
-import type { typesCreateAnalyticsApiOptions } from "../types/types";
+import type { typesCreateAnalyticsApiOptions } from "../../shared/types/index.js";
 
 /**
  * Legacy validation-only helper.
@@ -30,8 +30,8 @@ export async function configureAnalytics(
 	>,
 ) {
 	await ctx.runMutation(component.lib.writeConfiguration, {
-		events: serializeEvents(options.events),
-		metrics: serializeMetrics(options.metrics),
+		events: internalSerializeEvents(options.events),
+		metrics: internalSerializeMetrics(options.metrics),
 		...(options.settings ? { settings: options.settings } : {}),
 	});
 }

@@ -3,10 +3,10 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
 // CONFIG
-import { defaultSettings } from "../analyticsConfig";
+import { internalDefaultSettings } from "../analyticsConfig";
 
 // UTILS
-import { validateConfiguration } from "../validations/validations";
+import { internalValidateConfiguration } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -31,12 +31,12 @@ export const writeConfiguration = mutation({
 	},
 	returns: v.null(),
 	handler: async (_ctx, args) => {
-		validateConfiguration({
+		internalValidateConfiguration({
 			events: args.events,
 			metrics: args.metrics,
 			funnels: args.funnels,
 			settings: {
-				...defaultSettings(),
+				...internalDefaultSettings(),
 				...(args.settings ?? {}),
 			},
 		});

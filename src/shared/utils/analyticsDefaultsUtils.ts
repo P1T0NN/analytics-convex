@@ -1,4 +1,4 @@
-export function defaultAnalyticsSettings() {
+export function internalDefaultAnalyticsSettings() {
 	return {
 		trafficMode: "mediumVolume" as const,
 		mediumVolumeShardCount: 8,

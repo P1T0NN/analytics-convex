@@ -3,16 +3,16 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { getMetricTotalForRange } from "../helpers/rollupReads";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
 
 // UTILS
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
-import { assertDateRange } from "../validations/validations";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -53,12 +53,12 @@ export const fetchSummary = query({
 		range: rangeValidator,
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		assertDateRange(args, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange(args, config.settings);
 
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		const scope = resolveScope(args.scope);
-		const value = await getMetricTotalForRange(ctx, config, {
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		const scope = internalResolveScope(args.scope);
+		const value = await internalGetMetricTotalForRange(ctx, config, {
 			metric: args.metric,
 			scope,
 			from: args.from,
@@ -72,8 +72,8 @@ export const fetchSummary = query({
 			scope,
 			value,
 			range: {
-				from: startOfUtcDay(args.from),
-				to: startOfUtcDay(args.to),
+				from: internalStartOfUtcDay(args.from),
+				to: internalStartOfUtcDay(args.to),
 			},
 		};
 	},

@@ -1,13 +1,13 @@
 // HELPERS
-import { incrementDailyMetric } from "./incrementDailyMetric";
-import { upsertMetricRollupForEvent } from "./upsertMetricRollupForEvent";
+import { internalIncrementDailyMetric } from "./incrementDailyMetric";
+import { internalUpsertMetricRollupForEvent } from "./upsertMetricRollupForEvent";
 
 // UTILS
-import { startOfUtcDay } from "../utils/common/dateUtils";
-import { shouldAggregateMetric } from "../utils/shared/metricUtils";
-import { getScopesForEvent } from "../utils/shared/scopeUtils";
-import { getRollupIncrementKey } from "../utils/getRollupIncrementKey";
-import { getMetricRollupIncrements } from "../utils/getMetricRollupIncrements";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalShouldAggregateMetric } from "../utils/shared/metricUtils";
+import { internalGetScopesForEvent } from "../utils/shared/scopeUtils";
+import { internalGetRollupIncrementKey } from "../utils/getRollupIncrementKey";
+import { internalGetMetricRollupIncrements } from "../utils/getMetricRollupIncrements";
 
 // TYPES
 import type { MutationCtx } from "../_generated/server";
@@ -15,10 +15,10 @@ import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
 	typesRollupMode,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 import type { typesMetricRollupIncrement } from "../utils/getMetricRollupIncrements";
 
-export async function aggregateEvent(
+export async function internalAggregateEvent(
 	ctx: MutationCtx,
 	config: typesAnalyticsConfigState,
 	eventOrEvents:
@@ -29,14 +29,14 @@ export async function aggregateEvent(
 	// Single event — upsert each matching metric directly
 	if (!Array.isArray(eventOrEvents)) {
 		const event = eventOrEvents;
-		const bucketStart = startOfUtcDay(event.occurredAt);
+		const bucketStart = internalStartOfUtcDay(event.occurredAt);
 		const now = Date.now();
-		const scopes = getScopesForEvent(event);
+		const scopes = internalGetScopesForEvent(event);
 
 		for (const metric of config.metrics) {
-			if (!shouldAggregateMetric(config, event, metric, mode)) continue;
+			if (!internalShouldAggregateMetric(config, event, metric, mode)) continue;
 
-			await upsertMetricRollupForEvent(
+			await internalUpsertMetricRollupForEvent(
 				ctx,
 				config,
 				event,
@@ -56,20 +56,20 @@ export async function aggregateEvent(
 	const incrementsByKey = new Map<string, typesMetricRollupIncrement>();
 
 	for (const event of events) {
-		const bucketStart = startOfUtcDay(event.occurredAt);
-		const scopes = getScopesForEvent(event);
+		const bucketStart = internalStartOfUtcDay(event.occurredAt);
+		const scopes = internalGetScopesForEvent(event);
 
 		for (const metric of config.metrics) {
-			if (!shouldAggregateMetric(config, event, metric, mode)) continue;
+			if (!internalShouldAggregateMetric(config, event, metric, mode)) continue;
 
-			for (const increment of getMetricRollupIncrements(
+			for (const increment of internalGetMetricRollupIncrements(
 				config,
 				event,
 				metric,
 				bucketStart,
 				scopes,
 			)) {
-				const key = getRollupIncrementKey(increment);
+				const key = internalGetRollupIncrementKey(increment);
 				const existing = incrementsByKey.get(key);
 
 				if (existing) {
@@ -83,7 +83,7 @@ export async function aggregateEvent(
 	}
 
 	for (const increment of incrementsByKey.values()) {
-		await incrementDailyMetric(ctx, {
+		await internalIncrementDailyMetric(ctx, {
 			...increment,
 			now,
 		});

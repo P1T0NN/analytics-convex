@@ -2,11 +2,11 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "../../component/_generated/api";
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 import {
 	DAY_MS,
-	createAnalyticsComponentTest,
-	revenueConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalRevenueConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
@@ -18,9 +18,9 @@ describe("analytics load behavior", () => {
 
 	it("handles a full high-volume batch with stable totals", async () => {
 		vi.useFakeTimers();
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const now = Date.now();
-		const config = revenueConfiguration({
+		const config = internalRevenueConfiguration({
 			highVolumeBatchSize: ANALYTICS_LIMITS.maxTrackBatchSize,
 		});
 

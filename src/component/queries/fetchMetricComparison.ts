@@ -3,16 +3,16 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { getMetricTotalForRange } from "../helpers/rollupReads";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
 
 // UTILS
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
-import { assertDateRange } from "../validations/validations";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -64,21 +64,21 @@ export const fetchMetricComparison = query({
 		const previousFrom = args.from - rangeMs;
 		const previousTo = args.from;
 
-		const config = normalizeConfig(args.config);
-		assertDateRange({ from: args.from, to: args.to }, config.settings);
-		assertDateRange({ from: previousFrom, to: previousTo }, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
+		internalAssertDateRange({ from: previousFrom, to: previousTo }, config.settings);
 
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		const scope = resolveScope(args.scope);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		const scope = internalResolveScope(args.scope);
 
 		const [current, previous] = await Promise.all([
-			getMetricTotalForRange(ctx, config, {
+			internalGetMetricTotalForRange(ctx, config, {
 				metric: args.metric,
 				scope,
 				from: args.from,
 				to: args.to,
 			}),
-			getMetricTotalForRange(ctx, config, {
+			internalGetMetricTotalForRange(ctx, config, {
 				metric: args.metric,
 				scope,
 				from: previousFrom,
@@ -100,12 +100,12 @@ export const fetchMetricComparison = query({
 			deltaPercent,
 			range: {
 				current: {
-					from: startOfUtcDay(args.from),
-					to: startOfUtcDay(args.to),
+					from: internalStartOfUtcDay(args.from),
+					to: internalStartOfUtcDay(args.to),
 				},
 				previous: {
-					from: startOfUtcDay(previousFrom),
-					to: startOfUtcDay(previousTo),
+					from: internalStartOfUtcDay(previousFrom),
+					to: internalStartOfUtcDay(previousTo),
 				},
 			},
 		};

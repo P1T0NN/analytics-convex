@@ -2,7 +2,7 @@
 import type { Crons } from "convex/server";
 
 // TYPES
-import type { typesAnalyticsRuntimeConfig } from "../types/types";
+import type { typesAnalyticsRuntimeConfig } from "../../shared/types/index.js";
 
 /**
  * Register maintenance cron jobs for analytics.

@@ -2,11 +2,11 @@
 import { ConvexError } from "convex/values";
 
 // CONSTANTS
-import { DAY_MS, TOTAL_DIMENSION } from "../constants";
+import { DAY_MS, TOTAL_DIMENSION } from "../../shared/constants.js";
 
 // UTILS
-import { getAnalyticsRanking } from "../../shared/analyticsRanking";
-import { startOfUtcDay } from "../utils/common/dateUtils";
+import { getAnalyticsRanking } from "../../shared/utils/analyticsRankingUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
 
 // TYPES
 import type {
@@ -14,12 +14,12 @@ import type {
 	typesAnalyticsScope,
 	typesAnalyticsScopeType,
 	typesAnalyticsSettings,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 const DEFAULT_TOTAL_DAYS = 30;
 const DEFAULT_MAX_TOTAL_ROWS = 20_000;
 
-export async function collectDailyMetricRows(
+export async function internalCollectDailyMetricRows(
 	ctx: any,
 	args: {
 		metric: string;
@@ -39,8 +39,8 @@ export async function collectDailyMetricRows(
 				.eq("scopeId", args.scope.id)
 				.eq("granularity", "day")
 				.eq("dimensionKey", args.dimensionKey)
-				.gte("bucketStart", startOfUtcDay(args.from))
-				.lte("bucketStart", startOfUtcDay(args.to)),
+				.gte("bucketStart", internalStartOfUtcDay(args.from))
+				.lte("bucketStart", internalStartOfUtcDay(args.to)),
 		)
 		.take(args.settings.maxRollupRowsPerQuery + 1);
 
@@ -56,7 +56,7 @@ export async function collectDailyMetricRows(
 	return rows;
 }
 
-export async function getMetricTotalForRange(
+export async function internalGetMetricTotalForRange(
 	ctx: any,
 	config: typesAnalyticsConfigState,
 	args: {
@@ -67,7 +67,7 @@ export async function getMetricTotalForRange(
 		dimensionKey?: string;
 	},
 ) {
-	const rows = await collectDailyMetricRows(ctx, {
+	const rows = await internalCollectDailyMetricRows(ctx, {
 		metric: args.metric,
 		scope: args.scope,
 		dimensionKey: args.dimensionKey ?? TOTAL_DIMENSION,
@@ -85,7 +85,7 @@ export async function getMetricTotalForRange(
  * Get aggregated totals by dimension value from the component database.
  * App code should use analytics.fetchMetricTotalsByDimension(ctx, ...).
  */
-export async function getAnalyticsMetricTotalsByDimension(
+export async function internalGetAnalyticsMetricTotalsByDimension(
 	ctx: any,
 	args: {
 		metric: string;
@@ -112,7 +112,7 @@ export async function getAnalyticsMetricTotalsByDimension(
 		});
 	}
 
-	const todayStart = startOfUtcDay(Date.now());
+	const todayStart = internalStartOfUtcDay(Date.now());
 	const from = todayStart - DAY_MS * (days - 1);
 
 	const rows = await ctx.db
@@ -156,7 +156,7 @@ export async function getAnalyticsMetricTotalsByDimension(
  * Get the single highest-value dimension entry from the component database.
  * App code should use analytics.fetchTopDimensionValue(ctx, ...).
  */
-export async function getAnalyticsTopDimensionValue(
+export async function internalGetAnalyticsTopDimensionValue(
 	ctx: any,
 	args: {
 		metric: string;
@@ -166,7 +166,7 @@ export async function getAnalyticsTopDimensionValue(
 		days?: number;
 	},
 ): Promise<string | null> {
-	const totals = await getAnalyticsMetricTotalsByDimension(ctx, args);
+	const totals = await internalGetAnalyticsMetricTotalsByDimension(ctx, args);
 
 	const [top] = getAnalyticsRanking({
 		items: [...totals.entries()],

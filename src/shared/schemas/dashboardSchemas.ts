@@ -1,10 +1,11 @@
 // LIBRARIES
 import { v } from "convex/values";
 
+// SCHEMAS
 import {
 	metricComparisonInputValidator,
 	metricEvaluationResultValidator,
-} from "./analyticsEvaluationSchemas.js";
+} from "./evaluationSchemas.js";
 
 export const dashboardMetricItemValidator = v.object({
 	value: v.number(),

@@ -3,22 +3,22 @@ import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { aggregateEvent } from "./aggregateEvent";
-import { claimUniqueEvent } from "./claimUniqueEvent";
+import { internalAggregateEvent } from "./aggregateEvent";
+import { internalClaimUniqueEvent } from "./claimUniqueEvent";
 import {
-	buildAggregateInput,
-	buildAnalyticsEventInsert,
+	internalBuildAggregateInput,
+	internalBuildAnalyticsEventInsert,
 } from "../utils/analyticsEventPayloads";
 
 // UTILS
 import {
-	hasHighVolumeMetrics,
-	getHighVolumeEventNames,
+	internalHasHighVolumeMetrics,
+	internalGetHighVolumeEventNames,
 } from "../utils/shared/metricUtils";
-import { validateTrackBatchLimits } from "../validations/eventInputLimits";
+import { internalValidateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
@@ -35,7 +35,7 @@ import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
 	typesHighVolumeStatus,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 async function _writeSingle(
 	ctx: MutationCtx,
@@ -67,7 +67,7 @@ async function _writeSingle(
 		};
 	}
 
-	const uniqueClaim = await claimUniqueEvent(ctx, args);
+	const uniqueClaim = await internalClaimUniqueEvent(ctx, args);
 	if (!uniqueClaim.claimed) {
 		return {
 			duplicate: true,
@@ -76,7 +76,7 @@ async function _writeSingle(
 		};
 	}
 
-	const highVolumeStatus: typesHighVolumeStatus = hasHighVolumeMetrics(
+	const highVolumeStatus: typesHighVolumeStatus = internalHasHighVolumeMetrics(
 		config,
 		name,
 	)
@@ -85,13 +85,13 @@ async function _writeSingle(
 
 	const eventId = await ctx.db.insert(
 		"analyticsEvents",
-		buildAnalyticsEventInsert(args, highVolumeStatus),
+		internalBuildAnalyticsEventInsert(args, highVolumeStatus),
 	);
 
-	await aggregateEvent(
+	await internalAggregateEvent(
 		ctx,
 		config,
-		buildAggregateInput(eventId, args),
+		internalBuildAggregateInput(eventId, args),
 		"realtime",
 	);
 
@@ -112,9 +112,9 @@ async function _writeBatch(
 	dedupedCount: number;
 	pendingHighVolume: number;
 }> {
-	validateTrackBatchLimits(events.length);
+	internalValidateTrackBatchLimits(events.length);
 
-	const highVolumeEventNames = getHighVolumeEventNames(config);
+	const highVolumeEventNames = internalGetHighVolumeEventNames(config);
 	const seenIdempotencyKeys = new Set<string>();
 	const aggregateInputs: typesAnalyticsAggregateEventInput[] = [];
 
@@ -141,7 +141,7 @@ async function _writeBatch(
 			continue;
 		}
 
-		const uniqueClaim = await claimUniqueEvent(ctx, event);
+		const uniqueClaim = await internalClaimUniqueEvent(ctx, event);
 		if (!uniqueClaim.claimed) {
 			duplicates += 1;
 			dedupedCount += 1;
@@ -160,13 +160,13 @@ async function _writeBatch(
 
 		const eventId = await ctx.db.insert(
 			"analyticsEvents",
-			buildAnalyticsEventInsert(event, highVolumeStatus),
+			internalBuildAnalyticsEventInsert(event, highVolumeStatus),
 		);
 
-		aggregateInputs.push(buildAggregateInput(eventId, event));
+		aggregateInputs.push(internalBuildAggregateInput(eventId, event));
 	}
 
-	await aggregateEvent(ctx, config, aggregateInputs, "realtime");
+	await internalAggregateEvent(ctx, config, aggregateInputs, "realtime");
 
 	return {
 		inserted: aggregateInputs.length,
@@ -184,7 +184,7 @@ async function _writeBatch(
  *
  * @internal
  */
-export const writeAnalyticsEvent = internalMutation({
+export const internalWriteAnalyticsEvent = internalMutation({
 	args: {
 		config: analyticsRuntimeConfigValidator,
 		...preparedTrackEventInputFields,
@@ -211,7 +211,7 @@ export const writeAnalyticsEvent = internalMutation({
 		pendingHighVolume: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
+		const config = internalNormalizeConfig(args.config);
 
 		if (args.events) {
 			return _writeBatch(ctx, config, args.events);
@@ -219,7 +219,7 @@ export const writeAnalyticsEvent = internalMutation({
 
 		if (!args.name) {
 			throw new Error(
-				'writeAnalyticsEvent requires either "name" or "events".',
+				'internalWriteAnalyticsEvent requires either "name" or "events".',
 			);
 		}
 

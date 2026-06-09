@@ -1,9 +1,9 @@
 // DEFAULTS
-import { defaultAnalyticsSettings } from "../../shared/analyticsDefaults";
+import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDefaultsUtils";
 
 // UTILS
-import { serializeEvents } from "./serializeEvents";
-import { serializeMetrics } from "./serializeMetrics";
+import { internalSerializeEvents } from "./serializeEvents";
+import { internalSerializeMetrics } from "./serializeMetrics";
 
 // TYPES
 import type {
@@ -11,10 +11,10 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../types/types";
-import { serializeFunnels } from "./serializeFunnels";
+} from "../../shared/types/index.js";
+import { internalSerializeFunnels } from "./serializeFunnels";
 
-export function createAnalyticsConfiguration<
+export function internalCreateAnalyticsConfiguration<
 	const Events extends readonly typesAnalyticsEventConfig[],
 	const Metrics extends readonly typesAnalyticsMetricConfig<
 		string,
@@ -26,14 +26,14 @@ export function createAnalyticsConfiguration<
 	settings?: Partial<typesAnalyticsSettings>,
 	funnels?: typesAnalyticsFunnelsConfig,
 ) {
-	const serializedFunnels = serializeFunnels(funnels);
+	const serializedFunnels = internalSerializeFunnels(funnels);
 
 	return {
-		events: serializeEvents(events),
-		metrics: serializeMetrics(metrics),
+		events: internalSerializeEvents(events),
+		metrics: internalSerializeMetrics(metrics),
 		...(serializedFunnels ? { funnels: serializedFunnels } : {}),
 		settings: {
-			...defaultAnalyticsSettings(),
+			...internalDefaultAnalyticsSettings(),
 			...(settings ?? {}),
 		},
 	};

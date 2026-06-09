@@ -1,42 +1,42 @@
 // UTILS
-import { buildIdempotencyKey } from "../utils/buildIdempotencyKey.js";
+import { internalBuildIdempotencyKey } from "../utils/buildIdempotencyKey.js";
 import {
-	sanitizeProperties,
-	validateEventInput,
+	internalSanitizeProperties,
+	internalValidateEventInput,
 } from "../validations/validations.js";
-import { validateTrackEventLimits } from "../validations/eventInputLimits.js";
-import { badRequest } from "../errors/errors.js";
+import { internalValidateTrackEventLimits } from "../validations/eventInputLimits.js";
+import { internalBadRequest } from "../errors/errors.js";
 
 // TYPES
 import type {
 	typesAnalyticsConfigState,
 	typesPreparedTrackEventInput,
 	typesTrackEventInput,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
-export function prepareTrackEvent(
+export function internalPrepareTrackEvent(
 	config: typesAnalyticsConfigState,
 	input: typesTrackEventInput,
 ): typesPreparedTrackEventInput {
 	const occurredAt = input.occurredAt ?? Date.now();
 	const source = input.source ?? { type: "server" as const };
-	const properties = sanitizeProperties(input.properties);
+	const properties = internalSanitizeProperties(input.properties);
 
-	validateTrackEventLimits({
+	internalValidateTrackEventLimits({
 		...input,
 		occurredAt,
 		properties,
 		source,
 	});
 
-	const errors = validateEventInput(config, input.name, properties);
+	const errors = internalValidateEventInput(config, input.name, properties);
 	if (errors.length > 0) {
-		badRequest(
+		internalBadRequest(
 			`[analytics] invalid event "${input.name}": ${errors.join(" ")}`,
 		);
 	}
 
-	const idempotencyKey = buildIdempotencyKey({
+	const idempotencyKey = internalBuildIdempotencyKey({
 		name: input.name,
 		occurredAt,
 		...(input.actorId ? { actorId: input.actorId } : {}),

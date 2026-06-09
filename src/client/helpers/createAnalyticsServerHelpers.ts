@@ -3,7 +3,7 @@ import type { GenericDataModel, GenericMutationCtx } from "convex/server";
 import type { ComponentApi } from "../../component/_generated/component";
 
 // UTILS
-import { createAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
+import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // TYPES
 import type {
@@ -13,7 +13,7 @@ import type {
 	typesAnalyticsFunnelsConfig,
 	typesTrackEventInput,
 	typesTrackEventsInput,
-} from "../types/types";
+} from "../../shared/types/index.js";
 import type {
 	typesBreakdownArgs,
 	typesDashboardMetricsArgs,
@@ -26,7 +26,7 @@ import type {
 	typesQueryCtx,
 	typesTimeSeriesArgs,
 	typesTopDimensionValueArgs,
-} from "../types/analyticsReadTypes";
+} from "../../shared/types/queryArgs.js";
 
 type typesMutationCtx = Pick<
 	GenericMutationCtx<GenericDataModel>,
@@ -39,7 +39,7 @@ type typesWriteTrackInput =
 			events: typesTrackEventsInput;
 	  };
 
-export function createAnalyticsServerHelpers<
+export function internalCreateAnalyticsServerHelpers<
 	const Metrics extends readonly typesAnalyticsMetricConfig[],
 >(
 	component: ComponentApi,
@@ -48,7 +48,7 @@ export function createAnalyticsServerHelpers<
 	settings?: Partial<typesAnalyticsSettings>,
 	funnels?: typesAnalyticsFunnelsConfig,
 ) {
-	const config = createAnalyticsConfiguration(
+	const config = internalCreateAnalyticsConfiguration(
 		events,
 		metrics,
 		settings,

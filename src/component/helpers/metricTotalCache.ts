@@ -1,12 +1,12 @@
 // HELPERS
-import { getMetricTotalForRange } from "./rollupReads";
+import { internalGetMetricTotalForRange } from "./rollupReads";
 
 // TYPES
 import type { QueryCtx } from "../_generated/server";
 import type {
 	typesAnalyticsConfigState,
 	typesAnalyticsScope,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 export type typesMetricTotalRequest = {
 	metric: string;
@@ -14,14 +14,14 @@ export type typesMetricTotalRequest = {
 	to: number;
 };
 
-export function metricTotalCacheKey(
+export function internalMetricTotalCacheKey(
 	scope: typesAnalyticsScope,
 	request: typesMetricTotalRequest,
 ) {
 	return `${request.metric}:${request.from}:${request.to}:${scope.type}:${scope.id}`;
 }
 
-export async function fetchMetricTotalsBatch(
+export async function internalFetchMetricTotalsBatch(
 	ctx: QueryCtx,
 	config: typesAnalyticsConfigState,
 	scope: typesAnalyticsScope,
@@ -31,7 +31,7 @@ export async function fetchMetricTotalsBatch(
 	const unique = new Map<string, typesMetricTotalRequest>();
 
 	for (const request of requests) {
-		const key = metricTotalCacheKey(scope, request);
+		const key = internalMetricTotalCacheKey(scope, request);
 		if (!unique.has(key)) {
 			unique.set(key, request);
 		}
@@ -39,8 +39,8 @@ export async function fetchMetricTotalsBatch(
 
 	await Promise.all(
 		[...unique.values()].map(async (request) => {
-			const key = metricTotalCacheKey(scope, request);
-			const value = await getMetricTotalForRange(ctx, config, {
+			const key = internalMetricTotalCacheKey(scope, request);
+			const value = await internalGetMetricTotalForRange(ctx, config, {
 				metric: request.metric,
 				scope,
 				from: request.from,
@@ -53,10 +53,10 @@ export async function fetchMetricTotalsBatch(
 	return cache;
 }
 
-export function readMetricTotalFromCache(
+export function internalReadMetricTotalFromCache(
 	cache: Map<string, number>,
 	scope: typesAnalyticsScope,
 	request: typesMetricTotalRequest,
 ) {
-	return cache.get(metricTotalCacheKey(scope, request)) ?? 0;
+	return cache.get(internalMetricTotalCacheKey(scope, request)) ?? 0;
 }

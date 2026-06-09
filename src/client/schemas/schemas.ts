@@ -8,4 +8,4 @@ export {
 	trackEventInputValidator,
 	uniqueEventValidator,
 	uniqueScopeValidator,
-} from "../../shared/analyticsSchemas";
+} from "../../shared/schemas/analyticsSchemas";

@@ -1,16 +1,10 @@
-export const ANALYTICS_SCOPE_SEPARATOR = ":";
-export const ANALYTICS_RESOURCE_SCOPE_SEPARATOR = ANALYTICS_SCOPE_SEPARATOR;
+// TYPES
+import type {
+	typesAnalyticsResourceScope,
+	typesAnalyticsResourceScopeInput,
+} from "../types/scopes.js";
 
-export type typesAnalyticsResourceScope = {
-	scopeType: "resource";
-	scopeId: string;
-};
-
-export type typesAnalyticsResourceScopeInput = {
-	type: "resource";
-	resourceType: string;
-	id: string;
-};
+import { ANALYTICS_SCOPE_SEPARATOR } from "../constants.js";
 
 export function createAnalyticsScopeId(namespace: string, id: string) {
 	return `${namespace}${ANALYTICS_SCOPE_SEPARATOR}${id}`;

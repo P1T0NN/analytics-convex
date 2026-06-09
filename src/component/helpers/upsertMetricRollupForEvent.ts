@@ -1,37 +1,37 @@
 // HELPERS
-import { incrementDailyMetric } from "./incrementDailyMetric";
+import { internalIncrementDailyMetric } from "./incrementDailyMetric";
 
 // UTILS
-import { getMetricRollupIncrements } from "../utils/getMetricRollupIncrements";
+import { internalGetMetricRollupIncrements } from "../utils/getMetricRollupIncrements";
 
 // TYPES
 import type { MutationCtx } from "../_generated/server.js";
 import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsMetricScope,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
-export async function upsertMetricRollupForEvent(
+export async function internalUpsertMetricRollupForEvent(
 	ctx: MutationCtx,
 	config: typesAnalyticsConfigState,
 	event: typesAnalyticsAggregateEventInput,
-	metric: typesAnalyticsMetricConfig,
+	metric: typesAnalyticsMetricConfigRuntime,
 	bucketStart?: number,
 	scopes?: typesAnalyticsMetricScope[],
 	now?: number,
 ) {
 	const timestamp = now ?? Date.now();
 
-	for (const increment of getMetricRollupIncrements(
+	for (const increment of internalGetMetricRollupIncrements(
 		config,
 		event,
 		metric,
 		bucketStart,
 		scopes,
 	)) {
-		await incrementDailyMetric(ctx, {
+		await internalIncrementDailyMetric(ctx, {
 			...increment,
 			now: timestamp,
 		});

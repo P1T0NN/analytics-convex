@@ -3,23 +3,23 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { chartConfig, normalizeConfig } from "../analyticsConfig";
+import { internalChartConfig, internalNormalizeConfig } from "../analyticsConfig";
 
 // CONSTANTS
-import { TOTAL_DIMENSION } from "../constants";
+import { TOTAL_DIMENSION } from "../../shared/constants.js";
 
 // HELPERS
-import { collectDailyMetricRows } from "../helpers/rollupReads";
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalCollectDailyMetricRows } from "../helpers/rollupReads";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
-import { listDailyBuckets } from "../utils/listDailyBuckets";
-import { getTopSeriesKeys } from "../utils/getTopSeriesKeys";
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
+import { internalListDailyBuckets } from "../utils/listDailyBuckets";
+import { internalGetTopSeriesKeys } from "../utils/getTopSeriesKeys";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
 import {
-	assertDateRange,
-	assertAllowedDimension,
+	internalAssertDateRange,
+	internalAssertAllowedDimension,
 } from "../validations/validations";
 
 // SCHEMAS
@@ -74,19 +74,19 @@ export const fetchTimeSeries = query({
 		}),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		assertDateRange(args, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange(args, config.settings);
 
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
 
-		const scope = resolveScope(args.scope);
+		const scope = internalResolveScope(args.scope);
 		const dimensionKey = args.groupBy ?? TOTAL_DIMENSION;
 
 		if (args.groupBy) {
-			assertAllowedDimension(metricConfig, args.groupBy);
+			internalAssertAllowedDimension(metricConfig, args.groupBy);
 		}
 
-		const rows = (await collectDailyMetricRows(ctx, {
+		const rows = (await internalCollectDailyMetricRows(ctx, {
 			metric: args.metric,
 			scope,
 			dimensionKey,
@@ -102,7 +102,7 @@ export const fetchTimeSeries = query({
 		const shouldFill = args.fill ?? true;
 
 		const buckets = shouldFill
-			? listDailyBuckets(args.from, args.to)
+			? internalListDailyBuckets(args.from, args.to)
 			: [...new Set(rows.map((row: any) => row.bucketStart))].sort(
 					(a, b) => a - b,
 				);
@@ -112,7 +112,7 @@ export const fetchTimeSeries = query({
 			: [args.metric];
 
 		const seriesKeys = args.groupBy
-			? getTopSeriesKeys(rows as any, config.settings)
+			? internalGetTopSeriesKeys(rows as any, config.settings)
 			: allSeriesKeys;
 
 		const seriesKeySet = new Set(seriesKeys);
@@ -144,10 +144,10 @@ export const fetchTimeSeries = query({
 			x: "date" as const,
 			config:
 				seriesKeys.length === 1 && seriesKeys[0] === args.metric
-					? chartConfig(seriesKeys as string[], {
+					? internalChartConfig(seriesKeys as string[], {
 							[args.metric]: metricConfig.label,
 						})
-					: chartConfig(seriesKeys as string[]),
+					: internalChartConfig(seriesKeys as string[]),
 			meta: {
 				metric: args.metric,
 				label: metricConfig.label,
@@ -161,8 +161,8 @@ export const fetchTimeSeries = query({
 				),
 				xValueType: "timestamp" as const,
 				range: {
-					from: startOfUtcDay(args.from),
-					to: startOfUtcDay(args.to),
+					from: internalStartOfUtcDay(args.from),
+					to: internalStartOfUtcDay(args.to),
 				},
 			},
 		};

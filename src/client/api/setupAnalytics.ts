@@ -9,17 +9,17 @@ import { createAnalyticsApi } from "../api/createAnalyticsApi";
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
 // HELPERS
-import { createAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
+import { internalCreateAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
 
 // UTILS
-import { createAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
+import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsMetricConfig,
 	typesCreateAnalyticsApiOptionsForConfig,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 /**
  * One-stop setup for analytics — server wrappers, client exports,
@@ -50,7 +50,7 @@ export function setupAnalytics<
 	component: ComponentApi,
 	options: typesCreateAnalyticsApiOptionsForConfig<Events, Metrics>,
 ) {
-	const server = createAnalyticsServerHelpers(
+	const server = internalCreateAnalyticsServerHelpers(
 		component,
 		options.events,
 		options.metrics as any,
@@ -58,7 +58,7 @@ export function setupAnalytics<
 	);
 
 	const client = createAnalyticsApi(component, options);
-	const config = createAnalyticsConfiguration(
+	const config = internalCreateAnalyticsConfiguration(
 		options.events,
 		options.metrics,
 		options.settings,

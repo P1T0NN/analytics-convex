@@ -1,12 +1,12 @@
 // CONFIG
-import { DAY_MS } from "../constants.js";
+import { DAY_MS } from "../../shared/constants.js";
 
 // UTILS
-import { startOfUtcDay } from "./common/dateUtils.js";
+import { internalStartOfUtcDay } from "./common/dateUtils.js";
 
-export function listDailyBuckets(from: number, to: number) {
-	const start = startOfUtcDay(from);
-	const end = startOfUtcDay(to);
+export function internalListDailyBuckets(from: number, to: number) {
+	const start = internalStartOfUtcDay(from);
+	const end = internalStartOfUtcDay(to);
 	const buckets: number[] = [];
 
 	for (let bucket = start; bucket <= end; bucket += DAY_MS) {

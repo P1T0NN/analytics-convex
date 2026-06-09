@@ -1,9 +1,9 @@
 // CONSTANTS
-import { GLOBAL_SCOPE_ID } from "../../constants.js";
-import { createAnalyticsResourceScopeId } from "../../../shared/analyticsScopes.js";
+import { GLOBAL_SCOPE_ID } from "../../../shared/constants.js";
+import { createAnalyticsResourceScopeId } from "../../../shared/utils/analyticsScopesUtils.js";
 
 // UTILS
-import { badRequest } from "../../errors/errors.js";
+import { internalBadRequest } from "../../errors/errors.js";
 
 // TYPES
 import type {
@@ -11,16 +11,16 @@ import type {
 	typesAnalyticsMetricScope,
 	typesAnalyticsScope,
 	typesAnalyticsScopeInput,
-} from "../../types/types.js";
+} from "../../../shared/types/index.js";
 
-export function createResourceScopeId(
+export function internalCreateResourceScopeId(
 	resourceType: string,
 	resourceId: string,
 ) {
 	return createAnalyticsResourceScopeId(resourceType, resourceId);
 }
 
-export function getScopesForEvent(
+export function internalGetScopesForEvent(
 	event: typesAnalyticsAggregateEventInput,
 ): typesAnalyticsMetricScope[] {
 	const scopes: typesAnalyticsMetricScope[] = [
@@ -34,29 +34,29 @@ export function getScopesForEvent(
 	if (event.subject) {
 		scopes.push({
 			scopeType: "resource",
-			scopeId: createResourceScopeId(event.subject.type, event.subject.id),
+			scopeId: internalCreateResourceScopeId(event.subject.type, event.subject.id),
 		});
 	}
 
 	scopes.push(...(event.scopes ?? []));
-	return dedupeScopes(scopes);
+	return internalDedupeScopes(scopes);
 }
 
-export function getScopeKey(scope: typesAnalyticsMetricScope) {
+export function internalGetScopeKey(scope: typesAnalyticsMetricScope) {
 	return `${scope.scopeType}:${scope.scopeId}`;
 }
 
-export function dedupeScopes(scopes: typesAnalyticsMetricScope[]) {
+export function internalDedupeScopes(scopes: typesAnalyticsMetricScope[]) {
 	const deduped = new Map<string, typesAnalyticsMetricScope>();
 
 	for (const scope of scopes) {
-		deduped.set(getScopeKey(scope), scope);
+		deduped.set(internalGetScopeKey(scope), scope);
 	}
 
 	return [...deduped.values()];
 }
 
-export function resolveScope(
+export function internalResolveScope(
 	scope: typesAnalyticsScopeInput | undefined,
 ): typesAnalyticsScope {
 	if (!scope || scope.type === "global") {
@@ -65,25 +65,25 @@ export function resolveScope(
 
 	if (scope.type === "organization") {
 		if (!scope.id) {
-			badRequest("Organization analytics scope requires an id.");
+			internalBadRequest("Organization analytics scope requires an id.");
 		}
 
 		return { type: "organization", id: scope.id };
 	}
 
 	if (!scope.resourceType || !scope.id) {
-		badRequest("Resource analytics scope requires a resourceType and id.");
+		internalBadRequest("Resource analytics scope requires a resourceType and id.");
 	}
 
 	return {
 		type: "resource",
 		resourceType: scope.resourceType,
 		resourceId: scope.id,
-		id: createResourceScopeId(scope.resourceType, scope.id),
+		id: internalCreateResourceScopeId(scope.resourceType, scope.id),
 	};
 }
 
-export function toMetricScope(
+export function internalToMetricScope(
 	scope: typesAnalyticsScope,
 ): typesAnalyticsMetricScope {
 	return {

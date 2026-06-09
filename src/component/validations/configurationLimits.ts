@@ -1,33 +1,33 @@
 // LIMITS
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits.js";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 
 // VALIDATIONS
-import { assertAtMost, assertStringLength } from "./limitUtils.js";
+import { internalAssertAtMost, internalAssertStringLength } from "./limitUtils.js";
 
 // UTILS
-import { badRequest } from "../errors/errors.js";
+import { internalBadRequest } from "../errors/errors.js";
 
 // TYPES
 import type {
-	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsPropertyType,
 	typesAnalyticsFunnelsConfig,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
 function assertPropertyConfigLimits(
-	event: typesAnalyticsEventConfig,
+	event: typesAnalyticsEventConfigRuntime,
 	properties: Record<string, typesAnalyticsPropertyType>,
 ) {
 	const propertyNames = Object.keys(properties);
-	assertAtMost(
+	internalAssertAtMost(
 		propertyNames.length,
 		ANALYTICS_LIMITS.maxPropertiesPerEventConfig,
 		`event "${event.name}".properties`,
 	);
 
 	for (const propertyName of propertyNames) {
-		assertStringLength(
+		internalAssertStringLength(
 			propertyName,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`event "${event.name}" property "${propertyName}"`,
@@ -36,12 +36,12 @@ function assertPropertyConfigLimits(
 }
 
 function assertMetricPropertyReferences(
-	metric: typesAnalyticsMetricConfig,
-	eventByName: Map<string, typesAnalyticsEventConfig>,
+	metric: typesAnalyticsMetricConfigRuntime,
+	eventByName: Map<string, typesAnalyticsEventConfigRuntime>,
 ) {
 	const events = metric.eventNames
 		.map((eventName) => eventByName.get(eventName))
-		.filter((event): event is typesAnalyticsEventConfig => Boolean(event));
+		.filter((event): event is typesAnalyticsEventConfigRuntime => Boolean(event));
 
 	for (const eventName of metric.eventNames) {
 		const event = eventByName.get(eventName);
@@ -50,7 +50,7 @@ function assertMetricPropertyReferences(
 		if (metric.valueProperty) {
 			const valueType = event.properties?.[metric.valueProperty];
 			if (valueType !== "number") {
-				badRequest(
+				internalBadRequest(
 					`Metric "${metric.name}" valueProperty "${metric.valueProperty}" must be a registered number property on event "${eventName}".`,
 				);
 			}
@@ -63,24 +63,24 @@ function assertMetricPropertyReferences(
 		);
 
 		if (!isRegisteredForAnyEvent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" dimension "${dimension}" must be registered on at least one event feeding the metric.`,
 			);
 		}
 	}
 }
 
-export function validateConfigurationLimits(args: {
-	events: typesAnalyticsEventConfig[];
-	metrics: typesAnalyticsMetricConfig[];
+export function internalValidateConfigurationLimits(args: {
+	events: typesAnalyticsEventConfigRuntime[];
+	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels?: typesAnalyticsFunnelsConfig;
 }) {
-	assertAtMost(
+	internalAssertAtMost(
 		args.events.length,
 		ANALYTICS_LIMITS.maxEventsPerConfiguration,
 		"events",
 	);
-	assertAtMost(
+	internalAssertAtMost(
 		args.metrics.length,
 		ANALYTICS_LIMITS.maxMetricsPerConfiguration,
 		"metrics",
@@ -92,18 +92,18 @@ export function validateConfigurationLimits(args: {
 	validateFunnelLimits(args.funnels ?? {}, metricNames);
 
 	for (const event of args.events) {
-		assertStringLength(
+		internalAssertStringLength(
 			event.name,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`event "${event.name}".name`,
 		);
-		assertStringLength(
+		internalAssertStringLength(
 			event.label,
 			ANALYTICS_LIMITS.maxLabelLength,
 			`event "${event.name}".label`,
 		);
 		assertPropertyConfigLimits(event, event.properties ?? {});
-		assertAtMost(
+		internalAssertAtMost(
 			event.requiredProperties?.length ?? 0,
 			ANALYTICS_LIMITS.maxRequiredPropertiesPerEvent,
 			`event "${event.name}".requiredProperties`,
@@ -111,29 +111,29 @@ export function validateConfigurationLimits(args: {
 	}
 
 	for (const metric of args.metrics) {
-		assertStringLength(
+		internalAssertStringLength(
 			metric.name,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`metric "${metric.name}".name`,
 		);
-		assertStringLength(
+		internalAssertStringLength(
 			metric.label,
 			ANALYTICS_LIMITS.maxLabelLength,
 			`metric "${metric.name}".label`,
 		);
 		if (metric.description) {
-			assertStringLength(
+			internalAssertStringLength(
 				metric.description,
 				ANALYTICS_LIMITS.maxDescriptionLength,
 				`metric "${metric.name}".description`,
 			);
 		}
-		assertAtMost(
+		internalAssertAtMost(
 			metric.eventNames.length,
 			ANALYTICS_LIMITS.maxEventNamesPerMetric,
 			`metric "${metric.name}".eventNames`,
 		);
-		assertAtMost(
+		internalAssertAtMost(
 			metric.dimensions?.length ?? 0,
 			ANALYTICS_LIMITS.maxDimensionsPerMetric,
 			`metric "${metric.name}".dimensions`,
@@ -148,53 +148,53 @@ function validateFunnelLimits(
 	metricNames: Set<string>,
 ) {
 	const funnelNames = Object.keys(funnels);
-	assertAtMost(
+	internalAssertAtMost(
 		funnelNames.length,
 		ANALYTICS_LIMITS.maxFunnelsPerConfiguration,
 		"funnels",
 	);
 
 	for (const funnelName of funnelNames) {
-		assertStringLength(
+		internalAssertStringLength(
 			funnelName,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`funnel "${funnelName}".name`,
 		);
 
 		const funnel = funnels[funnelName];
-		assertStringLength(
+		internalAssertStringLength(
 			funnel.label,
 			ANALYTICS_LIMITS.maxLabelLength,
 			`funnel "${funnelName}".label`,
 		);
-		assertAtMost(
+		internalAssertAtMost(
 			funnel.steps.length,
 			ANALYTICS_LIMITS.maxFunnelSteps,
 			`funnel "${funnelName}".steps`,
 		);
 
 		if (funnel.steps.length < 2) {
-			badRequest(
+			internalBadRequest(
 				`Funnel "${funnelName}" must include at least two metric steps.`,
 			);
 		}
 
 		const stepNames = new Set<string>();
 		for (const step of funnel.steps) {
-			assertStringLength(
+			internalAssertStringLength(
 				step,
 				ANALYTICS_LIMITS.maxIdentifierLength,
 				`funnel "${funnelName}" step "${step}"`,
 			);
 
 			if (!metricNames.has(step)) {
-				badRequest(
+				internalBadRequest(
 					`Funnel "${funnelName}" step "${step}" references unknown metric "${step}".`,
 				);
 			}
 
 			if (stepNames.has(step)) {
-				badRequest(
+				internalBadRequest(
 					`Funnel "${funnelName}" step "${step}" is duplicated.`,
 				);
 			}
@@ -205,8 +205,8 @@ function validateFunnelLimits(
 }
 
 function assertMetricEvaluationReferences(
-	metric: typesAnalyticsMetricConfig,
-	metrics: typesAnalyticsMetricConfig[],
+	metric: typesAnalyticsMetricConfigRuntime,
+	metrics: typesAnalyticsMetricConfigRuntime[],
 ) {
 	const evaluation = metric.evaluation;
 	if (!evaluation) return;
@@ -218,13 +218,13 @@ function assertMetricEvaluationReferences(
 		evaluation.kind === "inverseRate"
 	) {
 		if (!metricNames.has(evaluation.denominatorMetric)) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation references unknown denominator metric "${evaluation.denominatorMetric}".`,
 			);
 		}
 
 		if (evaluation.denominatorMetric === metric.name) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation denominatorMetric must reference a different metric.`,
 			);
 		}
@@ -232,13 +232,13 @@ function assertMetricEvaluationReferences(
 
 	if (evaluation.kind === "comparison") {
 		if (evaluation.excellentGrowthPercent < evaluation.goodGrowthPercent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation excellentGrowthPercent must be >= goodGrowthPercent.`,
 			);
 		}
 
 		if (evaluation.goodGrowthPercent < evaluation.badGrowthPercent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation goodGrowthPercent must be >= badGrowthPercent.`,
 			);
 		}
@@ -246,13 +246,13 @@ function assertMetricEvaluationReferences(
 
 	if (evaluation.kind === "conversion") {
 		if (evaluation.excellentRatePercent < evaluation.goodRatePercent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation excellentRatePercent must be >= goodRatePercent.`,
 			);
 		}
 
 		if (evaluation.goodRatePercent < evaluation.badRatePercent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation goodRatePercent must be >= badRatePercent.`,
 			);
 		}
@@ -260,7 +260,7 @@ function assertMetricEvaluationReferences(
 
 	if (evaluation.kind === "inverseRate") {
 		if (evaluation.goodRatePercent > evaluation.badRatePercent) {
-			badRequest(
+			internalBadRequest(
 				`Metric "${metric.name}" evaluation goodRatePercent must be <= badRatePercent for inverseRate.`,
 			);
 		}

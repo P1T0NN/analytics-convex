@@ -4,14 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../../component/_generated/api";
 import {
 	DAY_MS,
-	createAnalyticsComponentTest,
-	pageViewsConfiguration,
-	revenueConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalPageViewsConfiguration,
+	internalRevenueConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
-type AnalyticsTest = ReturnType<typeof createAnalyticsComponentTest>;
+type AnalyticsTest = ReturnType<typeof internalCreateAnalyticsComponentTest>;
 
 async function flushScheduledAnalytics(t: AnalyticsTest) {
 	await t.finishAllScheduledFunctions(() => vi.runAllTimers());
@@ -27,8 +27,8 @@ describe("analytics unique events", () => {
 	});
 
 	it("deduplicates the same unique key across different timestamps", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 		const now = Date.now();
 
 		const first = await t.mutation(api.lib.writeTrack, {
@@ -64,8 +64,8 @@ describe("analytics unique events", () => {
 	});
 
 	it("deduplicates repeated unique keys in a batch and accepts different keys", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 		const now = Date.now();
 
 		const result = await t.mutation(api.lib.writeTrack, {
@@ -108,8 +108,8 @@ describe("analytics unique events", () => {
 	});
 
 	it("continues to count non-unique events independently", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 		const now = Date.now();
 
 		await t.mutation(api.lib.writeTrack, {
@@ -135,8 +135,8 @@ describe("analytics unique events", () => {
 	});
 
 	it("does not double-count concurrent writes with the same unique key", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 		const now = Date.now();
 
 		const results = await Promise.all([
@@ -169,9 +169,9 @@ describe("analytics unique events", () => {
 	});
 
 	it("deduplicates high-volume events before pending aggregation", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const now = Date.now();
-		const config = revenueConfiguration({
+		const config = internalRevenueConfiguration({
 			highVolumeBatchSize: 10,
 			highVolumeShardCount: 1,
 		});

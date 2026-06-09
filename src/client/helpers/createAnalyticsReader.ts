@@ -5,7 +5,7 @@ import type { ComponentApi } from "../../component/_generated/component.js";
 import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsRuntimeConfig,
-} from "../types/types";
+} from "../../shared/types/index.js";
 import type {
 	typesBreakdownArgs,
 	typesDashboardMetricsArgs,
@@ -18,7 +18,7 @@ import type {
 	typesQueryCtx,
 	typesTimeSeriesArgs,
 	typesTopDimensionValueArgs,
-} from "../types/analyticsReadTypes";
+} from "../../shared/types/queryArgs.js";
 
 /**
  * Create typed server-side read helpers from your metric config.

@@ -3,10 +3,10 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
 // CONSTANTS
-import { DAY_MS } from "../constants";
+import { DAY_MS } from "../../shared/constants.js";
 
 // HELPERS
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // SCHEMAS
 import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
@@ -36,7 +36,7 @@ export const purgeStaleAnalyticsEvents = mutation({
 		skipped: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
+		const config = internalNormalizeConfig(args.config);
 
 		if (config.settings.rawEventRetentionDays <= 0) {
 			return { deleted: 0, skipped: true };

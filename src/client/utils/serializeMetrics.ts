@@ -1,7 +1,7 @@
 // TYPES
-import type { typesAnalyticsMetricConfig } from "../types/types";
+import type { typesAnalyticsMetricConfig } from "../../shared/types/index.js";
 
-export function serializeMetrics(
+export function internalSerializeMetrics(
 	metrics: readonly typesAnalyticsMetricConfig[],
 ) {
 	return metrics.map((metric) => ({

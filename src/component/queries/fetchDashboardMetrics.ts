@@ -3,20 +3,20 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { buildDashboardMetricsForRange } from "../helpers/evaluateMetricForRange";
+import { internalBuildDashboardMetricsForRange } from "../helpers/evaluateMetricForRange";
 
 // UTILS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
-import { assertDateRange } from "../validations/validations";
-import { badRequest } from "../errors/errors";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalAssertDateRange } from "../validations/validations";
+import { internalBadRequest } from "../errors/errors";
 
 // LIMITS
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 
 // SCHEMAS
 import {
@@ -43,15 +43,15 @@ export const fetchDashboardMetrics = query({
 	},
 	returns: dashboardMetricsResponseValidator,
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		assertDateRange({ from: args.from, to: args.to }, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 
 		if (args.metrics.length === 0) {
-			badRequest("At least one metric must be requested.");
+			internalBadRequest("At least one metric must be requested.");
 		}
 
 		if (args.metrics.length > ANALYTICS_LIMITS.maxDashboardMetricsPerQuery) {
-			badRequest(
+			internalBadRequest(
 				`At most ${ANALYTICS_LIMITS.maxDashboardMetricsPerQuery} metrics can be requested per dashboard query.`,
 			);
 		}
@@ -59,14 +59,14 @@ export const fetchDashboardMetrics = query({
 		const uniqueMetrics = new Set<string>();
 		for (const metric of args.metrics) {
 			if (uniqueMetrics.has(metric)) {
-				badRequest(`Duplicate metric "${metric}" in dashboard request.`);
+				internalBadRequest(`Duplicate metric "${metric}" in dashboard request.`);
 			}
 			uniqueMetrics.add(metric);
-			getMetricConfigOrThrow(config, metric);
+			internalGetMetricConfigOrThrow(config, metric);
 		}
 
-		const scope = resolveScope(args.scope);
-		const metrics = await buildDashboardMetricsForRange(ctx, config, {
+		const scope = internalResolveScope(args.scope);
+		const metrics = await internalBuildDashboardMetricsForRange(ctx, config, {
 			metrics: args.metrics,
 			scope,
 			from: args.from,
@@ -78,8 +78,8 @@ export const fetchDashboardMetrics = query({
 		return {
 			scope,
 			range: {
-				from: startOfUtcDay(args.from),
-				to: startOfUtcDay(args.to),
+				from: internalStartOfUtcDay(args.from),
+				to: internalStartOfUtcDay(args.to),
 			},
 			metrics,
 		};

@@ -1,3 +1,25 @@
+export const ANALYTICS_SCOPE_SEPARATOR = ":";
+export const ANALYTICS_RESOURCE_SCOPE_SEPARATOR = ANALYTICS_SCOPE_SEPARATOR;
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+export const GLOBAL_SCOPE_ID = "__global";
+export const TOTAL_DIMENSION = "__total";
+
+export const ANALYTICS_TRAFFIC_MODE = {
+	LOW_VOLUME: "lowVolume",
+	MEDIUM_VOLUME: "mediumVolume",
+	HIGH_VOLUME: "highVolume",
+} as const;
+
+export const ANALYTICS_METRIC_LABELS = {
+	neutral: "Neutral",
+	activity: "Activity",
+	good: "Good",
+	excellent: "Excellent",
+	bad: "Bad",
+	clear: "Clear",
+} as const;
+
 export const ANALYTICS_LIMITS = {
 	maxEventsPerConfiguration: 200,
 	maxMetricsPerConfiguration: 200,

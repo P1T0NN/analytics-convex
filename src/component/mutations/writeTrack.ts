@@ -4,14 +4,14 @@ import { mutation } from "../_generated/server";
 import { internal } from "../_generated/api";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { claimUniqueEvent, withoutUniqueClaim } from "../helpers/claimUniqueEvent";
-import { prepareTrackEvent } from "../helpers/prepareTrackEvent";
+import { internalClaimUniqueEvent, internalWithoutUniqueClaim } from "../helpers/claimUniqueEvent";
+import { internalPrepareTrackEvent } from "../helpers/prepareTrackEvent";
 
 // VALIDATIONS
-import { validateTrackBatchLimits } from "../validations/eventInputLimits";
+import { internalValidateTrackBatchLimits } from "../validations/eventInputLimits";
 
 // SCHEMAS
 import {
@@ -24,7 +24,7 @@ import {
 import type {
 	typesPreparedTrackEventInput,
 	typesTrackEventInput,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 /**
  * Validate and schedule one or more analytics events.
@@ -64,25 +64,25 @@ export const writeTrack = mutation({
 		dedupedCount: v.optional(v.number()),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
+		const config = internalNormalizeConfig(args.config);
 
 		if (args.events) {
-			validateTrackBatchLimits(args.events.length);
+			internalValidateTrackBatchLimits(args.events.length);
 
 			const events = args.events.map((input) =>
-				prepareTrackEvent(config, input),
+				internalPrepareTrackEvent(config, input),
 			);
 			const acceptedEvents: typesPreparedTrackEventInput[] = [];
 			let dedupedCount = 0;
 
 			for (const event of events) {
-				const claim = await claimUniqueEvent(ctx, event);
+				const claim = await internalClaimUniqueEvent(ctx, event);
 				if (!claim.claimed) {
 					dedupedCount += 1;
 					continue;
 				}
 
-				acceptedEvents.push(withoutUniqueClaim(event));
+				acceptedEvents.push(internalWithoutUniqueClaim(event));
 			}
 
 			if (acceptedEvents.length === 0) {
@@ -95,7 +95,7 @@ export const writeTrack = mutation({
 
 			await ctx.scheduler.runAfter(
 				0,
-				internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+				internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 				{
 					config: args.config,
 					events: acceptedEvents,
@@ -125,8 +125,8 @@ export const writeTrack = mutation({
 			unique: args.unique,
 		};
 
-		const event = prepareTrackEvent(config, input);
-		const claim = await claimUniqueEvent(ctx, event);
+		const event = internalPrepareTrackEvent(config, input);
+		const claim = await internalClaimUniqueEvent(ctx, event);
 
 		if (!claim.claimed) {
 			return {
@@ -139,10 +139,10 @@ export const writeTrack = mutation({
 
 		await ctx.scheduler.runAfter(
 			0,
-			internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+			internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 			{
 				config: args.config,
-				...withoutUniqueClaim(event),
+				...internalWithoutUniqueClaim(event),
 			},
 		);
 

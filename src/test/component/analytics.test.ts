@@ -4,18 +4,18 @@ import { describe, expect, it } from "vitest";
 import { api, internal } from "../../component/_generated/api";
 import {
 	DAY_MS,
-	createAnalyticsComponentTest,
-	pageViewsConfiguration,
-	revenueConfiguration,
-	runtimeConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalPageViewsConfiguration,
+	internalRevenueConfiguration,
+	internalRuntimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
 describe("analytics component", () => {
 	it("reads runtime configuration back", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = runtimeConfiguration({
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalRuntimeConfiguration({
 			events: [
 				{
 					name: "page.viewed",
@@ -44,15 +44,15 @@ describe("analytics component", () => {
 	});
 
 	it("returns stable hashes for unchanged runtime configuration", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 
 		const first = await t.query(api.lib.fetchConfiguration, { config });
 		const second = await t.query(api.lib.fetchConfiguration, { config });
 
 		expect(second.configHash).toBe(first.configHash);
 
-		const changedConfig = runtimeConfiguration({
+		const changedConfig = internalRuntimeConfiguration({
 			events: config.events,
 			metrics: [
 				{
@@ -69,8 +69,8 @@ describe("analytics component", () => {
 	});
 
 	it("tracks an event and queries the summary", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = runtimeConfiguration({
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalRuntimeConfiguration({
 			events: [{ name: "feature.used", label: "Feature used" }],
 			metrics: [
 				{
@@ -85,7 +85,7 @@ describe("analytics component", () => {
 
 		// Write event directly (bypass scheduler for test determinism)
 		const now = Date.now();
-		await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+		await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 			config,
 			name: "feature.used",
 			occurredAt: now,
@@ -109,10 +109,10 @@ describe("analytics component", () => {
 	});
 
 	it("queries dimension helper reads through component queries", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const now = Date.now();
 		const ownerScopeId = "hospitalityOwner:user_123";
-		const config = runtimeConfiguration({
+		const config = internalRuntimeConfiguration({
 			events: [
 				{
 					name: "reservation.created",
@@ -134,7 +134,7 @@ describe("analytics component", () => {
 
 		for (const [index, hospitalityId] of ["h1", "h1", "h2"].entries()) {
 			await t.mutation(
-				internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+				internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 				{
 					config,
 					name: "reservation.created",
@@ -171,14 +171,14 @@ describe("analytics component", () => {
 	});
 
 	it("deduplicates events with same idempotency key", async () => {
-		const t = createAnalyticsComponentTest(modules);
-		const config = pageViewsConfiguration();
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
 
 		const now = Date.now();
 		const idempotencyKey = `page.viewed:${now}:server::`;
 
 		// Write twice with same key
-		await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+		await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 			config,
 			name: "page.viewed",
 			occurredAt: now,
@@ -188,7 +188,7 @@ describe("analytics component", () => {
 		});
 
 		const second = await t.mutation(
-			internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+			internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 			{
 				config,
 				name: "page.viewed",
@@ -213,16 +213,16 @@ describe("analytics component", () => {
 	});
 
 	it("batch-aggregates high-volume events without changing totals", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const now = Date.now();
-		const config = revenueConfiguration({
+		const config = internalRevenueConfiguration({
 			highVolumeShardCount: 1,
 			highVolumeBatchSize: 10,
 		});
 
 		for (const [index, amount] of [10, 15].entries()) {
 			const result = await t.mutation(
-				internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent,
+				internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent,
 				{
 					config,
 					name: "purchase.completed",
@@ -272,10 +272,10 @@ describe("analytics component", () => {
 	});
 
 	it("purges only stale non-pending raw events", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const now = Date.now();
 		const old = now - 2 * DAY_MS;
-		const config = runtimeConfiguration({
+		const config = internalRuntimeConfiguration({
 			events: [
 				{ name: "page.viewed", label: "Page viewed" },
 				{ name: "video.played", label: "Video played" },
@@ -304,7 +304,7 @@ describe("analytics component", () => {
 			},
 		});
 
-		await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+		await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 			config,
 			name: "page.viewed",
 			occurredAt: old,
@@ -313,7 +313,7 @@ describe("analytics component", () => {
 			idempotencyKey: `page.viewed:${old}`,
 		});
 
-		await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+		await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 			config,
 			name: "video.played",
 			occurredAt: old,

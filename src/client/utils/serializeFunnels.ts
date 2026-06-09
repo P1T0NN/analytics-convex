@@ -1,7 +1,7 @@
 // TYPES
-import type { typesAnalyticsFunnelsConfig } from "../../shared/analyticsFunnels";
+import type { typesAnalyticsFunnelsConfig } from "../../shared/types/config.js";
 
-export function serializeFunnels(
+export function internalSerializeFunnels(
 	funnels?: typesAnalyticsFunnelsConfig,
 ): typesAnalyticsFunnelsConfig | undefined {
 	if (!funnels) return undefined;

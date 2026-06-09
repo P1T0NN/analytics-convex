@@ -1,5 +1,5 @@
 // TYPES
-import type { typesAnalyticsPropertyType } from "../types/types";
+import type { typesAnalyticsPropertyType } from "../../shared/types/index.js";
 
 export type typesAnalyticsPropertyDefinition<
 	Type extends typesAnalyticsPropertyType = typesAnalyticsPropertyType,

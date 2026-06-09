@@ -9,7 +9,6 @@
  */
 
 import type * as analyticsConfig from "../analyticsConfig.js";
-import type * as constants from "../constants.js";
 import type * as crons_processPendingHighVolumeAnalyticsEvents from "../crons/processPendingHighVolumeAnalyticsEvents.js";
 import type * as crons_purgeStaleAnalyticsEvents from "../crons/purgeStaleAnalyticsEvents.js";
 import type * as errors_errors from "../errors/errors.js";
@@ -17,11 +16,11 @@ import type * as helpers_aggregateEvent from "../helpers/aggregateEvent.js";
 import type * as helpers_claimUniqueEvent from "../helpers/claimUniqueEvent.js";
 import type * as helpers_evaluateMetricForRange from "../helpers/evaluateMetricForRange.js";
 import type * as helpers_incrementDailyMetric from "../helpers/incrementDailyMetric.js";
+import type * as helpers_internalWriteAnalyticsEvent from "../helpers/internalWriteAnalyticsEvent.js";
 import type * as helpers_metricTotalCache from "../helpers/metricTotalCache.js";
 import type * as helpers_prepareTrackEvent from "../helpers/prepareTrackEvent.js";
 import type * as helpers_rollupReads from "../helpers/rollupReads.js";
 import type * as helpers_upsertMetricRollupForEvent from "../helpers/upsertMetricRollupForEvent.js";
-import type * as helpers_writeAnalyticsEvent from "../helpers/writeAnalyticsEvent.js";
 import type * as http from "../http.js";
 import type * as lib from "../lib.js";
 import type * as mutations_writeConfiguration from "../mutations/writeConfiguration.js";
@@ -38,7 +37,6 @@ import type * as queries_fetchSummary from "../queries/fetchSummary.js";
 import type * as queries_fetchTimeSeries from "../queries/fetchTimeSeries.js";
 import type * as queries_fetchTopDimensionValue from "../queries/fetchTopDimensionValue.js";
 import type * as schemas_schemas from "../schemas/schemas.js";
-import type * as types_types from "../types/types.js";
 import type * as utils_analyticsEventPayloads from "../utils/analyticsEventPayloads.js";
 import type * as utils_buildIdempotencyKey from "../utils/buildIdempotencyKey.js";
 import type * as utils_common_dateUtils from "../utils/common/dateUtils.js";
@@ -69,7 +67,6 @@ import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
   analyticsConfig: typeof analyticsConfig;
-  constants: typeof constants;
   "crons/processPendingHighVolumeAnalyticsEvents": typeof crons_processPendingHighVolumeAnalyticsEvents;
   "crons/purgeStaleAnalyticsEvents": typeof crons_purgeStaleAnalyticsEvents;
   "errors/errors": typeof errors_errors;
@@ -77,11 +74,11 @@ const fullApi: ApiFromModules<{
   "helpers/claimUniqueEvent": typeof helpers_claimUniqueEvent;
   "helpers/evaluateMetricForRange": typeof helpers_evaluateMetricForRange;
   "helpers/incrementDailyMetric": typeof helpers_incrementDailyMetric;
+  "helpers/internalWriteAnalyticsEvent": typeof helpers_internalWriteAnalyticsEvent;
   "helpers/metricTotalCache": typeof helpers_metricTotalCache;
   "helpers/prepareTrackEvent": typeof helpers_prepareTrackEvent;
   "helpers/rollupReads": typeof helpers_rollupReads;
   "helpers/upsertMetricRollupForEvent": typeof helpers_upsertMetricRollupForEvent;
-  "helpers/writeAnalyticsEvent": typeof helpers_writeAnalyticsEvent;
   http: typeof http;
   lib: typeof lib;
   "mutations/writeConfiguration": typeof mutations_writeConfiguration;
@@ -98,7 +95,6 @@ const fullApi: ApiFromModules<{
   "queries/fetchTimeSeries": typeof queries_fetchTimeSeries;
   "queries/fetchTopDimensionValue": typeof queries_fetchTopDimensionValue;
   "schemas/schemas": typeof schemas_schemas;
-  "types/types": typeof types_types;
   "utils/analyticsEventPayloads": typeof utils_analyticsEventPayloads;
   "utils/buildIdempotencyKey": typeof utils_buildIdempotencyKey;
   "utils/common/dateUtils": typeof utils_common_dateUtils;

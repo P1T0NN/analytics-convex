@@ -7,7 +7,7 @@ import type {
 	typesAnalyticsRuntimeConfig,
 	typesTrackEventInput,
 	typesTrackEventsInput,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 type typesMutationCtx = Pick<
 	GenericMutationCtx<GenericDataModel>,

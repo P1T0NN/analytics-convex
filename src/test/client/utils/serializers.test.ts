@@ -2,19 +2,19 @@
 import { describe, expect, it } from "vitest";
 
 // UTILS
-import { serializeEvents } from "../../../client/utils/serializeEvents";
-import { serializeMetrics } from "../../../client/utils/serializeMetrics";
+import { internalSerializeEvents } from "../../../client/utils/serializeEvents";
+import { internalSerializeMetrics } from "../../../client/utils/serializeMetrics";
 
-describe("serializeEvents", () => {
+describe("internalSerializeEvents", () => {
 	it("serializes basic event fields", () => {
-		const result = serializeEvents([
+		const result = internalSerializeEvents([
 			{ name: "page.viewed", label: "Page viewed" },
 		]);
 		expect(result).toEqual([{ name: "page.viewed", label: "Page viewed" }]);
 	});
 
 	it("includes properties when present", () => {
-		const result = serializeEvents([
+		const result = internalSerializeEvents([
 			{
 				name: "feature.used",
 				label: "Feature used",
@@ -25,7 +25,7 @@ describe("serializeEvents", () => {
 	});
 
 	it("includes requiredProperties when present", () => {
-		const result = serializeEvents([
+		const result = internalSerializeEvents([
 			{
 				name: "page.viewed",
 				label: "Page viewed",
@@ -36,9 +36,9 @@ describe("serializeEvents", () => {
 	});
 });
 
-describe("serializeMetrics", () => {
+describe("internalSerializeMetrics", () => {
 	it("serializes basic metric fields", () => {
-		const result = serializeMetrics([
+		const result = internalSerializeMetrics([
 			{
 				name: "pageViews",
 				label: "Page views",
@@ -57,7 +57,7 @@ describe("serializeMetrics", () => {
 	});
 
 	it("includes optional fields", () => {
-		const result = serializeMetrics([
+		const result = internalSerializeMetrics([
 			{
 				name: "revenue",
 				label: "Revenue",
@@ -81,7 +81,7 @@ describe("serializeMetrics", () => {
 	});
 
 	it("omits undefined optional fields", () => {
-		const result = serializeMetrics([
+		const result = internalSerializeMetrics([
 			{
 				name: "pageViews",
 				label: "Page views",

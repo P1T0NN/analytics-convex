@@ -6,9 +6,9 @@ import type {
 	typesAnalyticsProperties,
 	typesHighVolumeStatus,
 	typesPreparedTrackEventInput,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
-export function buildAnalyticsEventInsert(
+export function internalBuildAnalyticsEventInsert(
 	event: typesPreparedTrackEventInput,
 	highVolumeStatus: typesHighVolumeStatus,
 ) {
@@ -26,7 +26,7 @@ export function buildAnalyticsEventInsert(
 	};
 }
 
-export function buildAggregateInput(
+export function internalBuildAggregateInput(
 	eventId: Id<"analyticsEvents">,
 	event: typesPreparedTrackEventInput,
 ): typesAnalyticsAggregateEventInput {
@@ -42,7 +42,7 @@ export function buildAggregateInput(
 	};
 }
 
-export function toAggregateInput(
+export function internalToAggregateInput(
 	event: Doc<"analyticsEvents">,
 ): typesAnalyticsAggregateEventInput {
 	return {

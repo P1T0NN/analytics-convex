@@ -3,16 +3,16 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { buildMetricEvaluationResult } from "../helpers/evaluateMetricForRange";
+import { internalBuildMetricEvaluationResult } from "../helpers/evaluateMetricForRange";
 
 // UTILS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
-import { assertDateRange } from "../validations/validations";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -37,13 +37,13 @@ export const fetchMetricEvaluation = query({
 	},
 	returns: metricEvaluationResponseValidator,
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		assertDateRange({ from: args.from, to: args.to }, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
 
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		const scope = resolveScope(args.scope);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		const scope = internalResolveScope(args.scope);
 
-		const result = await buildMetricEvaluationResult(ctx, config, {
+		const result = await internalBuildMetricEvaluationResult(ctx, config, {
 			metric: args.metric,
 			metricConfig,
 			evaluation: metricConfig.evaluation,
@@ -59,8 +59,8 @@ export const fetchMetricEvaluation = query({
 			scope,
 			value: result.value,
 			range: {
-				from: startOfUtcDay(args.from),
-				to: startOfUtcDay(args.to),
+				from: internalStartOfUtcDay(args.from),
+				to: internalStartOfUtcDay(args.to),
 			},
 			evaluation: result.evaluation,
 			...(result.comparison ? { comparison: result.comparison } : {}),

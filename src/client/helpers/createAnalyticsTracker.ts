@@ -14,7 +14,7 @@ import type {
 	typesTypedTrackEventInputForEvents,
 	typesTypedTrackEventOptions,
 	typesUnifiedTrackInputForEvents,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 type typesMutationCtx = Pick<
 	GenericMutationCtx<GenericDataModel>,

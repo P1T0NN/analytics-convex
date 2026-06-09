@@ -3,18 +3,18 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { chartConfig, normalizeConfig } from "../analyticsConfig";
+import { internalChartConfig, internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { collectDailyMetricRows } from "../helpers/rollupReads";
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalCollectDailyMetricRows } from "../helpers/rollupReads";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
-import { resolveScope } from "../utils/shared/scopeUtils";
-import { startOfUtcDay } from "../utils/common/dateUtils";
+import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils";
 import {
-	assertDateRange,
-	assertAllowedDimension,
+	internalAssertDateRange,
+	internalAssertAllowedDimension,
 } from "../validations/validations";
 
 // SCHEMAS
@@ -70,14 +70,14 @@ export const fetchBreakdown = query({
 		}),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		assertDateRange(args, config.settings);
+		const config = internalNormalizeConfig(args.config);
+		internalAssertDateRange(args, config.settings);
 
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		assertAllowedDimension(metricConfig, args.groupBy);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		internalAssertAllowedDimension(metricConfig, args.groupBy);
 
-		const scope = resolveScope(args.scope);
-		const rows = await collectDailyMetricRows(ctx, {
+		const scope = internalResolveScope(args.scope);
+		const rows = await internalCollectDailyMetricRows(ctx, {
 			metric: args.metric,
 			scope,
 			dimensionKey: args.groupBy,
@@ -101,7 +101,7 @@ export const fetchBreakdown = query({
 
 		return {
 			data,
-			config: chartConfig(data.map((item) => item.key)),
+			config: internalChartConfig(data.map((item) => item.key)),
 			meta: {
 				metric: args.metric,
 				label: metricConfig.label,
@@ -110,8 +110,8 @@ export const fetchBreakdown = query({
 				groupBy: args.groupBy,
 				omittedSeriesCount: Math.max(0, totals.size - data.length),
 				range: {
-					from: startOfUtcDay(args.from),
-					to: startOfUtcDay(args.to),
+					from: internalStartOfUtcDay(args.from),
+					to: internalStartOfUtcDay(args.to),
 				},
 			},
 		};

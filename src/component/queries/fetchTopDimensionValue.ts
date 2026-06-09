@@ -3,15 +3,15 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { getAnalyticsTopDimensionValue } from "../helpers/rollupReads";
+import { internalGetAnalyticsTopDimensionValue } from "../helpers/rollupReads";
 
 // UTILS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { resolveScope, toMetricScope } from "../utils/shared/scopeUtils";
-import { assertAllowedDimension } from "../validations/validations";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalResolveScope, internalToMetricScope } from "../utils/shared/scopeUtils";
+import { internalAssertAllowedDimension } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -36,13 +36,13 @@ export const fetchTopDimensionValue = query({
 	},
 	returns: v.union(v.string(), v.null()),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		assertAllowedDimension(metricConfig, args.dimensionKey);
+		const config = internalNormalizeConfig(args.config);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		internalAssertAllowedDimension(metricConfig, args.dimensionKey);
 
-		const scope = toMetricScope(resolveScope(args.scope));
+		const scope = internalToMetricScope(internalResolveScope(args.scope));
 
-		return await getAnalyticsTopDimensionValue(ctx, {
+		return await internalGetAnalyticsTopDimensionValue(ctx, {
 			metric: args.metric,
 			scopeType: scope.scopeType,
 			scopeId: scope.scopeId,

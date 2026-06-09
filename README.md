@@ -1,10 +1,11 @@
 # Convex Analytics
 
-A production-grade, server-side analytics component for
-[Convex](https://convex.dev). Handles raw event ingestion, daily rollup
-aggregation, dashboard queries, high-volume batch processing, and automated raw
-event retention — all within your Convex deployment. Zero external dependencies
-beyond Convex itself.
+Production-grade, server-side analytics for [Convex](https://convex.dev): event
+ingestion, daily rollups, dashboard queries, high-volume batching, and raw event
+retention — all in your Convex deployment.
+
+**Start here:** [Installation](#installation) → [Public API](#public-api) →
+[Quick Start](#quick-start)
 
 ---
 
@@ -40,10 +41,10 @@ writeTrack() mutation
   → validates input against registered event config
   → builds idempotency key (event name + timestamp + actor + org + subject + scopes + properties + source)
   → optionally claims unique.key (duplicate → no raw event, no rollup)
-  → schedules writeAnalyticsEvent via ctx.scheduler.runAfter(0, ...)
-  → returns { scheduled, scheduledCount, deduped?, dedupedCount? } immediately
+  → schedules `internalWriteAnalyticsEvent` via `ctx.scheduler.runAfter(0, ...)`
+  → returns `{ scheduled, scheduledCount, deduped?, dedupedCount? }` immediately
 
-[async] writeAnalyticsEvent (internal mutation)
+[async] internalWriteAnalyticsEvent (internal mutation)
   → checks idempotency (duplicate → no-op)
   → inserts raw event into analyticsEvents
   → for each matching metric:
@@ -66,28 +67,26 @@ to the user, analytics catches up in the background.
 
 ---
 
-### Package structure
+### Package layout
 
-Most users only need the public exports, but contributors and LLM agents should
-respect the internal file boundaries:
+**Consumer apps:** import only from `@piton-/analytics-convex`. See [Public API](#public-api).
 
-| Path                         | Purpose                                                                                                              |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `src/component/schema.ts`    | Convex component tables, validators, and indexes. Add table/index changes here.                                      |
-| `src/component/lib.ts`       | Public component export surface used as `components.analytics.lib.*`. New component functions must be exported here. |
-| `src/component/mutations/`   | Public component mutations such as configuration, tracking, and batch tracking.                                      |
-| `src/component/queries/`     | Public dashboard/query functions such as time series, summaries, breakdowns, and comparisons.                        |
-| `src/component/helpers/`     | Shared component-side implementation helpers and internal mutations.                                                 |
-| `src/component/validations/` | Configuration, event input, and hard-limit validation helpers.                                                       |
-| `src/component/utils/`       | Component-side utility functions for dates, scopes, sharding, and metric behavior.                                   |
-| `src/component/crons/`       | Maintenance jobs for high-volume processing and raw event retention.                                                 |
-| `src/client/builders/`       | Builder API for ergonomic event, property, and metric definitions.                                                   |
-| `src/client/`                | Package API used by app-side Convex projects: `createAnalyticsApi`, server helpers, crons, schemas, and types.       |
-| `src/shared/`                | Shared constants and pure utilities used by both component and client code, including limits, scopes, and ranking.   |
+**Contributors:** respect folder boundaries and naming:
 
-When adding new behavior, keep it in the matching folder instead of putting
-everything into one file. Regenerate the Convex API after component export
-changes with `bun run build:codegen`.
+| Path | Purpose |
+| ---- | ------- |
+| `src/client/index.ts` | Public package exports — the only surface consumer apps should use |
+| `src/component/lib.ts` | Component Convex exports (`components.analytics.lib.*`) |
+| `src/component/mutations/`, `queries/`, `crons/` | Component Convex functions |
+| `src/component/helpers/`, `validations/`, `utils/` | Component implementation (functions prefixed `internal*`) |
+| `src/shared/constants.ts` | All constants (`ANALYTICS_LIMITS`, `DAY_MS`, scope separators, traffic mode, metric labels) |
+| `src/shared/types/` | TypeScript types grouped by domain |
+| `src/shared/schemas/` | Shared Convex validators |
+| `src/shared/utils/` | Pure helpers (`analyticsEvaluationUtils.ts`, `analyticsScopesUtils.ts`, etc.) |
+
+**Naming rule:** functions safe for consumer projects have normal names (`defineAnalytics`, `fetchSummary`, `evaluateMetricLabel`). Functions meant only for library internals are prefixed with `internal` (`internalValidateConfiguration`, `internalWriteAnalyticsEvent`, …). Do not call `internal*` functions from app code.
+
+Regenerate Convex bindings after component export changes: `npm run build:codegen`.
 
 ### LLM integration prompt
 
@@ -97,23 +96,22 @@ use this prompt:
 ```text
 Use this README to integrate @piton-/analytics-convex into my Convex app.
 
-This analytics component is for in-product, database-backed analytics such as
-feature usage, usage counters, revenue totals, credits consumed, org/resource
-activity, summaries, time series, and breakdowns. Do not use it for marketing
-page-view analytics; Umami or another web analytics tool handles that separately.
+This analytics component is for in-product, database-backed analytics (feature usage,
+counters, revenue, org/resource activity, dashboards). Not for marketing page-view
+analytics — use Umami or similar for that.
 
-Follow the documented project structure and public API. Register the component
-in convex.config.ts, define product events and metrics in convex/analytics.ts
-with defineAnalytics, event, property, and the typed metrics callback
-`metrics: ({ count, sum }) => ({ ... })`, register crons from the returned
-`analytics` object in convex/crons.ts, and use writeTrack from server mutations
-using the typed `analytics.writeTrack` helper.
-For batch ingestion, call `analytics.writeTrack(ctx, { events: [...] })`.
+Public API: import only from @piton-/analytics-convex. Use defineAnalytics with event,
+property, count, sum, optional funnels and .evaluation() on metrics. Server helpers:
+writeTrack, fetchSummary, fetchDashboardMetrics, fetchMetricEvaluation,
+fetchFunnelConversion, etc. Import types from the package — do not re-declare them.
 
-Use mediumVolume by default, highVolume for noisy metrics, batch ingestion for
-buffered/firehose-style tracking, and monitor Convex Insights before production.
-Respect the documented hard limits, scopes, authorization model, and traffic
-mode recommendations.
+Register the component in convex.config.ts. Define convex/analytics.ts with
+defineAnalytics. Register crons via analytics.registerCrons(crons, internal.analytics.crons).
+Track from mutations with analytics.writeTrack or analytics.track. Use unique.key for
+once-ever counting. Use mediumVolume by default; highVolume for noisy metrics.
+
+Respect ANALYTICS_LIMITS, scopes, authorize on client wrappers, and traffic mode guidance.
+Do not import or call internal* functions from the library source.
 ```
 
 ---
@@ -136,6 +134,79 @@ export default app;
 ```
 
 Run `npx convex dev` to regenerate the generated API.
+
+---
+
+## Public API
+
+Import everything your app needs from `@piton-/analytics-convex`. Do not import from
+`src/shared/*`, `src/component/*`, or deep paths inside the package.
+
+### Setup (once per project)
+
+| Export | Use |
+| ------ | --- |
+| `defineAnalytics` | Create `convex/analytics.ts` — events, metrics, funnels, settings, `authorize` |
+| `event`, `property`, `count`, `sum` | Define events and metrics |
+| `registerAnalyticsCrons` | Wired via `analytics.registerCrons(...)` in `convex/crons.ts` |
+
+`defineAnalytics` returns an `analytics` object with typed server helpers, optional
+client wrappers, runtime `config`, and `registerCrons`.
+
+### Server helpers (call inside Convex functions)
+
+Use these on your `analytics` object. They pass runtime config to the component
+automatically and **do not** run the `authorize` callback — your mutation/query must
+already enforce auth.
+
+| Method | Purpose |
+| ------ | ------- |
+| `writeTrack(ctx, input)` | Track one event or `{ events: [...] }` batch |
+| `track(ctx, input)` | Alias for typed single/batch tracking |
+| `fetchTimeSeries` | Daily chart data |
+| `fetchSummary` | Single total over a range |
+| `fetchBreakdown` | Top dimension values |
+| `fetchMetricComparison` | Current vs previous period |
+| `fetchMetricConversion` | Conversion rate between two metrics |
+| `fetchMetricEvaluation` | One dashboard card with health label |
+| `fetchDashboardMetrics` | Multiple dashboard cards in one query |
+| `fetchFunnelConversion` | Named funnel (first step → last step) |
+| `fetchDimensionTotals` | Dimension totals as `Map` (alias: `fetchMetricTotalsByDimension`) |
+| `fetchTopDimension` | Top dimension value or `null` (alias: `fetchTopDimensionValue`) |
+| `fetchConfiguration` | Read resolved runtime config |
+| `config` | Same config object passed to crons and helpers |
+
+### Client wrappers (optional — run `authorize`)
+
+Export from `convex/analytics.ts` when the browser or a public route should call
+analytics directly:
+
+```ts
+export const {
+	writeTrack,
+	fetchTimeSeries,
+	fetchSummary,
+	fetchDashboardMetrics,
+} = analytics.client;
+```
+
+These wrapped functions **do** run your `authorize` callback.
+
+### Utilities, constants, and types
+
+| Export | Use |
+| ------ | --- |
+| `evaluateMetricLabel`, `computeConversionRatePercent` | Label math in UI (same rules as `fetchMetricEvaluation`) |
+| `ANALYTICS_METRIC_LABELS` | Default display strings for labels |
+| `getAnalyticsRanking`, `compareScores` | Sort/rank by score with tie-breakers |
+| `createAnalyticsScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScopeInput` | Build consistent scope IDs |
+| `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, scope separator constants | Limits and enums |
+| `types*` exports | TypeScript types — import from the package; do not copy into app code |
+| Validators (`propertyValueValidator`, `scopeInputValidator`, …) | App-side Convex arg validation when needed |
+
+Lower-level exports (`createAnalyticsApi`, `setupAnalytics`, `createAnalyticsReader`,
+`createAnalyticsTracker`, `trackAnalytics*`, `configureAnalytics`) exist for advanced
+wiring. Most apps only need `defineAnalytics`.
 
 ---
 
@@ -282,11 +353,15 @@ explicitly from `convex/analytics.ts`:
 
 ```ts
 export const {
-	writeTrack, // single or batch: writeTrack({ name, ... }) or writeTrack({ events })
+	writeTrack,
 	fetchTimeSeries,
 	fetchSummary,
 	fetchBreakdown,
 	fetchMetricComparison,
+	fetchMetricConversion,
+	fetchMetricEvaluation,
+	fetchDashboardMetrics,
+	fetchFunnelConversion,
 } = analytics.client;
 ```
 
@@ -1013,15 +1088,15 @@ explicit `scopes` array. Queries accept scopes via their `scope` parameter.
 
 ## Authorization
 
-Pass an `authorize` callback to `createAnalyticsApi`. It receives the auth
-context and an operation descriptor:
+Pass an `authorize` callback to `defineAnalytics` (or `createAnalyticsApi`). It runs
+only for **client wrappers** (`analytics.client.*`), not for server helpers.
 
 ```ts
 authorize: async (ctx, operation) => {
 	// operation.type: "configure" | "track" | "read"
 	// operation.name: event name (track only)
-	// operation.query: "timeSeries" | "summary" | "breakdown" (read only)
-	// operation.metric: metric name (read only)
+	// operation.query: read query name (read only)
+	// operation.metric / operation.metrics / operation.funnel: (read only)
 	// operation.scope: requested scope (read only)
 
 	const user = await getAuthUser(ctx);
@@ -1033,13 +1108,16 @@ authorize: async (ctx, operation) => {
 };
 ```
 
-The `adminOnly` flag on metric configs is informational — it's up to your
-`authorize` callback to enforce it.
+Read query names on `operation.query`:
 
-**Important:** Authorization only applies to the wrapped API (`writeTrack`,
-`timeSeries`, etc.). Server-side helpers (`writeTrack`, `fetchSummary`, etc.)
-and direct component calls bypass authorization. Use them only from mutations
-that already implement their own auth.
+`timeSeries`, `summary`, `breakdown`, `metricComparison`, `metricConversion`,
+`metricEvaluation`, `dashboardMetrics`, `funnelConversion`
+
+The `adminOnly` flag on metric configs is informational — enforce it in `authorize`.
+
+**Important:** Server helpers (`analytics.fetchSummary`, `analytics.writeTrack`, …) and
+direct `components.analytics.lib.*` calls bypass `authorize`. Use them only from Convex
+functions that already implement auth.
 
 ---
 
@@ -1093,64 +1171,252 @@ const top5 = getAnalyticsRanking({
 
 ---
 
+## Types
+
+Import types and constants from `@piton-/analytics-convex`. Do not copy type definitions
+into consumer apps or import from `src/shared/types/*` directly.
+
+`defineAnalytics()` gives you typed metric/event names on server helpers automatically.
+Use the exports below for UI components, shared app utilities, and explicit annotations.
+
+### Where types live in the library
+
+| Location | Contents |
+| -------- | -------- |
+| `src/shared/constants.ts` | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_METRIC_LABELS`, scope separators, `DAY_MS`, … |
+| `src/shared/types/primitives.ts` | Units, aggregations, property types |
+| `src/shared/types/settings.ts` | `typesAnalyticsSettings` |
+| `src/shared/types/scopes.ts` | Scope input, resolved scope, metric scopes |
+| `src/shared/types/config.ts` | Event/metric/funnel config (builder + `*Runtime` variants) |
+| `src/shared/types/evaluation.ts` | Evaluation config, labels, comparison/conversion inputs |
+| `src/shared/types/tracking.ts` | Track inputs, unique events, `typesWriteTrackResult` |
+| `src/shared/types/queries.ts` | Query response shapes |
+| `src/shared/types/queryArgs.ts` | Typed query argument helpers |
+| `src/shared/types/operations.ts` | `typesAnalyticsOperation`, API options |
+| `src/shared/types/ranking.ts` | Ranking utility types |
+| `src/shared/types/typedTracking.ts` | Event-name–aware track generics |
+| `src/shared/types/componentInternal.ts` | Component-only types (not exported from package entry) |
+
+Builder config types use `readonly` arrays for literal inference. Runtime config uses
+`*Runtime` variants with mutable arrays for Convex validators.
+
+```ts
+import type {
+  // Tracking
+  typesTrackEventInput,
+  typesAnalyticsUnique,
+  typesWriteTrackResult,
+
+  // Config
+  typesAnalyticsEventConfig,
+  typesAnalyticsEventConfigRuntime,
+  typesAnalyticsMetricConfig,
+  typesAnalyticsMetricConfigRuntime,
+  typesMetricEvaluationConfig,
+  typesAnalyticsFunnelConfig,
+  typesAnalyticsFunnelsConfig,
+  typesAnalyticsRuntimeConfig,
+  typesAnalyticsScopeInput,
+  typesAnalyticsResolvedScope,
+
+  // Query args
+  typesMetricRangeArgs,
+  typesMetricComparisonArgs,
+  typesMetricConversionArgs,
+  typesMetricEvaluationArgs,
+  typesDashboardMetricsArgs,
+  typesFunnelConversionArgs,
+
+  // Query responses
+  typesMetricSummaryResponse,
+  typesMetricComparisonResponse,
+  typesMetricConversionResponse,
+  typesMetricEvaluationResponse,
+  typesDashboardMetricsResponse,
+  typesFunnelConversionResponse,
+
+  // Evaluation helpers
+  typesMetricEvaluationResult,
+  typesMetricComparisonInput,
+  typesAnalyticsMetricLabel,
+} from "@piton-/analytics-convex";
+```
+
+### Tracking
+
+```ts
+type typesTrackEventInput = {
+  name: string;
+  occurredAt?: number;
+  actorId?: string;
+  organizationId?: string;
+  subject?: { type: string; id: string };
+  scopes?: Array<{ scopeType: "global" | "organization" | "resource"; scopeId: string }>;
+  properties?: Record<string, string | number | boolean | null>;
+  source?: { type: "server" | "client" | "webhook" | "system"; name?: string };
+  unique?: { key: string; scope?: "forever" };
+};
+
+type typesWriteTrackResult = {
+  scheduled: boolean;
+  scheduledCount: number;
+  deduped?: boolean;
+  dedupedCount?: number;
+};
+```
+
+### Scopes
+
+```ts
+// Pass to queries
+type typesAnalyticsScopeInput =
+  | { type: "global"; id?: string }
+  | { type: "organization"; id: string }
+  | { type: "resource"; resourceType: string; id: string };
+
+// Returned by queries
+type typesAnalyticsResolvedScope =
+  | { type: "global"; id: string }
+  | { type: "organization"; id: string }
+  | { type: "resource"; resourceType: string; resourceId: string; id: string };
+```
+
+### Metric evaluation config
+
+```ts
+type typesMetricEvaluationConfig =
+  | {
+      kind: "comparison";
+      excellentGrowthPercent: number;
+      goodGrowthPercent: number;
+      badGrowthPercent: number;
+      minVolumeForComparison?: number;
+    }
+  | {
+      kind: "conversion";
+      denominatorMetric: string;
+      excellentRatePercent: number;
+      goodRatePercent: number;
+      badRatePercent: number;
+      minDenominator?: number;
+    }
+  | {
+      kind: "inverseRate";
+      denominatorMetric: string;
+      goodRatePercent: number;
+      badRatePercent: number;
+      minDenominator?: number;
+    };
+
+type typesMetricEvaluationResult = {
+  label: "neutral" | "activity" | "good" | "excellent" | "bad" | "clear";
+  reason:
+    | "no_evaluation_config"
+    | "below_min_volume"
+    | "below_min_denominator"
+    | "zero_previous"
+    | "zero_previous_and_current"
+    | "zero_denominator_with_numerator"
+    | "zero_denominator_and_numerator"
+    | "zero_inverse_rate"
+    | "comparison_growth"
+    | "conversion_rate"
+    | "inverse_rate";
+};
+```
+
+### Funnel config
+
+```ts
+type typesAnalyticsFunnelConfig = {
+  label: string;
+  steps: string[];
+};
+
+type typesAnalyticsFunnelsConfig = Record<string, typesAnalyticsFunnelConfig>;
+```
+
+### Query args (common shapes)
+
+Most query args share `from`, `to`, and optional `scope`:
+
+```ts
+type typesMetricRangeArgs = {
+  metric: string;
+  from: number;
+  to: number;
+  scope?: typesAnalyticsScopeInput;
+};
+
+type typesMetricConversionArgs = {
+  numeratorMetric: string;
+  denominatorMetric: string;
+  from: number;
+  to: number;
+  scope?: typesAnalyticsScopeInput;
+};
+
+type typesDashboardMetricsArgs = {
+  metrics: string[];
+  from: number;
+  to: number;
+  scope?: typesAnalyticsScopeInput;
+  includeComparison?: boolean;
+  includeEvaluation?: boolean;
+};
+
+type typesFunnelConversionArgs = {
+  funnel: string;
+  from: number;
+  to: number;
+  scope?: typesAnalyticsScopeInput;
+};
+```
+
+When using `defineAnalytics`, generic arg types such as
+`typesDashboardMetricsArgs<typeof metrics>` narrow metric and funnel names to your
+config.
+
+---
+
 ## API reference
 
-### Component exports (`components.analytics.lib.*`)
+### Component (`components.analytics.lib.*`)
 
-**Mutations:**
+Call these through server helpers or `ctx.runQuery` / `ctx.runMutation` with your
+runtime config. These are Convex functions, not TypeScript helpers.
 
-| Export               | Description                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `writeConfiguration` | Legacy validation-only compatibility mutation                |
-| `writeTrack`         | Validate and schedule one event or `{ events: [...] }` batch |
+**Mutations:** `writeConfiguration`, `writeTrack`
 
-**Queries:**
+**Queries:** `fetchConfiguration`, `fetchTimeSeries`, `fetchSummary`, `fetchBreakdown`,
+`fetchMetricComparison`, `fetchMetricConversion`, `fetchMetricEvaluation`,
+`fetchDashboardMetrics`, `fetchFunnelConversion`, `fetchMetricTotalsByDimension`,
+`fetchTopDimensionValue`
 
-| Export                         | Description                                             |
-| ------------------------------ | ------------------------------------------------------- |
-| `fetchConfiguration`           | Read the runtime config passed by app-side helpers      |
-| `fetchTimeSeries`              | Daily bucketed chart data with optional dimension group |
-| `fetchSummary`                 | Single aggregated total for a metric over a date range  |
-| `fetchBreakdown`               | Top dimension values ranked by total                    |
-| `fetchMetricComparison`        | Compare metric between current and previous period      |
-| `fetchMetricConversion`        | Rollup-based conversion rate between two metrics        |
-| `fetchMetricEvaluation`        | Query-time dashboard health label for one metric        |
-| `fetchDashboardMetrics`        | Batch dashboard read for multiple metrics in one query  |
-| `fetchFunnelConversion`        | Rollup-based conversion for a named funnel            |
-| `fetchMetricTotalsByDimension` | Aggregated dimension totals for app-side helpers        |
-| `fetchTopDimensionValue`       | Single highest-value dimension entry for app helpers    |
+**Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`
 
-**Crons:**
+### Package entry (`@piton-/analytics-convex`)
 
-| Export                                    | Description                                |
-| ----------------------------------------- | ------------------------------------------ |
-| `processPendingHighVolumeAnalyticsEvents` | Batch-aggregate pending high-volume events |
-| `purgeStaleAnalyticsEvents`               | Delete raw events past retention window    |
+Everything below is safe to import in consumer apps.
 
-### Client exports (`@piton-/analytics-convex`)
+| Category | Exports |
+| -------- | ------- |
+| Setup | `defineAnalytics`, `setupAnalytics`, `createAnalyticsApi` |
+| Builders | `event`, `property`, `count`, `sum` |
+| Tracking | `trackAnalytics`, `trackAnalyticsEvent`, `trackAnalyticsEvents` |
+| Readers / trackers | `createAnalyticsReader`, `createAnalyticsTracker`, `configureAnalytics` |
+| Evaluation | `evaluateMetricLabel`, `computeConversionRatePercent`, `ANALYTICS_METRIC_LABELS` |
+| Ranking | `getAnalyticsRanking`, `compareScores` |
+| Scopes | `createAnalyticsScopeId`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeInput` |
+| Constants | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_SCOPE_SEPARATOR`, `ANALYTICS_RESOURCE_SCOPE_SEPARATOR` |
+| Crons | `registerAnalyticsCrons` |
+| Validators | `propertyValueValidator`, `scopeInputValidator`, `scopeValidator`, `sourceValidator`, `subjectValidator`, `uniqueEventValidator`, `uniqueScopeValidator` |
+| Types | All `types*` exports listed in [Types](#types) |
 
-| Export                                                       | Description                                                                                                                                |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `defineAnalytics(component, options)`                        | Preferred builder-based setup for wrapped functions, event-aware metric builders, and typed server-side use                                |
-| `setupAnalytics(component, options)`                         | One-stop setup returning server wrappers at top level, client exports under `.client`, and `.registerCrons()`                              |
-| `createAnalyticsApi(component, options)`                     | Create wrapped functions plus typed server-side helpers like `writeTrack`, `fetchSummary`, `fetchDimensionTotals`, and `fetchTopDimension` |
-| `createAnalyticsReader(component, metrics)`                  | Lower-level typed read helper factory; normally use `createAnalyticsApi` instead                                                           |
-| `createAnalyticsTracker(component, events)`                  | Lower-level typed tracker helper; normally use `createAnalyticsApi` instead                                                                |
-| `event(name, options)`                                       | Define an analytics event with typed properties                                                                                            |
-| `property.string/number/boolean(options?)`                   | Define event property types, optionally required                                                                                           |
-| `count(label)`                                               | Build a count metric with `.from(...)`, `.by(...)`, and optional `.evaluation(...)` |
-| `sum(label, unit?)`                                          | Build a sum metric with `.from(...)`, `.value(...)`, `.by(...)`, and optional `.evaluation(...)` |
-| `evaluateMetricLabel(result, config)`                        | Pure label evaluation helper for UI reuse                                                                           |
-| `ANALYTICS_METRIC_LABELS`                                    | Default display map for metric labels; apps may override in UI                                                      |
-| `configureAnalytics(ctx, component, options)`                | Legacy validation-only helper; normal usage does not require configure                                                                     |
-| `trackAnalytics(ctx, component, input, config)`              | Lower-level direct helper; normally use `analytics.writeTrack`                                                                             |
-| `trackAnalyticsEvent(ctx, component, input, config)`         | Lower-level direct single-event helper                                                                                                     |
-| `trackAnalyticsEvents(ctx, component, events, config)`       | Lower-level direct batch helper                                                                                                            |
-| `registerAnalyticsCrons(crons, internalApi, config, options?)` | Lower-level cron registration; normally use `analytics.registerCrons(crons, internal.analytics.crons)` |
-| `ANALYTICS_TRAFFIC_MODE`                                     | Traffic mode constant object                                                                                                               |
-| `ANALYTICS_LIMITS`                                           | Hard limit constants for ingestion, config, and runtime settings                                                                           |
-| `getAnalyticsRanking`                                        | Pure ranking/sorting utility with tie-breakers                                                                                             |
-| `compareScores`                                              | Direction-aware score comparison for sorting                                                                                               |
+**Not exported to apps:** any function whose name starts with `internal` (library
+implementation only).
+
+See [CONSUMER-MIGRATION.md](./CONSUMER-MIGRATION.md) when upgrading from older versions.
 
 ---
 

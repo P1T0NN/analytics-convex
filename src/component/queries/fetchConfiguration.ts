@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // SCHEMAS
 import {
@@ -29,7 +29,7 @@ export const fetchConfiguration = query({
 		configHash: v.optional(v.string()),
 	}),
 	handler: async (_ctx, args) => {
-		const config = normalizeConfig(args.config);
+		const config = internalNormalizeConfig(args.config);
 
 		return {
 			events: config.events,

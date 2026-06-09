@@ -3,14 +3,14 @@
 import { describe, expect, it } from "vitest";
 import { api, internal } from "../../component/_generated/api";
 import {
-	createAnalyticsComponentTest,
-	runtimeConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalRuntimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
 function hospitalityConfig() {
-	return runtimeConfiguration({
+	return internalRuntimeConfiguration({
 		events: [
 			{ name: "qr.scanned", label: "QR scanned" },
 			{ name: "guest.activated", label: "Guest activated" },
@@ -72,12 +72,12 @@ function hospitalityConfig() {
 }
 
 async function writeEvent(
-	t: ReturnType<typeof createAnalyticsComponentTest>,
+	t: ReturnType<typeof internalCreateAnalyticsComponentTest>,
 	config: ReturnType<typeof hospitalityConfig>,
 	name: string,
 	occurredAt: number,
 ) {
-	await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+	await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 		config,
 		name,
 		occurredAt,
@@ -89,7 +89,7 @@ async function writeEvent(
 
 describe("analytics metric evaluation queries", () => {
 	it("computes rollup-based metric conversion", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 
@@ -114,7 +114,7 @@ describe("analytics metric evaluation queries", () => {
 	});
 
 	it("evaluates conversion and inverse-rate metric labels", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 
@@ -159,7 +159,7 @@ describe("analytics metric evaluation queries", () => {
 	});
 
 	it("returns neutral when comparison volume is below the configured minimum", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 		const previous = now - 7 * 86_400_000;

@@ -1,28 +1,28 @@
 // LIMITS
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits.js";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 
 // VALIDATIONS
 import {
-	assertAtMost,
-	assertFiniteNumber,
-	assertStringLength,
+	internalAssertAtMost,
+	internalAssertFiniteNumber,
+	internalAssertStringLength,
 } from "./limitUtils.js";
 
 // UTILS
-import { badRequest } from "../errors/errors.js";
+import { internalBadRequest } from "../errors/errors.js";
 
 // TYPES
 import type {
 	typesAnalyticsMetricScope,
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
-export function validateTrackBatchLimits(count: number) {
-	assertAtMost(count, ANALYTICS_LIMITS.maxTrackBatchSize, "events");
+export function internalValidateTrackBatchLimits(count: number) {
+	internalAssertAtMost(count, ANALYTICS_LIMITS.maxTrackBatchSize, "events");
 }
 
-export function validateTrackEventLimits(args: {
+export function internalValidateTrackEventLimits(args: {
 	name: string;
 	occurredAt: number;
 	actorId?: string;
@@ -33,41 +33,41 @@ export function validateTrackEventLimits(args: {
 	source?: { type: string; name?: string };
 	unique?: { key: string; scope?: "forever" };
 }) {
-	assertStringLength(
+	internalAssertStringLength(
 		args.name,
 		ANALYTICS_LIMITS.maxIdentifierLength,
 		"event name",
 	);
-	assertFiniteNumber(args.occurredAt, "occurredAt");
+	internalAssertFiniteNumber(args.occurredAt, "occurredAt");
 
 	if (args.actorId) {
-		assertStringLength(
+		internalAssertStringLength(
 			args.actorId,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			"actorId",
 		);
 	}
 	if (args.organizationId) {
-		assertStringLength(
+		internalAssertStringLength(
 			args.organizationId,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			"organizationId",
 		);
 	}
 	if (args.subject) {
-		assertStringLength(
+		internalAssertStringLength(
 			args.subject.type,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			"subject.type",
 		);
-		assertStringLength(
+		internalAssertStringLength(
 			args.subject.id,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			"subject.id",
 		);
 	}
 	if (args.source?.name) {
-		assertStringLength(
+		internalAssertStringLength(
 			args.source.name,
 			ANALYTICS_LIMITS.maxSourceNameLength,
 			"source.name",
@@ -75,25 +75,25 @@ export function validateTrackEventLimits(args: {
 	}
 	if (args.unique) {
 		if (args.unique.key.trim().length === 0) {
-			badRequest("unique.key must not be empty.");
+			internalBadRequest("unique.key must not be empty.");
 		}
-		assertStringLength(
+		internalAssertStringLength(
 			args.unique.key,
 			ANALYTICS_LIMITS.maxUniqueKeyLength,
 			"unique.key",
 		);
 		if (args.unique.scope && args.unique.scope !== "forever") {
-			badRequest('unique.scope must be "forever".');
+			internalBadRequest('unique.scope must be "forever".');
 		}
 	}
 
-	assertAtMost(
+	internalAssertAtMost(
 		args.scopes?.length ?? 0,
 		ANALYTICS_LIMITS.maxScopesPerEvent,
 		"scopes",
 	);
 	for (const scope of args.scopes ?? []) {
-		assertStringLength(
+		internalAssertStringLength(
 			scope.scopeId,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`scope "${scope.scopeType}"`,
@@ -101,7 +101,7 @@ export function validateTrackEventLimits(args: {
 	}
 
 	const entries = Object.entries(args.properties);
-	assertAtMost(
+	internalAssertAtMost(
 		entries.length,
 		ANALYTICS_LIMITS.maxPropertiesPerEvent,
 		"properties",
@@ -109,7 +109,7 @@ export function validateTrackEventLimits(args: {
 
 	let payloadCharacters = 0;
 	for (const [key, value] of entries) {
-		assertStringLength(
+		internalAssertStringLength(
 			key,
 			ANALYTICS_LIMITS.maxIdentifierLength,
 			`property "${key}"`,
@@ -119,7 +119,7 @@ export function validateTrackEventLimits(args: {
 	}
 
 	if (payloadCharacters > ANALYTICS_LIMITS.maxPropertyPayloadCharacters) {
-		badRequest(
+		internalBadRequest(
 			`properties payload must be at most ${ANALYTICS_LIMITS.maxPropertyPayloadCharacters} characters.`,
 		);
 	}
@@ -130,13 +130,13 @@ function validatePropertyValueLimit(
 	value: typesAnalyticsPropertyValue,
 ) {
 	if (typeof value === "string") {
-		assertStringLength(
+		internalAssertStringLength(
 			value,
 			ANALYTICS_LIMITS.maxPropertyStringLength,
 			`property "${key}"`,
 		);
 	}
 	if (typeof value === "number") {
-		assertFiniteNumber(value, `property "${key}"`);
+		internalAssertFiniteNumber(value, `property "${key}"`);
 	}
 }

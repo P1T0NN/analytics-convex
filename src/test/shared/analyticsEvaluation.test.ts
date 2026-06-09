@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateMetricLabel } from "../../shared/analyticsEvaluation";
+import { evaluateMetricLabel } from "../../shared/utils/analyticsEvaluationUtils";
 
 describe("evaluateMetricLabel", () => {
 	it("evaluates comparison growth thresholds", () => {

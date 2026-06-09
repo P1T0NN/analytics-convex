@@ -1,7 +1,7 @@
 // TYPES
 import type { typesMetricRollupIncrement } from "../utils/getMetricRollupIncrements";
 
-export function getRollupIncrementKey(increment: typesMetricRollupIncrement) {
+export function internalGetRollupIncrementKey(increment: typesMetricRollupIncrement) {
 	return JSON.stringify([
 		increment.metric,
 		increment.bucketStart,

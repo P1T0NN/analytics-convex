@@ -1,8 +1,8 @@
 // TYPES
 import type { MutationCtx } from "../_generated/server.js";
-import type { typesAnalyticsMetricScope } from "../types/types.js";
+import type { typesAnalyticsMetricScope } from "../../shared/types/index.js";
 
-export async function incrementDailyMetric(
+export async function internalIncrementDailyMetric(
 	ctx: MutationCtx,
 	args: {
 		metric: string;

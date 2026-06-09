@@ -5,28 +5,28 @@ import { convexTest } from "convex-test";
 import schema from "../component/schema";
 
 // DEFAULTS
-import { defaultAnalyticsSettings } from "../shared/analyticsDefaults";
+import { internalDefaultAnalyticsSettings } from "../shared/utils/analyticsDefaultsUtils";
 
 // TYPES
 import type {
-	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsRuntimeConfig,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../component/types/types";
+} from "../shared/types/index.js";
 
-export const DAY_MS = 86_400_000;
+export { DAY_MS } from "../shared/constants.js";
 
-export function createAnalyticsComponentTest(
+export function internalCreateAnalyticsComponentTest(
 	modules: Record<string, () => Promise<unknown>>,
 ) {
 	return convexTest(schema, modules);
 }
 
-export function runtimeConfiguration(config: {
-	events: typesAnalyticsEventConfig[];
-	metrics: typesAnalyticsMetricConfig[];
+export function internalRuntimeConfiguration(config: {
+	events: typesAnalyticsEventConfigRuntime[];
+	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels?: typesAnalyticsFunnelsConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 }): typesAnalyticsRuntimeConfig {
@@ -35,13 +35,13 @@ export function runtimeConfiguration(config: {
 		metrics: config.metrics,
 		...(config.funnels ? { funnels: config.funnels } : {}),
 		settings: {
-			...defaultAnalyticsSettings(),
+			...internalDefaultAnalyticsSettings(),
 			...(config.settings ?? {}),
 		},
 	};
 }
 
-export function pageViewsConfiguration(): typesAnalyticsRuntimeConfig {
+export function internalPageViewsConfiguration(): typesAnalyticsRuntimeConfig {
 	return {
 		events: [{ name: "page.viewed", label: "Page viewed" }],
 		metrics: [
@@ -53,14 +53,14 @@ export function pageViewsConfiguration(): typesAnalyticsRuntimeConfig {
 				aggregation: "count" as const,
 			},
 		],
-		settings: defaultAnalyticsSettings(),
+		settings: internalDefaultAnalyticsSettings(),
 	};
 }
 
-export function revenueConfiguration(
+export function internalRevenueConfiguration(
 	settings?: Partial<typesAnalyticsSettings>,
 ) {
-	return runtimeConfiguration({
+	return internalRuntimeConfiguration({
 		events: [
 			{
 				name: "purchase.completed",

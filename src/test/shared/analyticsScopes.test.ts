@@ -5,7 +5,7 @@ import {
 	createAnalyticsResourceScopeId,
 	createAnalyticsResourceScopeInput,
 	createAnalyticsScopeId,
-} from "../../shared/analyticsScopes";
+} from "../../shared/utils/analyticsScopesUtils";
 
 describe("analytics scope helpers", () => {
 	it("creates canonical compound scope ids", () => {

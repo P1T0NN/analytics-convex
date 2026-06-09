@@ -6,7 +6,7 @@ import type {
 	typesAnalyticsTrafficMode,
 	typesAnalyticsUnit,
 	typesMetricEvaluationConfig,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
 type typesMetricBuilderState = {
 	label: string;
@@ -238,7 +238,7 @@ export function sum(label: string, unit: typesAnalyticsUnit = "count") {
 	});
 }
 
-export function createAnalyticsMetricBuilders<
+export function internalCreateAnalyticsMetricBuilders<
 	Events extends typesAnalyticsEventMap,
 >(): typesAnalyticsMetricBuilders<Events> {
 	return {

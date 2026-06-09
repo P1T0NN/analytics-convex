@@ -8,10 +8,10 @@ import {
 import { v } from "convex/values";
 
 // HELPERS
-import { authorize } from "../helpers/authorize";
+import { internalAuthorize } from "../helpers/authorize";
 import { createAnalyticsReader } from "../helpers/createAnalyticsReader";
 import { createAnalyticsTracker } from "../helpers/createAnalyticsTracker";
-import { createAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
+import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 
 // SCHEMAS
 import { scopeInputValidator, trackEventInputFields } from "../schemas/schemas";
@@ -22,7 +22,7 @@ import type {
 	typesAnalyticsMetricConfig,
 	typesAnalyticsScopeInput,
 	typesCreateAnalyticsApiOptionsForConfig,
-} from "../types/types";
+} from "../../shared/types/index.js";
 import type { ComponentApi } from "../../component/_generated/component.js";
 
 type typesMutationCtx = Pick<
@@ -58,7 +58,7 @@ export function createAnalyticsApi<
 		...options.metrics.map((m) => v.literal(m.name as MetricName)),
 	);
 
-	const configuration = createAnalyticsConfiguration(
+	const configuration = internalCreateAnalyticsConfiguration(
 		options.events,
 		options.metrics,
 		options.settings,
@@ -107,7 +107,7 @@ export function createAnalyticsApi<
 			args: {},
 			returns: v.null(),
 			handler: async (ctx) => {
-				await authorize(options, ctx, { type: "configure" });
+				await internalAuthorize(options, ctx, { type: "configure" });
 				await ctx.runMutation(component.lib.writeConfiguration, configuration);
 				return null;
 			},
@@ -118,7 +118,7 @@ export function createAnalyticsApi<
 			handler: async (ctx, args) => {
 				if (args.events) {
 					for (const event of args.events) {
-						await authorize(options, ctx, {
+						await internalAuthorize(options, ctx, {
 							type: "track",
 							name: event.name,
 						});
@@ -136,7 +136,7 @@ export function createAnalyticsApi<
 
 				const { events: _events, ...event } = args;
 
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "track",
 					name: args.name,
 				});
@@ -157,7 +157,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "metricComparison",
 					metric: args.metric,
@@ -179,7 +179,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "metricConversion",
 					metric: args.numeratorMetric,
@@ -200,7 +200,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "metricEvaluation",
 					metric: args.metric,
@@ -223,7 +223,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "dashboardMetrics",
 					metrics: args.metrics,
@@ -244,7 +244,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "funnelConversion",
 					funnel: args.funnel,
@@ -267,7 +267,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "timeSeries",
 					metric: args.metric,
@@ -288,7 +288,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "summary",
 					metric: args.metric,
@@ -310,7 +310,7 @@ export function createAnalyticsApi<
 			},
 			returns: v.any(),
 			handler: async (ctx, args) => {
-				await authorize(options, ctx, {
+				await internalAuthorize(options, ctx, {
 					type: "read",
 					query: "breakdown",
 					metric: args.metric,

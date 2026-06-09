@@ -3,15 +3,15 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // CONFIG
-import { normalizeConfig } from "../analyticsConfig";
+import { internalNormalizeConfig } from "../analyticsConfig";
 
 // HELPERS
-import { getAnalyticsMetricTotalsByDimension } from "../helpers/rollupReads";
+import { internalGetAnalyticsMetricTotalsByDimension } from "../helpers/rollupReads";
 
 // UTILS
-import { getMetricConfigOrThrow } from "../utils/shared/metricUtils";
-import { resolveScope, toMetricScope } from "../utils/shared/scopeUtils";
-import { assertAllowedDimension } from "../validations/validations";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import { internalResolveScope, internalToMetricScope } from "../utils/shared/scopeUtils";
+import { internalAssertAllowedDimension } from "../validations/validations";
 
 // SCHEMAS
 import {
@@ -42,12 +42,12 @@ export const fetchMetricTotalsByDimension = query({
 		}),
 	),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
-		const metricConfig = getMetricConfigOrThrow(config, args.metric);
-		assertAllowedDimension(metricConfig, args.dimensionKey);
+		const config = internalNormalizeConfig(args.config);
+		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
+		internalAssertAllowedDimension(metricConfig, args.dimensionKey);
 
-		const scope = toMetricScope(resolveScope(args.scope));
-		const totals = await getAnalyticsMetricTotalsByDimension(ctx, {
+		const scope = internalToMetricScope(internalResolveScope(args.scope));
+		const totals = await internalGetAnalyticsMetricTotalsByDimension(ctx, {
 			metric: args.metric,
 			scopeType: scope.scopeType,
 			scopeId: scope.scopeId,

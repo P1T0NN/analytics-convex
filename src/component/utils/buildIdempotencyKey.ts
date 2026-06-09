@@ -2,9 +2,9 @@
 import type {
 	typesAnalyticsMetricScope,
 	typesAnalyticsProperties,
-} from "../types/types";
+} from "../../shared/types/index.js";
 
-export function buildIdempotencyKey(args: {
+export function internalBuildIdempotencyKey(args: {
 	name: string;
 	occurredAt: number;
 	actorId?: string;

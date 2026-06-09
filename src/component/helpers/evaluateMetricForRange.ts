@@ -1,30 +1,33 @@
 // HELPERS
 import {
-	fetchMetricTotalsBatch,
-	readMetricTotalFromCache,
+	internalFetchMetricTotalsBatch,
+	internalReadMetricTotalFromCache,
 	type typesMetricTotalRequest,
 } from "./metricTotalCache";
-import { getMetricTotalForRange } from "./rollupReads";
+import { internalGetMetricTotalForRange } from "./rollupReads";
 
 // SHARED
 import {
 	computeConversionRatePercent,
 	evaluateMetricLabel,
-} from "../../shared/analyticsEvaluation";
+} from "../../shared/utils/analyticsEvaluationUtils";
 
 // TYPES
 import type { QueryCtx } from "../_generated/server";
 import type {
 	typesAnalyticsConfigState,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsScope,
+	typesAnalyticsUnit,
+} from "../../shared/types/index.js";
+import type {
 	typesMetricEvaluationConfig,
 	typesMetricEvaluationResult,
-} from "../types/types";
+} from "../../shared/types/evaluation.js";
 
 type typesMetricEvaluationBuildArgs = {
 	metric: string;
-	metricConfig: typesAnalyticsMetricConfig;
+	metricConfig: typesAnalyticsMetricConfigRuntime;
 	evaluation: typesMetricEvaluationConfig | undefined;
 	scope: typesAnalyticsScope;
 	from: number;
@@ -66,11 +69,11 @@ function buildComparisonBlock(args: {
 	};
 }
 
-export function buildMetricEvaluationFromCache(
+export function internalBuildMetricEvaluationFromCache(
 	cache: Map<string, number>,
 	args: typesMetricEvaluationBuildArgs,
 ): typesMetricEvaluationBuildResult {
-	const value = readMetricTotalFromCache(cache, args.scope, {
+	const value = internalReadMetricTotalFromCache(cache, args.scope, {
 		metric: args.metric,
 		from: args.from,
 		to: args.to,
@@ -88,7 +91,7 @@ export function buildMetricEvaluationFromCache(
 
 	if (args.evaluation.kind === "comparison") {
 		const rangeMs = args.to - args.from;
-		const previous = readMetricTotalFromCache(cache, args.scope, {
+		const previous = internalReadMetricTotalFromCache(cache, args.scope, {
 			metric: args.metric,
 			from: args.from - rangeMs,
 			to: args.from,
@@ -107,7 +110,7 @@ export function buildMetricEvaluationFromCache(
 	}
 
 	const denominatorMetric = args.evaluation.denominatorMetric;
-	const denominator = readMetricTotalFromCache(cache, args.scope, {
+	const denominator = internalReadMetricTotalFromCache(cache, args.scope, {
 		metric: denominatorMetric,
 		from: args.from,
 		to: args.to,
@@ -141,7 +144,7 @@ export function buildMetricEvaluationFromCache(
 	};
 }
 
-export async function buildMetricEvaluationResult(
+export async function internalBuildMetricEvaluationResult(
 	ctx: QueryCtx,
 	config: typesAnalyticsConfigState,
 	args: typesMetricEvaluationBuildArgs,
@@ -174,17 +177,17 @@ export async function buildMetricEvaluationResult(
 		});
 	}
 
-	const cache = await fetchMetricTotalsBatch(
+	const cache = await internalFetchMetricTotalsBatch(
 		ctx,
 		config,
 		args.scope,
 		requests,
 	);
 
-	return buildMetricEvaluationFromCache(cache, args);
+	return internalBuildMetricEvaluationFromCache(cache, args);
 }
 
-export function buildComparisonRange(args: { from: number; to: number }) {
+export function internalBuildComparisonRange(args: { from: number; to: number }) {
 	const rangeMs = args.to - args.from;
 	const previousFrom = args.from - rangeMs;
 	const previousTo = args.from;
@@ -201,7 +204,7 @@ export function buildComparisonRange(args: { from: number; to: number }) {
 	};
 }
 
-export async function buildPeriodComparison(
+export async function internalBuildPeriodComparison(
 	ctx: QueryCtx,
 	config: typesAnalyticsConfigState,
 	args: {
@@ -213,13 +216,13 @@ export async function buildPeriodComparison(
 ) {
 	const rangeMs = args.to - args.from;
 	const [value, previous] = await Promise.all([
-		getMetricTotalForRange(ctx, config, {
+		internalGetMetricTotalForRange(ctx, config, {
 			metric: args.metric,
 			scope: args.scope,
 			from: args.from,
 			to: args.to,
 		}),
-		getMetricTotalForRange(ctx, config, {
+		internalGetMetricTotalForRange(ctx, config, {
 			metric: args.metric,
 			scope: args.scope,
 			from: args.from - rangeMs,
@@ -230,9 +233,9 @@ export async function buildPeriodComparison(
 	return buildComparisonBlock({ value, previous });
 }
 
-export function collectDashboardMetricTotalRequests(args: {
+export function internalCollectDashboardMetricTotalRequests(args: {
 	metrics: string[];
-	metricConfigs: Map<string, typesAnalyticsMetricConfig>;
+	metricConfigs: Map<string, typesAnalyticsMetricConfigRuntime>;
 	from: number;
 	to: number;
 	includeComparison: boolean;
@@ -284,7 +287,7 @@ export function collectDashboardMetricTotalRequests(args: {
 	return requests;
 }
 
-export async function buildDashboardMetricsForRange(
+export async function internalBuildDashboardMetricsForRange(
 	ctx: QueryCtx,
 	config: typesAnalyticsConfigState,
 	args: {
@@ -298,7 +301,7 @@ export async function buildDashboardMetricsForRange(
 ) {
 	const includeComparison = args.includeComparison ?? false;
 	const includeEvaluation = args.includeEvaluation ?? false;
-	const requests = collectDashboardMetricTotalRequests({
+	const requests = internalCollectDashboardMetricTotalRequests({
 		metrics: args.metrics,
 		metricConfigs: config.metricByName,
 		from: args.from,
@@ -306,7 +309,7 @@ export async function buildDashboardMetricsForRange(
 		includeComparison,
 		includeEvaluation,
 	});
-	const cache = await fetchMetricTotalsBatch(
+	const cache = await internalFetchMetricTotalsBatch(
 		ctx,
 		config,
 		args.scope,
@@ -318,7 +321,7 @@ export async function buildDashboardMetricsForRange(
 		{
 			value: number;
 			label: string;
-			unit: typesAnalyticsMetricConfig["unit"];
+			unit: typesAnalyticsUnit;
 			comparison?: typesComparisonBlock;
 			evaluation?: typesMetricEvaluationResult;
 			conversion?: {
@@ -334,7 +337,7 @@ export async function buildDashboardMetricsForRange(
 		const metricConfig = config.metricByName.get(metric);
 		if (!metricConfig) continue;
 
-		const value = readMetricTotalFromCache(cache, args.scope, {
+		const value = internalReadMetricTotalFromCache(cache, args.scope, {
 			metric,
 			from: args.from,
 			to: args.to,
@@ -348,7 +351,7 @@ export async function buildDashboardMetricsForRange(
 
 		if (includeComparison) {
 			const rangeMs = args.to - args.from;
-			const previous = readMetricTotalFromCache(cache, args.scope, {
+			const previous = internalReadMetricTotalFromCache(cache, args.scope, {
 				metric,
 				from: args.from - rangeMs,
 				to: args.from,
@@ -357,7 +360,7 @@ export async function buildDashboardMetricsForRange(
 		}
 
 		if (includeEvaluation) {
-			const evaluationResult = buildMetricEvaluationFromCache(cache, {
+			const evaluationResult = internalBuildMetricEvaluationFromCache(cache, {
 				metric,
 				metricConfig,
 				evaluation: metricConfig.evaluation,

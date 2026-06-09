@@ -1,8 +1,8 @@
 // TYPES
 import type { MutationCtx } from "../_generated/server";
-import type { typesPreparedTrackEventInput } from "../types/types";
+import type { typesPreparedTrackEventInput } from "../../shared/types/index.js";
 
-export async function claimUniqueEvent(
+export async function internalClaimUniqueEvent(
 	ctx: MutationCtx,
 	event: typesPreparedTrackEventInput,
 ): Promise<{ claimed: boolean }> {
@@ -32,7 +32,7 @@ export async function claimUniqueEvent(
 	return { claimed: true };
 }
 
-export function withoutUniqueClaim(
+export function internalWithoutUniqueClaim(
 	event: typesPreparedTrackEventInput,
 ): typesPreparedTrackEventInput {
 	const { unique: _unique, ...rest } = event;

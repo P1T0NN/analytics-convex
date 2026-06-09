@@ -1,1 +1,1 @@
-export { getAnalyticsRanking } from "../../shared/analyticsRanking";
+export { getAnalyticsRanking } from "../../shared/utils/analyticsRankingUtils";

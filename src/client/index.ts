@@ -25,53 +25,52 @@ export { trackAnalyticsEvents } from "./helpers/trackAnalyticsEvents";
 
 // PURE UTILS
 export {
-	ANALYTICS_METRIC_LABELS,
 	computeConversionRatePercent,
 	evaluateMetricLabel,
-	type typesAnalyticsMetricLabel,
-	type typesMetricComparisonEvaluationConfig,
-	type typesMetricConversionEvaluationConfig,
-	type typesMetricEvaluationConfig,
-	type typesMetricEvaluationReason,
-	type typesMetricEvaluationResult,
-	type typesMetricInverseRateEvaluationConfig,
-} from "../shared/analyticsEvaluation";
+} from "../shared/utils/analyticsEvaluationUtils";
 export {
 	compareScores,
 	getAnalyticsRanking,
-	type typesAnalyticsRankingDirection,
-	type typesAnalyticsRankingTieBreaker,
-	type typesGetAnalyticsRankingArgs,
-} from "../shared/analyticsRanking";
+} from "../shared/utils/analyticsRankingUtils";
 
 // LIMITS
-export { ANALYTICS_LIMITS } from "../shared/analyticsLimits";
+export {
+	ANALYTICS_LIMITS,
+	ANALYTICS_METRIC_LABELS,
+	ANALYTICS_RESOURCE_SCOPE_SEPARATOR,
+	ANALYTICS_SCOPE_SEPARATOR,
+	ANALYTICS_TRAFFIC_MODE,
+} from "../shared/constants";
 
 // SCOPES
 export {
-	ANALYTICS_RESOURCE_SCOPE_SEPARATOR,
-	ANALYTICS_SCOPE_SEPARATOR,
 	createAnalyticsResourceScope,
 	createAnalyticsResourceScopeId,
 	createAnalyticsResourceScopeInput,
 	createAnalyticsScopeId,
-	type typesAnalyticsResourceScope,
-	type typesAnalyticsResourceScopeInput,
-} from "../shared/analyticsScopes";
+} from "../shared/utils/analyticsScopesUtils";
 
 // CRONS
 export { registerAnalyticsCrons } from "./crons/registerAnalyticsCrons";
 
 // TYPES
 export {
-	ANALYTICS_TRAFFIC_MODE,
 	type typesAnalyticsAggregation,
+	type typesAnalyticsDateRange,
 	type typesAnalyticsEventConfig,
+	type typesAnalyticsEventConfigRuntime,
 	type typesAnalyticsMetricConfig,
+	type typesAnalyticsMetricConfigRuntime,
+	type typesAnalyticsMetricLabel,
 	type typesAnalyticsMetricScope,
 	type typesAnalyticsOperation,
 	type typesAnalyticsPropertyType,
 	type typesAnalyticsPropertyValue,
+	type typesAnalyticsRankingDirection,
+	type typesAnalyticsRankingTieBreaker,
+	type typesAnalyticsResolvedScope,
+	type typesAnalyticsResourceScope,
+	type typesAnalyticsResourceScopeInput,
 	type typesAnalyticsRuntimeConfig,
 	type typesAnalyticsScopeInput,
 	type typesAnalyticsScopeType,
@@ -83,6 +82,24 @@ export {
 	type typesAnalyticsFunnelsConfig,
 	type typesCreateAnalyticsApiOptions,
 	type typesCreateAnalyticsApiOptionsForConfig,
+	type typesDashboardMetricConversion,
+	type typesDashboardMetricItem,
+	type typesDashboardMetricsResponse,
+	type typesFunnelConversionResponse,
+	type typesGetAnalyticsRankingArgs,
+	type typesMetricComparisonEvaluationConfig,
+	type typesMetricComparisonInput,
+	type typesMetricComparisonResponse,
+	type typesMetricConversionEvaluationConfig,
+	type typesMetricConversionInput,
+	type typesMetricConversionResponse,
+	type typesMetricEvaluationConfig,
+	type typesMetricEvaluationConversion,
+	type typesMetricEvaluationReason,
+	type typesMetricEvaluationResponse,
+	type typesMetricEvaluationResult,
+	type typesMetricInverseRateEvaluationConfig,
+	type typesMetricSummaryResponse,
 	type typesTrackEventInput,
 	type typesTrackEventsInput,
 	type typesTypedTrackBatchInputForEvents,
@@ -90,7 +107,24 @@ export {
 	type typesTypedTrackEventInputForEvents,
 	type typesTypedTrackEventOptions,
 	type typesUnifiedTrackInputForEvents,
-} from "./types/types";
+	type typesWriteTrackResult,
+} from "../shared/types/index.js";
+
+export type {
+	typesBreakdownArgs,
+	typesDashboardMetricsArgs,
+	typesDimensionNameForMetric,
+	typesFunnelConversionArgs,
+	typesMetricComparisonArgs,
+	typesMetricConversionArgs,
+	typesMetricEvaluationArgs,
+	typesMetricName,
+	typesMetricRangeArgs,
+	typesMetricTotalsByDimensionArgs,
+	typesQueryCtx,
+	typesTimeSeriesArgs,
+	typesTopDimensionValueArgs,
+} from "../shared/types/queryArgs.js";
 
 // SCHEMAS
 export {

@@ -1,9 +1,9 @@
 // UTILS
-import { humanizeKey } from "./utils/common/stringUtils.js";
-import { createConfigurationHash } from "./utils/configurationHash.js";
+import { internalHumanizeKey } from "./utils/common/stringUtils.js";
+import { internalCreateConfigurationHash } from "./utils/configurationHash.js";
 
 // DEFAULTS
-import { defaultAnalyticsSettings } from "../shared/analyticsDefaults.js";
+import { internalDefaultAnalyticsSettings } from "../shared/utils/analyticsDefaultsUtils.js";
 
 // TYPES
 import type {
@@ -11,13 +11,13 @@ import type {
 	typesAnalyticsConfigState,
 	typesAnalyticsPropertyType,
 	typesAnalyticsRuntimeConfig,
-} from "./types/types.js";
+} from "../shared/types/index.js";
 
-export function defaultSettings(): typesAnalyticsSettings {
-	return defaultAnalyticsSettings();
+export function internalDefaultSettings(): typesAnalyticsSettings {
+	return internalDefaultAnalyticsSettings();
 }
 
-export function chartConfig(
+export function internalChartConfig(
 	seriesKeys: string[],
 	labels?: Record<string, string>,
 ) {
@@ -25,13 +25,13 @@ export function chartConfig(
 		seriesKeys.map((key) => [
 			key,
 			{
-				label: labels?.[key] ?? humanizeKey(key),
+				label: labels?.[key] ?? internalHumanizeKey(key),
 			},
 		]),
 	);
 }
 
-export function normalizeConfig(
+export function internalNormalizeConfig(
 	config: typesAnalyticsRuntimeConfig,
 ): typesAnalyticsConfigState {
 	const events = config.events.map((event) => ({
@@ -43,7 +43,7 @@ export function normalizeConfig(
 	const metrics = config.metrics.map((metric) => ({ ...metric }));
 	const funnels = config.funnels ?? {};
 	const settings = {
-		...defaultSettings(),
+		...internalDefaultSettings(),
 		...config.settings,
 	};
 
@@ -59,7 +59,7 @@ export function normalizeConfig(
 		settings,
 		configHash:
 			config.configHash ??
-			createConfigurationHash({
+			internalCreateConfigurationHash({
 				events,
 				metrics,
 				funnels,

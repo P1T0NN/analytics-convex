@@ -1,9 +1,7 @@
 // TYPES
-import type {
-	typesAnalyticsMetricConfig,
-	typesAnalyticsScopeInput,
-} from "./types";
 import type { GenericDataModel, GenericQueryCtx } from "convex/server";
+import type { typesAnalyticsMetricConfig } from "./config.js";
+import type { typesAnalyticsScopeInput } from "./scopes.js";
 
 export type typesQueryCtx = Pick<GenericQueryCtx<GenericDataModel>, "runQuery">;
 
@@ -96,6 +94,12 @@ export type typesFunnelConversionArgs = {
 	to: number;
 	scope?: typesAnalyticsScopeInput;
 };
+
+/** Same fields as `typesMetricRangeArgs` — used by `fetchMetricComparison`. */
+export type typesMetricComparisonArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+	Name extends typesMetricName<Metrics>,
+> = typesMetricRangeArgs<Metrics, Name>;
 
 export type typesTopDimensionValueArgs<
 	Metrics extends readonly typesAnalyticsMetricConfig[],

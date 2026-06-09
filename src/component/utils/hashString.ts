@@ -1,4 +1,4 @@
-export function hashString(value: string) {
+export function internalHashString(value: string) {
 	let hash = 0;
 
 	for (let index = 0; index < value.length; index += 1) {

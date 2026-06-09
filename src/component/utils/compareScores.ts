@@ -1,1 +1,1 @@
-export { compareScores } from "../../shared/analyticsRanking";
+export { compareScores } from "../../shared/utils/analyticsRankingUtils";

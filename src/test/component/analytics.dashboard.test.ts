@@ -3,14 +3,14 @@
 import { describe, expect, it } from "vitest";
 import { api, internal } from "../../component/_generated/api";
 import {
-	createAnalyticsComponentTest,
-	runtimeConfiguration,
+	internalCreateAnalyticsComponentTest,
+	internalRuntimeConfiguration,
 } from "../../testUtils/componentTestUtils";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
 function hospitalityConfig() {
-	return runtimeConfiguration({
+	return internalRuntimeConfiguration({
 		events: [
 			{ name: "qr.scanned", label: "QR scanned" },
 			{ name: "guest.activated", label: "Guest activated" },
@@ -82,12 +82,12 @@ function hospitalityConfig() {
 }
 
 async function writeEvent(
-	t: ReturnType<typeof createAnalyticsComponentTest>,
+	t: ReturnType<typeof internalCreateAnalyticsComponentTest>,
 	config: ReturnType<typeof hospitalityConfig>,
 	name: string,
 	occurredAt: number,
 ) {
-	await t.mutation(internal.helpers.writeAnalyticsEvent.writeAnalyticsEvent, {
+	await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
 		config,
 		name,
 		occurredAt,
@@ -99,7 +99,7 @@ async function writeEvent(
 
 describe("analytics dashboard and funnel queries", () => {
 	it("batch-reads dashboard metrics with comparison and evaluation", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 
@@ -160,7 +160,7 @@ describe("analytics dashboard and funnel queries", () => {
 	});
 
 	it("computes named funnel conversion from first to last step", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 
@@ -191,7 +191,7 @@ describe("analytics dashboard and funnel queries", () => {
 	});
 
 	it("rejects duplicate metrics in dashboard batch requests", async () => {
-		const t = createAnalyticsComponentTest(modules);
+		const t = internalCreateAnalyticsComponentTest(modules);
 		const config = hospitalityConfig();
 		const now = Date.now();
 

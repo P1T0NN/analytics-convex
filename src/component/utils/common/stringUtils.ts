@@ -1,4 +1,4 @@
-export function humanizeKey(value: string) {
+export function internalHumanizeKey(value: string) {
 	return value
 		.replace(/[_-]+/g, " ")
 		.replace(/\s+/g, " ")

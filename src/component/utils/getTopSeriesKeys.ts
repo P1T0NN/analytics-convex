@@ -1,8 +1,8 @@
 // TYPES
 import type { Doc } from "../_generated/dataModel";
-import type { typesAnalyticsSettings } from "../types/types.js";
+import type { typesAnalyticsSettings } from "../../shared/types/index.js";
 
-export function getTopSeriesKeys(
+export function internalGetTopSeriesKeys(
 	rows: Doc<"analyticsDailyMetrics">[],
 	settings: typesAnalyticsSettings,
 ) {

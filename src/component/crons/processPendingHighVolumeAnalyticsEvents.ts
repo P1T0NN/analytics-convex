@@ -4,11 +4,11 @@ import { mutation } from "../_generated/server";
 import { api } from "../_generated/api";
 
 // HELPERS
-import { normalizeConfig } from "../analyticsConfig";
-import { aggregateEvent } from "../helpers/aggregateEvent";
+import { internalNormalizeConfig } from "../analyticsConfig";
+import { internalAggregateEvent } from "../helpers/aggregateEvent";
 
 // UTILS
-import { toAggregateInput } from "../utils/analyticsEventPayloads";
+import { internalToAggregateInput } from "../utils/analyticsEventPayloads";
 
 // SCHEMAS
 import { analyticsRuntimeConfigValidator } from "../schemas/schemas";
@@ -32,7 +32,7 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 		scheduledNextBatch: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		const config = normalizeConfig(args.config);
+		const config = internalNormalizeConfig(args.config);
 		const remainingCatchupBatches =
 			args.remainingCatchupBatches ??
 			config.settings.highVolumeMaxCatchupBatches;
@@ -51,10 +51,10 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 			};
 		}
 
-		await aggregateEvent(
+		await internalAggregateEvent(
 			ctx,
 			config,
-			pendingEvents.map((event) => toAggregateInput(event)),
+			pendingEvents.map((event) => internalToAggregateInput(event)),
 			"highVolume",
 		);
 

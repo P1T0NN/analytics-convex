@@ -12,13 +12,13 @@ export {
 	trackEventInputValidator,
 	uniqueEventValidator,
 	uniqueScopeValidator,
-} from "../../shared/analyticsSchemas.js";
+} from "../../shared/schemas/analyticsSchemas.js";
 
 import {
 	propertyValueValidator,
 	sourceValidator,
 	trackEventInputFields,
-} from "../../shared/analyticsSchemas.js";
+} from "../../shared/schemas/analyticsSchemas.js";
 
 export const trafficModeValidator = v.union(
 	v.literal("lowVolume"),
@@ -54,12 +54,12 @@ export {
 	funnelConfigValidator,
 	funnelsConfigValidator,
 	funnelConversionResponseValidator,
-} from "../../shared/analyticsFunnelSchemas.js";
+} from "../../shared/schemas/funnelSchemas.js";
 
 export {
 	dashboardMetricItemValidator,
 	dashboardMetricsResponseValidator,
-} from "../../shared/analyticsDashboardSchemas.js";
+} from "../../shared/schemas/dashboardSchemas.js";
 
 export {
 	metricComparisonEvaluationConfigValidator,
@@ -71,10 +71,10 @@ export {
 	metricEvaluationResultValidator,
 	metricInverseRateEvaluationConfigValidator,
 	metricLabelValidator,
-} from "../../shared/analyticsEvaluationSchemas.js";
+} from "../../shared/schemas/evaluationSchemas.js";
 
-import { metricEvaluationConfigValidator } from "../../shared/analyticsEvaluationSchemas.js";
-import { funnelsConfigValidator } from "../../shared/analyticsFunnelSchemas.js";
+import { metricEvaluationConfigValidator } from "../../shared/schemas/evaluationSchemas.js";
+import { funnelsConfigValidator } from "../../shared/schemas/funnelSchemas.js";
 
 export const metricConfigValidator = v.object({
 	name: v.string(),

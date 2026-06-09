@@ -1,164 +1,164 @@
 // CONSTANTS
-import { ANALYTICS_LIMITS } from "../../shared/analyticsLimits.js";
-import { DAY_MS } from "../constants.js";
+import { ANALYTICS_LIMITS } from "../../shared/constants.js";
+import { DAY_MS } from "../../shared/constants.js";
 
 // UTILS
-import { startOfUtcDay } from "../utils/common/dateUtils.js";
-import { badRequest } from "../errors/errors.js";
+import { internalStartOfUtcDay } from "../utils/common/dateUtils.js";
+import { internalBadRequest } from "../errors/errors.js";
 
 // VALIDATIONS
-import { validateConfigurationLimits } from "./configurationLimits.js";
-import { assertNumberAtMost } from "./limitUtils.js";
+import { internalValidateConfigurationLimits } from "./configurationLimits.js";
+import { internalAssertNumberAtMost } from "./limitUtils.js";
 
 // TYPES
 import type {
 	typesAnalyticsConfigState,
-	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../types/types.js";
+} from "../../shared/types/index.js";
 
-export function assertNonEmptyString(value: string, field: string) {
+export function internalAssertNonEmptyString(value: string, field: string) {
 	if (value.trim().length === 0) {
-		badRequest(`${field} must not be empty.`);
+		internalBadRequest(`${field} must not be empty.`);
 	}
 }
 
-export function assertPositiveInteger(
+export function internalAssertPositiveInteger(
 	value: number,
 	field: keyof typesAnalyticsSettings,
 ) {
 	if (!Number.isInteger(value) || value <= 0) {
-		badRequest(`settings.${field} must be a positive integer.`);
+		internalBadRequest(`settings.${field} must be a positive integer.`);
 	}
 }
 
-export function assertNonNegativeInteger(
+export function internalAssertNonNegativeInteger(
 	value: number,
 	field: keyof typesAnalyticsSettings,
 ) {
 	if (!Number.isInteger(value) || value < 0) {
-		badRequest(`settings.${field} must be a non-negative integer.`);
+		internalBadRequest(`settings.${field} must be a non-negative integer.`);
 	}
 }
 
-export function validateSettings(settings: typesAnalyticsSettings) {
-	assertPositiveInteger(
+export function internalValidateSettings(settings: typesAnalyticsSettings) {
+	internalAssertPositiveInteger(
 		settings.mediumVolumeShardCount,
 		"mediumVolumeShardCount",
 	);
-	assertPositiveInteger(settings.highVolumeShardCount, "highVolumeShardCount");
-	assertPositiveInteger(settings.highVolumeBatchSize, "highVolumeBatchSize");
-	assertPositiveInteger(
+	internalAssertPositiveInteger(settings.highVolumeShardCount, "highVolumeShardCount");
+	internalAssertPositiveInteger(settings.highVolumeBatchSize, "highVolumeBatchSize");
+	internalAssertPositiveInteger(
 		settings.highVolumeBatchIntervalMinutes,
 		"highVolumeBatchIntervalMinutes",
 	);
-	assertNonNegativeInteger(
+	internalAssertNonNegativeInteger(
 		settings.highVolumeMaxCatchupBatches,
 		"highVolumeMaxCatchupBatches",
 	);
-	assertPositiveInteger(settings.maxQueryRangeDays, "maxQueryRangeDays");
-	assertPositiveInteger(
+	internalAssertPositiveInteger(settings.maxQueryRangeDays, "maxQueryRangeDays");
+	internalAssertPositiveInteger(
 		settings.maxRollupRowsPerQuery,
 		"maxRollupRowsPerQuery",
 	);
-	assertPositiveInteger(settings.maxBreakdownItems, "maxBreakdownItems");
-	assertNonNegativeInteger(
+	internalAssertPositiveInteger(settings.maxBreakdownItems, "maxBreakdownItems");
+	internalAssertNonNegativeInteger(
 		settings.rawEventRetentionDays,
 		"rawEventRetentionDays",
 	);
-	assertPositiveInteger(
+	internalAssertPositiveInteger(
 		settings.maxRawEventDeletesPerRun,
 		"maxRawEventDeletesPerRun",
 	);
 
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.mediumVolumeShardCount,
 		ANALYTICS_LIMITS.maxMediumVolumeShardCount,
 		"settings.mediumVolumeShardCount",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.highVolumeShardCount,
 		ANALYTICS_LIMITS.maxHighVolumeShardCount,
 		"settings.highVolumeShardCount",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.highVolumeBatchSize,
 		ANALYTICS_LIMITS.maxHighVolumeBatchSize,
 		"settings.highVolumeBatchSize",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.highVolumeMaxCatchupBatches,
 		ANALYTICS_LIMITS.maxHighVolumeMaxCatchupBatches,
 		"settings.highVolumeMaxCatchupBatches",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.maxQueryRangeDays,
 		ANALYTICS_LIMITS.maxQueryRangeDays,
 		"settings.maxQueryRangeDays",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.maxRollupRowsPerQuery,
 		ANALYTICS_LIMITS.maxRollupRowsPerQuery,
 		"settings.maxRollupRowsPerQuery",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.maxBreakdownItems,
 		ANALYTICS_LIMITS.maxBreakdownItems,
 		"settings.maxBreakdownItems",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.rawEventRetentionDays,
 		ANALYTICS_LIMITS.maxRawEventRetentionDays,
 		"settings.rawEventRetentionDays",
 	);
-	assertNumberAtMost(
+	internalAssertNumberAtMost(
 		settings.maxRawEventDeletesPerRun,
 		ANALYTICS_LIMITS.maxRawEventDeletesPerRun,
 		"settings.maxRawEventDeletesPerRun",
 	);
 }
 
-export function validateConfiguration(args: {
-	events: typesAnalyticsEventConfig[];
-	metrics: typesAnalyticsMetricConfig[];
+export function internalValidateConfiguration(args: {
+	events: typesAnalyticsEventConfigRuntime[];
+	metrics: typesAnalyticsMetricConfigRuntime[];
 	settings: typesAnalyticsSettings;
 	funnels?: typesAnalyticsFunnelsConfig;
 }) {
-	validateConfigurationLimits(args);
+	internalValidateConfigurationLimits(args);
 
 	if (args.events.length === 0) {
-		badRequest("At least one analytics event must be configured.");
+		internalBadRequest("At least one analytics event must be configured.");
 	}
 	if (args.metrics.length === 0) {
-		badRequest("At least one analytics metric must be configured.");
+		internalBadRequest("At least one analytics metric must be configured.");
 	}
 
 	const eventNames = new Set<string>();
 	for (const event of args.events) {
-		assertNonEmptyString(event.name, "event.name");
-		assertNonEmptyString(event.label, `event "${event.name}".label`);
+		internalAssertNonEmptyString(event.name, "event.name");
+		internalAssertNonEmptyString(event.label, `event "${event.name}".label`);
 
 		if (eventNames.has(event.name)) {
-			badRequest(`Duplicate analytics event "${event.name}".`);
+			internalBadRequest(`Duplicate analytics event "${event.name}".`);
 		}
 		eventNames.add(event.name);
 
 		for (const propertyName of Object.keys(event.properties ?? {})) {
-			assertNonEmptyString(propertyName, `event "${event.name}" property name`);
+			internalAssertNonEmptyString(propertyName, `event "${event.name}" property name`);
 		}
 
 		for (const requiredProperty of event.requiredProperties ?? []) {
-			assertNonEmptyString(
+			internalAssertNonEmptyString(
 				requiredProperty,
 				`event "${event.name}" required property`,
 			);
 
 			if (!event.properties?.[requiredProperty]) {
-				badRequest(
+				internalBadRequest(
 					`Required property "${requiredProperty}" is not registered on event "${event.name}".`,
 				);
 			}
@@ -167,40 +167,40 @@ export function validateConfiguration(args: {
 
 	const metricNames = new Set<string>();
 	for (const metric of args.metrics) {
-		assertNonEmptyString(metric.name, "metric.name");
-		assertNonEmptyString(metric.label, `metric "${metric.name}".label`);
+		internalAssertNonEmptyString(metric.name, "metric.name");
+		internalAssertNonEmptyString(metric.label, `metric "${metric.name}".label`);
 
 		if (metricNames.has(metric.name)) {
-			badRequest(`Duplicate analytics metric "${metric.name}".`);
+			internalBadRequest(`Duplicate analytics metric "${metric.name}".`);
 		}
 
 		metricNames.add(metric.name);
 
 		if (metric.eventNames.length === 0) {
-			badRequest(`Metric "${metric.name}" must include at least one event.`);
+			internalBadRequest(`Metric "${metric.name}" must include at least one event.`);
 		}
 
 		for (const eventName of metric.eventNames) {
 			if (!eventNames.has(eventName)) {
-				badRequest(
+				internalBadRequest(
 					`Metric "${metric.name}" references unknown event "${eventName}".`,
 				);
 			}
 		}
 
 		if (metric.aggregation === "sum" && !metric.valueProperty) {
-			badRequest(`Sum metric "${metric.name}" requires valueProperty.`);
+			internalBadRequest(`Sum metric "${metric.name}" requires valueProperty.`);
 		}
 
 		for (const dimension of metric.dimensions ?? []) {
-			assertNonEmptyString(dimension, `metric "${metric.name}" dimension`);
+			internalAssertNonEmptyString(dimension, `metric "${metric.name}" dimension`);
 		}
 	}
 
-	validateSettings(args.settings);
+	internalValidateSettings(args.settings);
 }
 
-export function sanitizeProperties(
+export function internalSanitizeProperties(
 	input: Record<string, typesAnalyticsPropertyValue> | undefined,
 ) {
 	const properties: typesAnalyticsProperties = {};
@@ -219,7 +219,7 @@ export function sanitizeProperties(
 	return properties;
 }
 
-export function validateEventInput(
+export function internalValidateEventInput(
 	config: typesAnalyticsConfigState,
 	name: string,
 	properties: typesAnalyticsProperties,
@@ -261,31 +261,31 @@ export function validateEventInput(
 	return errors;
 }
 
-export function assertDateRange(
+export function internalAssertDateRange(
 	args: { from: number; to: number },
 	settings: typesAnalyticsSettings,
 ) {
-	const from = startOfUtcDay(args.from);
-	const to = startOfUtcDay(args.to);
+	const from = internalStartOfUtcDay(args.from);
+	const to = internalStartOfUtcDay(args.to);
 
 	if (from > to) {
-		badRequest("`from` must be before or equal to `to`.");
+		internalBadRequest("`from` must be before or equal to `to`.");
 	}
 
 	const rangeDays = Math.floor((to - from) / DAY_MS) + 1;
 
 	if (rangeDays > settings.maxQueryRangeDays) {
-		badRequest(
+		internalBadRequest(
 			`Analytics queries are limited to ${settings.maxQueryRangeDays} days. Narrow the date range.`,
 		);
 	}
 }
 
-export function assertAllowedDimension(
-	metric: typesAnalyticsMetricConfig,
+export function internalAssertAllowedDimension(
+	metric: typesAnalyticsMetricConfigRuntime,
 	groupBy: string,
 ) {
 	if (!metric.dimensions?.includes(groupBy)) {
-		badRequest(`Metric "${metric.name}" cannot be grouped by "${groupBy}".`);
+		internalBadRequest(`Metric "${metric.name}" cannot be grouped by "${groupBy}".`);
 	}
 }

@@ -6,16 +6,16 @@ import type { ComponentApi } from "../../component/_generated/component.js";
 import { createAnalyticsApi } from "./createAnalyticsApi";
 
 // BUILDERS
-import { createAnalyticsMetricBuilders } from "../builders/metric";
+import { internalCreateAnalyticsMetricBuilders } from "../builders/metric";
 
 // HELPERS
-import { createAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
+import { internalCreateAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
 
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
 
 // DEFAULTS
-import { defaultAnalyticsSettings } from "../../shared/analyticsDefaults";
+import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDefaultsUtils";
 
 // TYPES
 import type {
@@ -24,7 +24,7 @@ import type {
 	typesAnalyticsOperation,
 	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../types/types";
+} from "../../shared/types/index.js";
 import type {
 	typesAnalyticsMetricBuilder,
 	typesAnalyticsMetricBuilders,
@@ -82,7 +82,7 @@ export function defineAnalytics<
 	) as unknown as readonly typesMapValue<Events>[];
 	const metricBuilders =
 		typeof options.metrics === "function"
-			? options.metrics(createAnalyticsMetricBuilders<Events>())
+			? options.metrics(internalCreateAnalyticsMetricBuilders<Events>())
 			: options.metrics;
 	const metrics = Object.entries(metricBuilders).map(([name, metric]) =>
 		metric.build(name),
@@ -93,13 +93,13 @@ export function defineAnalytics<
 		metrics: metrics as any,
 		...(options.funnels ? { funnels: options.funnels } : {}),
 		settings: {
-			...defaultAnalyticsSettings(),
+			...internalDefaultAnalyticsSettings(),
 			...(options.settings ?? {}),
 		},
 	};
 
 	return {
-		...createAnalyticsServerHelpers(
+		...internalCreateAnalyticsServerHelpers(
 			component,
 			events,
 			metrics,

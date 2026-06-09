@@ -532,5 +532,22 @@ Do not expect these from the library yet:
 
 ## Related docs
 
-- [README.md](./README.md) — full API reference, scopes, traffic modes, tracking
+- [README.md](./README.md) — full API reference, scopes, traffic modes, tracking, **Types**
 - [CHANGELOG.md](./CHANGELOG.md) — version history
+
+### TypeScript types
+
+Import query response and config types from the package — do not re-declare them in
+consumer apps:
+
+```ts
+import type {
+  typesDashboardMetricsResponse,
+  typesMetricEvaluationResponse,
+  typesFunnelConversionResponse,
+  typesWriteTrackResult,
+  typesMetricEvaluationConfig,
+} from "@piton-/analytics-convex";
+```
+
+See the [Types](./README.md#types) section in README for the full export list.
