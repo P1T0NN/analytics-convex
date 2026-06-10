@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.27
 
 ### Breaking
 - Removed public exports: `createAnalyticsApi`, `createAnalyticsReader`, `createAnalyticsTracker`, `registerAnalyticsCrons`, and `createAnalyticsCronHandlers`. Use `defineAnalytics()` only.
