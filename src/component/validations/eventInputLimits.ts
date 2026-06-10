@@ -14,9 +14,11 @@ import { internalBadRequest } from "../errors/errors.js";
 // TYPES
 import type {
 	typesAnalyticsMetricScope,
+} from "../../shared/types/scopes.js";
+import type {
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
-} from "../../shared/types/index.js";
+} from "../../shared/types/primitives.js";
 
 export function internalValidateTrackBatchLimits(count: number) {
 	internalAssertAtMost(count, ANALYTICS_LIMITS.maxTrackBatchSize, "events");

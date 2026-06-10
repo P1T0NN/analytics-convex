@@ -1,19 +1,23 @@
+// UTILS
+import {
+	internalReduceMetricRollupTotalsByKey,
+} from "../../shared/utils/metricAggregationUtils.js";
+
 // TYPES
 import type { Doc } from "../_generated/dataModel";
-import type { typesAnalyticsSettings } from "../../shared/types/index.js";
+import type {
+	typesAnalyticsAggregation,
+} from "../../shared/types/primitives.js";
+import type {
+	typesAnalyticsSettings,
+} from "../../shared/types/settings.js";
 
 export function internalGetTopSeriesKeys(
 	rows: Doc<"analyticsDailyMetrics">[],
 	settings: typesAnalyticsSettings,
+	aggregation: typesAnalyticsAggregation = "sum",
 ) {
-	const totals = new Map<string, number>();
-
-	for (const row of rows) {
-		totals.set(
-			row.dimensionValue,
-			(totals.get(row.dimensionValue) ?? 0) + row.value,
-		);
-	}
+	const totals = internalReduceMetricRollupTotalsByKey(aggregation, rows);
 
 	return [...totals.entries()]
 		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))

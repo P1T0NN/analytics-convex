@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 // BUILDERS
 import { event } from "../../../client/builders/event";
-import { count, sum } from "../../../client/builders/metric";
+import { avg, count, distinctActors, max, min, sum } from "../../../client/builders/metric";
 import { property } from "../../../client/builders/property";
 
 describe("analytics builders", () => {
@@ -83,6 +83,60 @@ describe("analytics builders", () => {
 			aggregation: "sum",
 			valueProperty: "price",
 			dimensions: ["category", "currency"],
+		});
+
+		expect(
+			avg("Average order value", "currency")
+				.from("product.added")
+				.value("price")
+				.build("averageOrderValue"),
+		).toEqual({
+			name: "averageOrderValue",
+			label: "Average order value",
+			unit: "currency",
+			eventNames: ["product.added"],
+			aggregation: "avg",
+			valueProperty: "price",
+		});
+
+		expect(
+			min("Minimum order value", "currency")
+				.from("product.added")
+				.value("price")
+				.build("minimumOrderValue"),
+		).toEqual({
+			name: "minimumOrderValue",
+			label: "Minimum order value",
+			unit: "currency",
+			eventNames: ["product.added"],
+			aggregation: "min",
+			valueProperty: "price",
+		});
+
+		expect(
+			max("Maximum order value", "currency")
+				.from("product.added")
+				.value("price")
+				.build("maximumOrderValue"),
+		).toEqual({
+			name: "maximumOrderValue",
+			label: "Maximum order value",
+			unit: "currency",
+			eventNames: ["product.added"],
+			aggregation: "max",
+			valueProperty: "price",
+		});
+
+		expect(
+			distinctActors("Daily active users")
+				.from("app.opened")
+				.build("dailyActiveUsers"),
+		).toEqual({
+			name: "dailyActiveUsers",
+			label: "Daily active users",
+			unit: "count",
+			eventNames: ["app.opened"],
+			aggregation: "distinctActors",
 		});
 	});
 });

@@ -1,5 +1,7 @@
 // TYPES
-import type { typesAnalyticsEventConfig } from "../../shared/types/index.js";
+import type {
+	typesAnalyticsEventConfig,
+} from "../../shared/types/config.js";
 
 export function internalSerializeEvents(events: readonly typesAnalyticsEventConfig[]) {
 	return events.map((event) => ({

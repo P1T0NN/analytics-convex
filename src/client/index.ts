@@ -10,10 +10,25 @@ export { defineAnalytics } from "./api/defineAnalytics";
 
 // BUILDERS
 export { event } from "./builders/event";
-export { count, sum } from "./builders/metric";
+export { count, sum, avg, min, max, distinctActors } from "./builders/metric";
 export { property } from "./builders/property";
 
 // PURE UTILS
+export {
+	analyticsDayRangeIncludesToday,
+	countUtcDaysInRange,
+	createAnalyticsCompletedDayRange,
+	createAnalyticsDayRange,
+	createAnalyticsTodayRange,
+	normalizeAnalyticsDayRange,
+	previousAnalyticsDayRange,
+	previousAnalyticsPeriodRange,
+	startOfUtcDay,
+	startOfUtcWeek,
+	startOfUtcMonth,
+	getQueryBucketStart,
+	listQueryBuckets,
+} from "../shared/utils/analyticsDateRangeUtils";
 export {
 	computeConversionRatePercent,
 	computePercentOfGoal,
@@ -42,69 +57,93 @@ export {
 } from "../shared/utils/analyticsScopesUtils";
 
 // TYPES
-export {
-	type typesAnalyticsAggregation,
-	type typesAnalyticsDateRange,
-	type typesAnalyticsEventConfig,
-	type typesAnalyticsEventConfigRuntime,
-	type typesAnalyticsMetricConfig,
-	type typesAnalyticsMetricConfigRuntime,
-	type typesAnalyticsMetricLabel,
-	type typesAnalyticsMetricScope,
-	type typesAnalyticsOperation,
-	type typesAnalyticsPropertyType,
-	type typesAnalyticsPropertyValue,
-	type typesAnalyticsRankingDirection,
-	type typesAnalyticsRankingTieBreaker,
-	type typesAnalyticsResolvedScope,
-	type typesAnalyticsResourceScope,
-	type typesAnalyticsResourceScopeInput,
-	type typesAnalyticsRuntimeConfig,
-	type typesAnalyticsScopeInput,
-	type typesAnalyticsScopeType,
-	type typesAnalyticsSettings,
-	type typesAnalyticsTrafficMode,
-	type typesAnalyticsUnit,
-	type typesAnalyticsUnique,
-	type typesAnalyticsFunnelConfig,
-	type typesAnalyticsFunnelsConfig,
-	type typesDashboardMetricConversion,
-	type typesDashboardMetricGoal,
-	type typesDashboardMetricItem,
-	type typesDashboardMetricsResponse,
-	type typesFunnelConversionResponse,
-	type typesGetAnalyticsRankingArgs,
-	type typesMetricComparisonEvaluationConfig,
-	type typesMetricComparisonInput,
-	type typesMetricComparisonResponse,
-	type typesMetricConversionEvaluationConfig,
-	type typesMetricConversionInput,
-	type typesMetricConversionResponse,
-	type typesMetricEvaluationConfig,
-	type typesMetricEvaluationConversion,
-	type typesMetricEvaluationGoal,
-	type typesMetricEvaluationReason,
-	type typesMetricEvaluationResponse,
-	type typesMetricEvaluationResult,
-	type typesMetricGoalEvaluationConfig,
-	type typesMetricGoalInput,
-	type typesMetricInverseRateEvaluationConfig,
-	type typesMetricSummaryResponse,
-	type typesTrackEventInput,
-	type typesTrackEventsInput,
-	type typesTypedTrackBatchInputForEvents,
-	type typesTypedTrackEventInput,
-	type typesTypedTrackEventInputForEvents,
-	type typesTypedTrackEventOptions,
-	type typesUnifiedTrackInputForEvents,
-	type typesWriteTrackResult,
-} from "../shared/types/index.js";
+export type {
+	typesAnalyticsAggregation,
+	typesAnalyticsPropertyType,
+	typesAnalyticsPropertyValue,
+	typesAnalyticsRollupGranularity,
+	typesAnalyticsBucketUnit,
+	typesAnalyticsTrafficMode,
+	typesAnalyticsUnit,
+} from "../shared/types/primitives.js";
+export type {
+	typesAnalyticsDateRange,
+	typesDashboardMetricConversion,
+	typesDashboardMetricGoal,
+	typesDashboardMetricItem,
+	typesDashboardMetricsResponse,
+	typesFunnelConversionResponse,
+	typesJourneyConversionResponse,
+	typesMetricComparisonResponse,
+	typesMetricConversionResponse,
+	typesMetricEvaluationConversion,
+	typesMetricEvaluationGoal,
+	typesMetricEvaluationResponse,
+	typesMetricSummaryResponse,
+} from "../shared/types/queries.js";
+export type {
+	typesAnalyticsEventConfig,
+	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsFunnelConfig,
+	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneyConfig,
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfig,
+	typesAnalyticsMetricConfigRuntime,
+	typesAnalyticsRuntimeConfig,
+} from "../shared/types/config.js";
+export type {
+	typesAnalyticsMetricLabel,
+	typesMetricComparisonEvaluationConfig,
+	typesMetricComparisonInput,
+	typesMetricConversionEvaluationConfig,
+	typesMetricConversionInput,
+	typesMetricEvaluationConfig,
+	typesMetricEvaluationReason,
+	typesMetricEvaluationResult,
+	typesMetricGoalEvaluationConfig,
+	typesMetricGoalInput,
+	typesMetricInverseRateEvaluationConfig,
+} from "../shared/types/evaluation.js";
+export type {
+	typesAnalyticsMetricScope,
+	typesAnalyticsResolvedScope,
+	typesAnalyticsResourceScope,
+	typesAnalyticsResourceScopeInput,
+	typesAnalyticsScopeInput,
+	typesAnalyticsScopeType,
+} from "../shared/types/scopes.js";
+export type {
+	typesAnalyticsOperation,
+} from "../shared/types/operations.js";
+export type {
+	typesAnalyticsRankingDirection,
+	typesAnalyticsRankingTieBreaker,
+	typesGetAnalyticsRankingArgs,
+} from "../shared/types/ranking.js";
+export type {
+	typesAnalyticsSettings,
+} from "../shared/types/settings.js";
+export type {
+	typesAnalyticsUnique,
+	typesTrackEventInput,
+	typesTrackEventsInput,
+	typesWriteTrackResult,
+} from "../shared/types/tracking.js";
+export type {
+	typesTypedTrackBatchInputForEvents,
+	typesTypedTrackEventInput,
+	typesTypedTrackEventInputForEvents,
+	typesTypedTrackEventOptions,
+	typesUnifiedTrackInputForEvents,
+} from "../shared/types/typedTracking.js";
 
 export type {
 	typesBreakdownArgs,
 	typesDashboardMetricsArgs,
 	typesDimensionNameForMetric,
 	typesFunnelConversionArgs,
+	typesJourneyConversionArgs,
 	typesMetricComparisonArgs,
 	typesMetricConversionArgs,
 	typesMetricEvaluationArgs,

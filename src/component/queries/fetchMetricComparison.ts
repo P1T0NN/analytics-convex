@@ -8,32 +8,34 @@ import { internalGetMetricTotalsForRanges } from "../helpers/rollupReads";
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
+import {
+	getQueryBucketEndInclusive,
+	getQueryBucketStart,
+	previousAnalyticsPeriodRange,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import {
+	internalResolveQueryBucketUnit,
+	internalResolveQueryTimezone,
+} from "../utils/queryOptionsUtils";
 import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
 import {
+	bucketUnitValidator,
 	configReferenceFields,
 	rangeValidator,
 	resolvedScopeValidator,
 	scopeInputValidator,
+	timezoneValidator,
 	unitValidator,
 } from "../schemas/schemas";
 
 /**
  * Compare a metric between two equal-length periods.
  *
- * The previous period is auto-calculated by shifting the current range
- * backward by its duration. Runs two parallel rollup queries. Returns
- * current, previous, delta, and deltaPercent (undefined if previous is 0).
- *
- * @example
- * const result = await ctx.runQuery(components.analytics.lib.fetchMetricComparison, {
- *   metric: "pageViews",
- *   from: Date.UTC(2026, 5, 1),
- *   to: Date.UTC(2026, 5, 7),
- * });
+ * The previous period is auto-calculated from the current range. Day ranges
+ * use UTC day counts; week/month ranges use calendar bucket counts.
  */
 export const fetchMetricComparison = query({
 	args: {
@@ -42,6 +44,8 @@ export const fetchMetricComparison = query({
 		from: v.number(),
 		to: v.number(),
 		scope: v.optional(scopeInputValidator),
+		bucketUnit: v.optional(bucketUnitValidator),
+		timezone: v.optional(timezoneValidator),
 	},
 	returns: v.object({
 		metric: v.string(),
@@ -52,22 +56,44 @@ export const fetchMetricComparison = query({
 		previous: v.number(),
 		delta: v.number(),
 		deltaPercent: v.optional(v.number()),
+		bucketUnit: bucketUnitValidator,
+		timezone: v.string(),
 		range: v.object({
 			current: rangeValidator,
 			previous: rangeValidator,
 		}),
 	}),
 	handler: async (ctx, args) => {
-		const rangeMs = args.to - args.from;
-		const previousFrom = args.from - rangeMs;
-		const previousTo = args.from;
-
 		const config = await internalResolveConfiguration(ctx, {
 			configHash: args.configHash,
 			config: args.config,
 		});
-		internalAssertDateRange({ from: args.from, to: args.to }, config.settings);
-		internalAssertDateRange({ from: previousFrom, to: previousTo }, config.settings);
+		const bucketUnit = internalResolveQueryBucketUnit(args.bucketUnit);
+		const timeZone = internalResolveQueryTimezone(args.timezone, config.settings);
+		const { current: currentRange, previous: previousRange } =
+			previousAnalyticsPeriodRange(
+				{
+					from: args.from,
+					to: args.to,
+				},
+				bucketUnit,
+				timeZone,
+			);
+
+		internalAssertDateRange(
+			{
+				from: currentRange.from,
+				to: getQueryBucketEndInclusive(currentRange.to, bucketUnit, timeZone),
+			},
+			config.settings,
+		);
+		internalAssertDateRange(
+			{
+				from: previousRange.from,
+				to: getQueryBucketEndInclusive(previousRange.to, bucketUnit, timeZone),
+			},
+			config.settings,
+		);
 
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
 		const scope = internalResolveScope(args.scope);
@@ -76,8 +102,16 @@ export const fetchMetricComparison = query({
 			metric: args.metric,
 			scope,
 			ranges: [
-				{ key: "current", from: args.from, to: args.to },
-				{ key: "previous", from: previousFrom, to: previousTo },
+				{
+					key: "current",
+					from: currentRange.from,
+					to: getQueryBucketEndInclusive(currentRange.to, bucketUnit, timeZone),
+				},
+				{
+					key: "previous",
+					from: previousRange.from,
+					to: getQueryBucketEndInclusive(previousRange.to, bucketUnit, timeZone),
+				},
 			],
 		});
 		const current = totals.get("current") ?? 0;
@@ -95,14 +129,16 @@ export const fetchMetricComparison = query({
 			previous,
 			delta,
 			deltaPercent,
+			bucketUnit,
+			timezone: timeZone === "UTC" ? "UTC" : timeZone,
 			range: {
 				current: {
-					from: internalStartOfUtcDay(args.from),
-					to: internalStartOfUtcDay(args.to),
+					from: getQueryBucketStart(currentRange.from, bucketUnit, timeZone),
+					to: getQueryBucketStart(currentRange.to, bucketUnit, timeZone),
 				},
 				previous: {
-					from: internalStartOfUtcDay(previousFrom),
-					to: internalStartOfUtcDay(previousTo),
+					from: getQueryBucketStart(previousRange.from, bucketUnit, timeZone),
+					to: getQueryBucketStart(previousRange.to, bucketUnit, timeZone),
 				},
 			},
 		};

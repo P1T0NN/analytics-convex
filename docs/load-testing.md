@@ -6,17 +6,17 @@
 
 | Command | Where it runs | Convex cloud impact |
 | --- | --- | --- |
-| `npm test` | Local Node + `convex-test` | **None** — in-memory fake DB |
-| `npm run test:volume` | Same | **None** |
-| `npm run test:stress` | Same | **None** |
-| `npm run dev` (example app) | Your linked dev deployment | **Yes** — real writes, storage, functions |
-| `npm run insights` | Reads deployment metrics | **None** on storage; reads telemetry |
+| `bun test` | Local Node + `convex-test` | **None** — in-memory fake DB |
+| `bun run test:volume` | Same | **None** |
+| `bun run test:stress` | Same | **None** |
+| `bun run dev` (example app) | Your linked dev deployment | **Yes** — real writes, storage, functions |
+| `bun run insights` | Reads deployment metrics | **None** on storage; reads telemetry |
 
 Volume tests simulate rollups, sharding, and cron batching **on your machine**.
 They validate correctness and print local timing — not Convex cloud limits.
 
-Use `npm run dev` + manual dashboard calls when you want to validate against a
-real deployment. Use `npm run insights` after that to inspect documents read,
+Use `bun run dev` + manual dashboard calls when you want to validate against a
+real deployment. Use `bun run insights` after that to inspect documents read,
 OCC conflicts, and slow functions.
 
 ---
@@ -26,7 +26,7 @@ OCC conflicts, and slow functions.
 Run all traffic modes (low, medium, high):
 
 ```bash
-npm run test:volume
+bun run test:volume
 ```
 
 Each mode tracks a full batch through `writeTrack`, scheduled aggregation,

@@ -28,9 +28,11 @@ Run `npx convex dev` to regenerate the component API, then follow the [Quick Sta
 ## What you get
 
 - Server-side event ingestion with idempotency and optional `unique.key`
-- Daily rollup metrics with sharding for high-volume traffic
-- Dashboard queries: summaries, comparisons, evaluation labels, funnels, time series, breakdowns
+- Daily (or hourly) rollup metrics with sharding for high-volume traffic
+- Dashboard queries: summaries, comparisons, evaluation labels, funnels, journeys, time series, breakdowns
+- Distinct-actor metrics (DAU-style) that stay accurate across multi-day ranges
 - Typed `defineAnalytics()` setup — one object for tracking, queries, client wrappers, and crons
+- Retention crons that purge raw events and rollups, and keep up with high write volume
 
 ## Docs map
 
@@ -41,6 +43,7 @@ Run `npx convex dev` to regenerate the component API, then follow the [Quick Sta
 | `writeTrack`, uniqueness | [Tracking](./docs/tracking.md) |
 | Dashboard reads | [Querying](./docs/querying.md) |
 | Multi-tenant filtering | [Scopes](./docs/scopes.md) |
+| Limits and scale | [Scale and limits](./docs/scale-and-limits.md) |
 
 ## Development
 

@@ -4,8 +4,9 @@ import type {
 	typesAnalyticsEventConfigRuntime,
 	typesAnalyticsFunnelConfig,
 	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneyConfig,
+	typesAnalyticsJourneysConfig,
 	typesAnalyticsMetricConfigRuntime,
-	typesAnalyticsRuntimeConfig,
 } from "./config.js";
 import type { typesAnalyticsProperties } from "./primitives.js";
 import type { typesAnalyticsMetricScope } from "./scopes.js";
@@ -32,8 +33,8 @@ export type typesAnalyticsConfigState = {
 	metricByName: Map<string, typesAnalyticsMetricConfigRuntime>;
 	funnels: typesAnalyticsFunnelsConfig;
 	funnelByName: Map<string, typesAnalyticsFunnelConfig>;
+	journeys: typesAnalyticsJourneysConfig;
+	journeyByName: Map<string, typesAnalyticsJourneyConfig>;
 	settings: typesAnalyticsSettings;
 	configHash?: string;
 };
-
-export type { typesAnalyticsRuntimeConfig };

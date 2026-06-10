@@ -1,12 +1,20 @@
 // TYPES
 import type {
 	typesAnalyticsMetricScope,
+} from "../../shared/types/scopes.js";
+import type {
 	typesAnalyticsProperties,
-} from "../../shared/types/index.js";
+} from "../../shared/types/primitives.js";
 
 export function internalBuildIdempotencyKey(args: {
 	name: string;
 	occurredAt: number;
+	/**
+	 * Position of the event inside its track batch. Convex fixes `Date.now()`
+	 * for the whole mutation, so without this two identical events in one
+	 * batch would collide on the same key and silently collapse into one.
+	 */
+	batchIndex: number;
 	actorId?: string;
 	organizationId?: string;
 	subject?: { type: string; id: string };
@@ -24,6 +32,7 @@ export function internalBuildIdempotencyKey(args: {
 	return [
 		args.name,
 		args.occurredAt,
+		args.batchIndex,
 		args.actorId ?? "",
 		args.organizationId ?? "",
 		args.subject?.type ?? "",

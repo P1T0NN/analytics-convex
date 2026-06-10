@@ -11,7 +11,9 @@ import type { ComponentApi } from "../../component/_generated/component.js";
 import { internalAnalyticsConfigHashReference } from "../utils/configReference";
 
 // TYPES
-import type { typesAnalyticsRuntimeConfig } from "../../shared/types/index.js";
+import type {
+	typesAnalyticsRuntimeConfig,
+} from "../../shared/types/config.js";
 
 type typesMutationCtx = Pick<
 	GenericMutationCtx<GenericDataModel>,
@@ -59,10 +61,30 @@ export function createAnalyticsCronHandlers(
 				deleted: v.number(),
 				cutoff: v.optional(v.number()),
 				skipped: v.boolean(),
+				scheduledNextBatch: v.boolean(),
 			}),
 			handler: async (ctx: typesMutationCtx, args) => {
 				return await ctx.runMutation(
 					component.lib.purgeStaleAnalyticsEvents,
+					{
+						configHash: args.configHash,
+					},
+				);
+			},
+		}),
+		purgeStaleAnalyticsRollups: internalMutationGeneric({
+			args: {
+				configHash: v.string(),
+			},
+			returns: v.object({
+				deleted: v.number(),
+				cutoff: v.optional(v.number()),
+				skipped: v.boolean(),
+				scheduledNextBatch: v.boolean(),
+			}),
+			handler: async (ctx: typesMutationCtx, args) => {
+				return await ctx.runMutation(
+					component.lib.purgeStaleAnalyticsRollups,
 					{
 						configHash: args.configHash,
 					},

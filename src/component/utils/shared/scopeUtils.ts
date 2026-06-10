@@ -8,17 +8,12 @@ import { internalBadRequest } from "../../errors/errors.js";
 // TYPES
 import type {
 	typesAnalyticsAggregateEventInput,
+} from "../../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsMetricScope,
 	typesAnalyticsScope,
 	typesAnalyticsScopeInput,
-} from "../../../shared/types/index.js";
-
-export function internalCreateResourceScopeId(
-	resourceType: string,
-	resourceId: string,
-) {
-	return createAnalyticsResourceScopeId(resourceType, resourceId);
-}
+} from "../../../shared/types/scopes.js";
 
 export function internalGetScopesForEvent(
 	event: typesAnalyticsAggregateEventInput,
@@ -34,23 +29,15 @@ export function internalGetScopesForEvent(
 	if (event.subject) {
 		scopes.push({
 			scopeType: "resource",
-			scopeId: internalCreateResourceScopeId(event.subject.type, event.subject.id),
+			scopeId: createAnalyticsResourceScopeId(event.subject.type, event.subject.id),
 		});
 	}
 
 	scopes.push(...(event.scopes ?? []));
-	return internalDedupeScopes(scopes);
-}
 
-export function internalGetScopeKey(scope: typesAnalyticsMetricScope) {
-	return `${scope.scopeType}:${scope.scopeId}`;
-}
-
-export function internalDedupeScopes(scopes: typesAnalyticsMetricScope[]) {
 	const deduped = new Map<string, typesAnalyticsMetricScope>();
-
 	for (const scope of scopes) {
-		deduped.set(internalGetScopeKey(scope), scope);
+		deduped.set(`${scope.scopeType}:${scope.scopeId}`, scope);
 	}
 
 	return [...deduped.values()];
@@ -79,7 +66,7 @@ export function internalResolveScope(
 		type: "resource",
 		resourceType: scope.resourceType,
 		resourceId: scope.id,
-		id: internalCreateResourceScopeId(scope.resourceType, scope.id),
+		id: createAnalyticsResourceScopeId(scope.resourceType, scope.id),
 	};
 }
 

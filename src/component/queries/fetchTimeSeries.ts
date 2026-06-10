@@ -8,16 +8,37 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // CONSTANTS
 import { TOTAL_DIMENSION } from "../../shared/constants.js";
+import { ANALYTICS_UTC_TIMEZONE } from "../../shared/utils/analyticsTimezoneUtils.js";
 
 // HELPERS
-import { internalCollectDailyMetricRows } from "../helpers/rollupReads";
-import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import {
+	internalCollectDailyActorClaims,
+	internalCollectDailyMetricRows,
+} from "../helpers/rollupReads";
+import {
+	internalGetMetricBucketStart,
+	internalGetMetricConfigOrThrow,
+	internalGetMetricRollupGranularity,
+} from "../utils/shared/metricUtils";
 
 // UTILS
-import { internalListDailyBuckets } from "../utils/listDailyBuckets";
+import {
+	getQueryBucketStart,
+	listRollupBuckets,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
+import {
+	internalBuildBucketedTimeSeriesPoints,
+	internalBuildDistinctActorTimeSeriesPoints,
+} from "../../shared/utils/analyticsQueryBucketUtils.js";
 import { internalGetTopSeriesKeys } from "../utils/getTopSeriesKeys";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import { internalReduceMetricRollupRows } from "../../shared/utils/metricAggregationUtils.js";
+import {
+	internalResolveQueryBucketUnit,
+	internalResolveQueryTimezone,
+	internalUsesDistinctActorClaimTimeSeries,
+	internalUsesRollupRebucketTimeSeries,
+} from "../utils/queryOptionsUtils";
 import {
 	internalAssertDateRange,
 	internalAssertAllowedDimension,
@@ -25,28 +46,22 @@ import {
 
 // SCHEMAS
 import {
+	bucketUnitValidator,
 	configReferenceFields,
 	chartConfigValidator,
 	rangeValidator,
 	resolvedScopeValidator,
 	scopeInputValidator,
+	timezoneValidator,
 	unitValidator,
 } from "../schemas/schemas";
 
 /**
- * Daily bucketed chart data with optional dimension grouping.
+ * Bucketed chart data with optional dimension grouping.
  *
- * Returns one data point per day. When `groupBy` is set, each point
- * contains a value per dimension key. Fills gaps with zeros by default.
- * Hits indexed rollup rows, not raw events.
- *
- * @example
- * const result = await ctx.runQuery(components.analytics.lib.fetchTimeSeries, {
- *   metric: "pageViews",
- *   from: Date.UTC(2026, 0, 1),
- *   to: Date.UTC(2026, 0, 31),
- *   groupBy: "path",
- * });
+ * Returns one data point per query bucket (day, week, or month). When
+ * `groupBy` is set, each point contains a value per dimension key. Fills
+ * gaps with zeros by default. Hits indexed rollup rows, not raw events.
  */
 export const fetchTimeSeries = query({
 	args: {
@@ -57,6 +72,8 @@ export const fetchTimeSeries = query({
 		groupBy: v.optional(v.string()),
 		scope: v.optional(scopeInputValidator),
 		fill: v.optional(v.boolean()),
+		bucketUnit: v.optional(bucketUnitValidator),
+		timezone: v.optional(timezoneValidator),
 	},
 	returns: v.object({
 		data: v.array(v.record(v.string(), v.number())),
@@ -68,6 +85,8 @@ export const fetchTimeSeries = query({
 			unit: unitValidator,
 			scope: resolvedScopeValidator,
 			groupBy: v.optional(v.string()),
+			bucketUnit: bucketUnitValidator,
+			timezone: v.string(),
 			seriesKeys: v.array(v.string()),
 			omittedSeriesCount: v.number(),
 			xValueType: v.literal("timestamp"),
@@ -78,61 +97,141 @@ export const fetchTimeSeries = query({
 		const config = await internalResolveConfiguration(ctx, {
 			configHash: args.configHash,
 			config: args.config,
-		
 		});
 		internalAssertDateRange(args, config.settings);
 
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
-
+		const granularity = internalGetMetricRollupGranularity(metricConfig);
+		const bucketUnit = internalResolveQueryBucketUnit(args.bucketUnit);
+		const timeZone = internalResolveQueryTimezone(args.timezone, config.settings);
 		const scope = internalResolveScope(args.scope);
 		const dimensionKey = args.groupBy ?? TOTAL_DIMENSION;
+		const shouldFill = args.fill ?? true;
 
 		if (args.groupBy) {
 			internalAssertAllowedDimension(metricConfig, args.groupBy);
 		}
 
-		const rows = (await internalCollectDailyMetricRows(ctx, {
+		const rangeMeta = {
+			from: getQueryBucketStart(args.from, bucketUnit, timeZone),
+			to: getQueryBucketStart(args.to, bucketUnit, timeZone),
+		};
+
+		if (
+			internalUsesDistinctActorClaimTimeSeries({
+				aggregation: metricConfig.aggregation,
+				bucketUnit,
+				timeZone,
+			})
+		) {
+			const claims = await internalCollectDailyActorClaims(ctx, {
+				metric: args.metric,
+				scope,
+				dimensionKey,
+				from: args.from,
+				to: args.to,
+				settings: config.settings,
+			});
+
+			const allSeriesKeys = args.groupBy
+				? [...new Set(claims.map((claim) => claim.dimensionValue))]
+				: [args.metric];
+			const seriesKeys = args.groupBy
+				? getAnalyticsRankingSeriesKeys(claims, config.settings.maxBreakdownItems)
+				: allSeriesKeys;
+
+			const { data } = internalBuildDistinctActorTimeSeriesPoints({
+				from: args.from,
+				to: args.to,
+				bucketUnit,
+				timeZone,
+				claims,
+				seriesKeys,
+				metricName: args.metric,
+				...(args.groupBy ? { groupBy: args.groupBy } : {}),
+				fill: shouldFill,
+			});
+
+			return buildTimeSeriesResponse({
+				data,
+				metric: args.metric,
+				metricConfig,
+				scope,
+				groupBy: args.groupBy,
+				bucketUnit,
+				timeZone,
+				seriesKeys,
+				allSeriesKeys,
+				range: rangeMeta,
+			});
+		}
+
+		const rows = await internalCollectDailyMetricRows(ctx, {
 			metric: args.metric,
 			scope,
 			dimensionKey,
 			from: args.from,
 			to: args.to,
 			settings: config.settings,
-		})) as Array<{
-			bucketStart: number;
-			dimensionValue: string;
-			value: number;
-		}>;
-
-		const shouldFill = args.fill ?? true;
-
-		const buckets = shouldFill
-			? internalListDailyBuckets(args.from, args.to)
-			: [...new Set(rows.map((row: any) => row.bucketStart))].sort(
-					(a, b) => a - b,
-				);
-
-		const allSeriesKeys = args.groupBy
-			? [...new Set(rows.map((row: any) => row.dimensionValue))]
-			: [args.metric];
-
-		const seriesKeys = args.groupBy
-			? internalGetTopSeriesKeys(rows as any, config.settings)
-			: allSeriesKeys;
-
-		const seriesKeySet = new Set(seriesKeys);
-
-		const data = buckets.map((bucketStart) => {
-			const point: Record<string, number> = { date: bucketStart };
-
-			for (const key of seriesKeys) {
-				point[key as string] = 0;
-			}
-
-			return point;
+			granularity,
 		});
 
+		const allSeriesKeys = args.groupBy
+			? [...new Set(rows.map((row) => row.dimensionValue))]
+			: [args.metric];
+		const seriesKeys = args.groupBy
+			? internalGetTopSeriesKeys(rows, config.settings, metricConfig.aggregation)
+			: allSeriesKeys;
+
+		if (
+			internalUsesRollupRebucketTimeSeries({
+				bucketUnit,
+				timeZone,
+			})
+		) {
+			const { data } = internalBuildBucketedTimeSeriesPoints({
+				from: args.from,
+				to: args.to,
+				bucketUnit,
+				timeZone,
+				aggregation: metricConfig.aggregation,
+				rows,
+				seriesKeys,
+				metricName: args.metric,
+				...(args.groupBy ? { groupBy: args.groupBy } : {}),
+				fill: shouldFill,
+			});
+
+			return buildTimeSeriesResponse({
+				data,
+				metric: args.metric,
+				metricConfig,
+				scope,
+				groupBy: args.groupBy,
+				bucketUnit,
+				timeZone,
+				seriesKeys,
+				allSeriesKeys,
+				range: rangeMeta,
+			});
+		}
+
+		const buckets = shouldFill
+			? listRollupBuckets(args.from, args.to, granularity)
+			: [...new Set(rows.map((row) => row.bucketStart))].sort((a, b) => a - b);
+		const seriesKeySet = new Set(seriesKeys);
+		const data = buckets.map((bucketStart) => {
+			const point: Record<string, number> = { date: bucketStart };
+			for (const key of seriesKeys) {
+				point[key] = 0;
+			}
+			return point;
+		});
 		const pointByBucket = new Map(data.map((point) => [point.date, point]));
+		const rowsByBucketAndSeries = new Map<
+			string,
+			Array<{ bucketStart: number; value: number; sampleCount?: number }>
+		>();
 
 		for (const row of rows) {
 			const point = pointByBucket.get(row.bucketStart);
@@ -141,35 +240,95 @@ export const fetchTimeSeries = query({
 			const seriesKey = args.groupBy ? row.dimensionValue : args.metric;
 			if (!seriesKeySet.has(seriesKey)) continue;
 
-			point[seriesKey] = (point[seriesKey] ?? 0) + row.value;
+			const key = `${row.bucketStart}:${seriesKey}`;
+			const bucketRows = rowsByBucketAndSeries.get(key) ?? [];
+			bucketRows.push(row);
+			rowsByBucketAndSeries.set(key, bucketRows);
 		}
 
-		return {
+		for (const [key, bucketRows] of rowsByBucketAndSeries) {
+			const separatorIndex = key.indexOf(":");
+			const bucketStart = Number(key.slice(0, separatorIndex));
+			const seriesKey = key.slice(separatorIndex + 1);
+			const point = pointByBucket.get(bucketStart);
+			if (!point) continue;
+
+			point[seriesKey] = internalReduceMetricRollupRows(
+				metricConfig.aggregation,
+				bucketRows,
+			);
+		}
+
+		return buildTimeSeriesResponse({
 			data,
-			x: "date" as const,
-			config:
-				seriesKeys.length === 1 && seriesKeys[0] === args.metric
-					? internalChartConfig(seriesKeys as string[], {
-							[args.metric]: metricConfig.label,
-						})
-					: internalChartConfig(seriesKeys as string[]),
-			meta: {
-				metric: args.metric,
-				label: metricConfig.label,
-				unit: metricConfig.unit,
-				scope,
-				...(args.groupBy ? { groupBy: args.groupBy } : {}),
-				seriesKeys,
-				omittedSeriesCount: Math.max(
-					0,
-					allSeriesKeys.length - seriesKeys.length,
-				),
-				xValueType: "timestamp" as const,
-				range: {
-					from: internalStartOfUtcDay(args.from),
-					to: internalStartOfUtcDay(args.to),
-				},
+			metric: args.metric,
+			metricConfig,
+			scope,
+			groupBy: args.groupBy,
+			bucketUnit,
+			timeZone,
+			seriesKeys,
+			allSeriesKeys,
+			range: {
+				from: internalGetMetricBucketStart(metricConfig, args.from),
+				to: internalGetMetricBucketStart(metricConfig, args.to),
 			},
-		};
+		});
 	},
 });
+
+function getAnalyticsRankingSeriesKeys(
+	claims: Array<{ dimensionValue: string }>,
+	limit: number,
+) {
+	const totals = new Map<string, number>();
+	for (const claim of claims) {
+		totals.set(claim.dimensionValue, (totals.get(claim.dimensionValue) ?? 0) + 1);
+	}
+
+	return [...totals.entries()]
+		.sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+		.slice(0, limit)
+		.map(([key]) => key);
+}
+
+function buildTimeSeriesResponse(args: {
+	data: Array<Record<string, number>>;
+	metric: string;
+	metricConfig: ReturnType<typeof internalGetMetricConfigOrThrow>;
+	scope: ReturnType<typeof internalResolveScope>;
+	groupBy?: string;
+	bucketUnit: ReturnType<typeof internalResolveQueryBucketUnit>;
+	timeZone: string;
+	seriesKeys: string[];
+	allSeriesKeys: string[];
+	range: { from: number; to: number };
+}) {
+	return {
+		data: args.data,
+		x: "date" as const,
+		config:
+			args.seriesKeys.length === 1 && args.seriesKeys[0] === args.metric
+				? internalChartConfig(args.seriesKeys as string[], {
+						[args.metric]: args.metricConfig.label,
+					})
+				: internalChartConfig(args.seriesKeys as string[]),
+		meta: {
+			metric: args.metric,
+			label: args.metricConfig.label,
+			unit: args.metricConfig.unit,
+			scope: args.scope,
+			...(args.groupBy ? { groupBy: args.groupBy } : {}),
+			bucketUnit: args.bucketUnit,
+			timezone:
+				args.timeZone === ANALYTICS_UTC_TIMEZONE ? "UTC" : args.timeZone,
+			seriesKeys: args.seriesKeys,
+			omittedSeriesCount: Math.max(
+				0,
+				args.allSeriesKeys.length - args.seriesKeys.length,
+			),
+			xValueType: "timestamp" as const,
+			range: args.range,
+		},
+	};
+}

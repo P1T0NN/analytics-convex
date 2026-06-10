@@ -45,12 +45,13 @@ export const analytics = defineAnalytics(components.analytics, {
 
 export const {
 	writeTrack,
-	fetchSummary,
-	fetchTimeSeries,
-	fetchBreakdown,
+	summary,
+	timeSeries,
+	breakdown,
 } = analytics.client;
 
 export const {
 	processPendingHighVolumeAnalyticsEvents,
 	purgeStaleAnalyticsEvents,
+	purgeStaleAnalyticsRollups,
 } = analytics.crons;

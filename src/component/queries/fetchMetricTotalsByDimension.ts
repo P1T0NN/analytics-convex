@@ -9,7 +9,10 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 import { internalGetAnalyticsMetricTotalsByDimension } from "../helpers/rollupReads";
 
 // UTILS
-import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import {
+	internalGetMetricConfigOrThrow,
+	internalGetMetricRollupGranularity,
+} from "../utils/shared/metricUtils";
 import { internalResolveScope, internalToMetricScope } from "../utils/shared/scopeUtils";
 import { internalAssertAllowedDimension } from "../validations/validations";
 
@@ -56,6 +59,9 @@ export const fetchMetricTotalsByDimension = query({
 			scopeType: scope.scopeType,
 			scopeId: scope.scopeId,
 			dimensionKey: args.dimensionKey,
+			aggregation: metricConfig.aggregation,
+			settings: config.settings,
+			granularity: internalGetMetricRollupGranularity(metricConfig),
 			...(args.days !== undefined ? { days: args.days } : {}),
 			...(args.maxRows !== undefined ? { maxRows: args.maxRows } : {}),
 		});

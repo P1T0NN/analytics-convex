@@ -111,6 +111,12 @@ export const unitValidator = v.union(
 	v.literal("bytes"),
 );
 
+export const bucketUnitValidator = v.union(
+	v.literal("day"),
+	v.literal("week"),
+	v.literal("month"),
+);
+
 export const metricSummaryResponseValidator = v.object({
 	metric: v.string(),
 	label: v.string(),
@@ -129,6 +135,8 @@ export const metricComparisonResponseValidator = v.object({
 	previous: v.number(),
 	delta: v.number(),
 	deltaPercent: v.optional(v.number()),
+	bucketUnit: bucketUnitValidator,
+	timezone: v.string(),
 	range: v.object({
 		current: rangeValidator,
 		previous: rangeValidator,
@@ -164,6 +172,8 @@ export const timeSeriesResponseValidator = v.object({
 		unit: unitValidator,
 		scope: resolvedScopeValidator,
 		groupBy: v.optional(v.string()),
+		bucketUnit: bucketUnitValidator,
+		timezone: v.string(),
 		seriesKeys: v.array(v.string()),
 		omittedSeriesCount: v.number(),
 		xValueType: v.literal("timestamp"),

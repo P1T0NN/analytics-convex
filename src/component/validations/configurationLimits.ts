@@ -6,14 +6,18 @@ import { internalAssertAtMost, internalAssertStringLength } from "./limitUtils.j
 
 // UTILS
 import { internalBadRequest } from "../errors/errors.js";
+import { internalIsBlockedDimensionName } from "../../shared/utils/dimensionGuardUtils.js";
 
 // TYPES
 import type {
 	typesAnalyticsEventConfigRuntime,
-	typesAnalyticsMetricConfigRuntime,
-	typesAnalyticsPropertyType,
 	typesAnalyticsFunnelsConfig,
-} from "../../shared/types/index.js";
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfigRuntime,
+} from "../../shared/types/config.js";
+import type {
+	typesAnalyticsPropertyType,
+} from "../../shared/types/primitives.js";
 
 function assertPropertyConfigLimits(
 	event: typesAnalyticsEventConfigRuntime,
@@ -55,6 +59,15 @@ function assertMetricPropertyReferences(
 				);
 			}
 		}
+
+		if (metric.actorProperty) {
+			const actorType = event.properties?.[metric.actorProperty];
+			if (actorType !== "string") {
+				internalBadRequest(
+					`Metric "${metric.name}" actorProperty "${metric.actorProperty}" must be a registered string property on event "${eventName}".`,
+				);
+			}
+		}
 	}
 
 	for (const dimension of metric.dimensions ?? []) {
@@ -67,6 +80,13 @@ function assertMetricPropertyReferences(
 				`Metric "${metric.name}" dimension "${dimension}" must be registered on at least one event feeding the metric.`,
 			);
 		}
+
+		if (internalIsBlockedDimensionName(dimension)) {
+			internalBadRequest(
+				`Metric "${metric.name}" dimension "${dimension}" is blocked because it is high-cardinality. ` +
+					"Use categorical dimensions (plan, feature, path), not user or session identifiers.",
+			);
+		}
 	}
 }
 
@@ -74,6 +94,7 @@ export function internalValidateConfigurationLimits(args: {
 	events: typesAnalyticsEventConfigRuntime[];
 	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels?: typesAnalyticsFunnelsConfig;
+	journeys?: typesAnalyticsJourneysConfig;
 }) {
 	internalAssertAtMost(
 		args.events.length,
@@ -90,6 +111,7 @@ export function internalValidateConfigurationLimits(args: {
 	const metricNames = new Set(args.metrics.map((metric) => metric.name));
 
 	validateFunnelLimits(args.funnels ?? {}, metricNames);
+	validateJourneyLimits(args.journeys ?? {}, eventByName);
 
 	for (const event of args.events) {
 		internalAssertStringLength(
@@ -140,6 +162,113 @@ export function internalValidateConfigurationLimits(args: {
 		);
 		assertMetricPropertyReferences(metric, eventByName);
 		assertMetricEvaluationReferences(metric, args.metrics);
+
+		if (
+			metric.aggregation === "distinctActors" &&
+			metric.trafficMode &&
+			metric.trafficMode !== "lowVolume"
+		) {
+			internalBadRequest(
+				`Metric "${metric.name}" uses distinctActors aggregation and must stay on lowVolume traffic mode.`,
+			);
+		}
+
+		if (metric.rollupGranularity === "hour") {
+			if (metric.aggregation === "distinctActors") {
+				internalBadRequest(
+					`Metric "${metric.name}" cannot combine hourly rollups with distinctActors aggregation.`,
+				);
+			}
+
+			if (metric.trafficMode && metric.trafficMode !== "lowVolume") {
+				internalBadRequest(
+					`Metric "${metric.name}" uses hourly rollups and must stay on lowVolume traffic mode.`,
+				);
+			}
+		}
+	}
+}
+
+function validateJourneyLimits(
+	journeys: typesAnalyticsJourneysConfig,
+	eventByName: Map<string, typesAnalyticsEventConfigRuntime>,
+) {
+	const journeyNames = Object.keys(journeys);
+	internalAssertAtMost(
+		journeyNames.length,
+		ANALYTICS_LIMITS.maxJourneysPerConfiguration,
+		"journeys",
+	);
+
+	for (const journeyName of journeyNames) {
+		internalAssertStringLength(
+			journeyName,
+			ANALYTICS_LIMITS.maxIdentifierLength,
+			`journey "${journeyName}".name`,
+		);
+
+		const journey = journeys[journeyName];
+		internalAssertStringLength(
+			journey.label,
+			ANALYTICS_LIMITS.maxLabelLength,
+			`journey "${journeyName}".label`,
+		);
+		internalAssertAtMost(
+			journey.steps.length,
+			ANALYTICS_LIMITS.maxJourneySteps,
+			`journey "${journeyName}".steps`,
+		);
+
+		if (journey.steps.length < 2) {
+			internalBadRequest(
+				`Journey "${journeyName}" must include at least two event steps.`,
+			);
+		}
+
+		if (journey.breakdownProperty) {
+			internalAssertStringLength(
+				journey.breakdownProperty,
+				ANALYTICS_LIMITS.maxIdentifierLength,
+				`journey "${journeyName}".breakdownProperty`,
+			);
+
+			const firstStepEvent = eventByName.get(journey.steps[0]!);
+			if (!firstStepEvent?.properties?.[journey.breakdownProperty]) {
+				internalBadRequest(
+					`Journey "${journeyName}" breakdownProperty "${journey.breakdownProperty}" must be registered on first-step event "${journey.steps[0]}".`,
+				);
+			}
+
+			if (internalIsBlockedDimensionName(journey.breakdownProperty)) {
+				internalBadRequest(
+					`Journey "${journeyName}" breakdownProperty "${journey.breakdownProperty}" is blocked because it is high-cardinality. ` +
+						"Use categorical properties (plan, feature, region), not user or session identifiers.",
+				);
+			}
+		}
+
+		const stepNames = new Set<string>();
+		for (const step of journey.steps) {
+			internalAssertStringLength(
+				step,
+				ANALYTICS_LIMITS.maxIdentifierLength,
+				`journey "${journeyName}" step "${step}"`,
+			);
+
+			if (!eventByName.has(step)) {
+				internalBadRequest(
+					`Journey "${journeyName}" step "${step}" references unknown event "${step}".`,
+				);
+			}
+
+			if (stepNames.has(step)) {
+				internalBadRequest(
+					`Journey "${journeyName}" step "${step}" is duplicated.`,
+				);
+			}
+
+			stepNames.add(step);
+		}
 	}
 }
 

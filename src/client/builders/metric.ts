@@ -1,12 +1,17 @@
 // TYPES
 import type {
 	typesAnalyticsAggregation,
-	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
+	typesAnalyticsRollupGranularity,
 	typesAnalyticsTrafficMode,
 	typesAnalyticsUnit,
+} from "../../shared/types/primitives.js";
+import type {
+	typesAnalyticsEventConfig,
+	typesAnalyticsMetricConfig,
+} from "../../shared/types/config.js";
+import type {
 	typesMetricEvaluationConfig,
-} from "../../shared/types/index.js";
+} from "../../shared/types/evaluation.js";
 
 type typesMetricBuilderState = {
 	label: string;
@@ -14,9 +19,11 @@ type typesMetricBuilderState = {
 	eventNames: readonly string[];
 	aggregation: typesAnalyticsAggregation;
 	valueProperty?: string;
+	actorProperty?: string;
 	dimensions?: readonly string[];
 	description?: string;
 	trafficMode?: typesAnalyticsTrafficMode;
+	rollupGranularity?: typesAnalyticsRollupGranularity;
 	adminOnly?: boolean;
 	evaluation?: typesMetricEvaluationConfig;
 };
@@ -72,6 +79,20 @@ type typesNumberPropertyNameForEvents<
 				: never;
 		}[Extract<keyof typesCommonPropertiesForEvents<Events, Names>, string>];
 
+type typesStringPropertyNameForEvents<
+	Events extends typesAnalyticsEventMap,
+	Names extends string,
+> = string extends Names
+	? string
+	: {
+			[Key in Extract<
+				keyof typesCommonPropertiesForEvents<Events, Names>,
+				string
+			>]: typesCommonPropertiesForEvents<Events, Names>[Key] extends "string"
+				? Key
+				: never;
+		}[Extract<keyof typesCommonPropertiesForEvents<Events, Names>, string>];
+
 export type typesAnalyticsMetricBuilder<
 	Events extends typesAnalyticsEventMap = Record<
 		string,
@@ -108,6 +129,14 @@ export type typesAnalyticsMetricBuilder<
 	>(
 		property: Property,
 	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
+	actor<
+		const Property extends typesStringPropertyNameForEvents<
+			Events,
+			SelectedEventName
+		>,
+	>(
+		property: Property,
+	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
 	unit(
 		unit: typesAnalyticsUnit,
 	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
@@ -117,6 +146,7 @@ export type typesAnalyticsMetricBuilder<
 	trafficMode(
 		mode: typesAnalyticsTrafficMode,
 	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
+	hourly(): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
 	adminOnly(
 		adminOnly?: boolean,
 	): typesAnalyticsMetricBuilder<Events, SelectedEventName, Dimensions>;
@@ -139,6 +169,19 @@ export type typesAnalyticsMetricBuilders<
 		label: string,
 		unit?: typesAnalyticsUnit,
 	): typesAnalyticsMetricBuilder<Events>;
+	avg(
+		label: string,
+		unit?: typesAnalyticsUnit,
+	): typesAnalyticsMetricBuilder<Events>;
+	min(
+		label: string,
+		unit?: typesAnalyticsUnit,
+	): typesAnalyticsMetricBuilder<Events>;
+	max(
+		label: string,
+		unit?: typesAnalyticsUnit,
+	): typesAnalyticsMetricBuilder<Events>;
+	distinctActors(label: string): typesAnalyticsMetricBuilder<Events>;
 };
 
 class AnalyticsMetricBuilder {
@@ -158,6 +201,10 @@ class AnalyticsMetricBuilder {
 		return this.with({ valueProperty: property });
 	}
 
+	actor<const Property extends string>(property: Property) {
+		return this.with({ actorProperty: property });
+	}
+
 	unit(unit: typesAnalyticsUnit) {
 		return this.with({ unit });
 	}
@@ -168,6 +215,10 @@ class AnalyticsMetricBuilder {
 
 	trafficMode(mode: typesAnalyticsTrafficMode) {
 		return this.with({ trafficMode: mode });
+	}
+
+	hourly() {
+		return this.with({ rollupGranularity: "hour" });
 	}
 
 	adminOnly(adminOnly = true) {
@@ -188,6 +239,9 @@ class AnalyticsMetricBuilder {
 			...(this.state.valueProperty
 				? { valueProperty: this.state.valueProperty }
 				: {}),
+			...(this.state.actorProperty
+				? { actorProperty: this.state.actorProperty }
+				: {}),
 			...(this.state.dimensions
 				? { dimensions: [...this.state.dimensions] }
 				: {}),
@@ -196,6 +250,9 @@ class AnalyticsMetricBuilder {
 				: {}),
 			...(this.state.trafficMode
 				? { trafficMode: this.state.trafficMode }
+				: {}),
+			...(this.state.rollupGranularity
+				? { rollupGranularity: this.state.rollupGranularity }
 				: {}),
 			...(this.state.adminOnly !== undefined
 				? { adminOnly: this.state.adminOnly }
@@ -220,24 +277,6 @@ function createMetricBuilder<Events extends typesAnalyticsEventMap>(
 	) as unknown as typesAnalyticsMetricBuilder<Events>;
 }
 
-export function count(label: string) {
-	return createMetricBuilder<Record<string, typesAnalyticsEventConfig>>({
-		label,
-		unit: "count",
-		eventNames: [],
-		aggregation: "count",
-	});
-}
-
-export function sum(label: string, unit: typesAnalyticsUnit = "count") {
-	return createMetricBuilder<Record<string, typesAnalyticsEventConfig>>({
-		label,
-		unit,
-		eventNames: [],
-		aggregation: "sum",
-	});
-}
-
 export function internalCreateAnalyticsMetricBuilders<
 	Events extends typesAnalyticsEventMap,
 >(): typesAnalyticsMetricBuilders<Events> {
@@ -256,5 +295,43 @@ export function internalCreateAnalyticsMetricBuilders<
 				eventNames: [],
 				aggregation: "sum",
 			}),
+		avg: (label, unit = "count") =>
+			createMetricBuilder<Events>({
+				label,
+				unit,
+				eventNames: [],
+				aggregation: "avg",
+			}),
+		min: (label, unit = "count") =>
+			createMetricBuilder<Events>({
+				label,
+				unit,
+				eventNames: [],
+				aggregation: "min",
+			}),
+		max: (label, unit = "count") =>
+			createMetricBuilder<Events>({
+				label,
+				unit,
+				eventNames: [],
+				aggregation: "max",
+			}),
+		distinctActors: (label) =>
+			createMetricBuilder<Events>({
+				label,
+				unit: "count",
+				eventNames: [],
+				aggregation: "distinctActors",
+			}),
 	};
 }
+
+/**
+ * Standalone metric builders for use outside `defineAnalytics()`.
+ * Inside `defineAnalytics`, prefer the typed builders callback:
+ * `metrics: ({ count }) => ({ ... })`.
+ */
+export const { count, sum, avg, min, max, distinctActors } =
+	internalCreateAnalyticsMetricBuilders<
+		Record<string, typesAnalyticsEventConfig>
+	>();

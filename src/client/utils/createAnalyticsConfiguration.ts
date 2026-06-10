@@ -5,16 +5,20 @@ import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDe
 import { internalSerializeEvents } from "./serializeEvents";
 import { internalSerializeMetrics } from "./serializeMetrics";
 import { internalSerializeFunnels } from "./serializeFunnels";
+import { internalSerializeJourneys } from "./serializeJourneys";
 import { internalCreateConfigurationHash } from "../../shared/utils/configurationHashUtils";
 
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
-	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfig,
 	typesAnalyticsRuntimeConfig,
-} from "../../shared/types/index.js";
+} from "../../shared/types/config.js";
+import type {
+	typesAnalyticsSettings,
+} from "../../shared/types/settings.js";
 
 export function internalCreateAnalyticsConfiguration<
 	const Events extends readonly typesAnalyticsEventConfig[],
@@ -27,10 +31,12 @@ export function internalCreateAnalyticsConfiguration<
 	metrics: Metrics,
 	settings?: Partial<typesAnalyticsSettings>,
 	funnels?: typesAnalyticsFunnelsConfig,
+	journeys?: typesAnalyticsJourneysConfig,
 ): typesAnalyticsRuntimeConfig {
 	const serializedEvents = internalSerializeEvents(events);
 	const serializedMetrics = internalSerializeMetrics(metrics);
 	const serializedFunnels = internalSerializeFunnels(funnels);
+	const serializedJourneys = internalSerializeJourneys(journeys);
 	const resolvedSettings = {
 		...internalDefaultAnalyticsSettings(),
 		...(settings ?? {}),
@@ -40,6 +46,7 @@ export function internalCreateAnalyticsConfiguration<
 		events: serializedEvents,
 		metrics: serializedMetrics,
 		funnels: serializedFunnels ?? {},
+		journeys: serializedJourneys ?? {},
 		settings: resolvedSettings,
 	});
 
@@ -47,6 +54,7 @@ export function internalCreateAnalyticsConfiguration<
 		events: serializedEvents,
 		metrics: serializedMetrics,
 		...(serializedFunnels ? { funnels: serializedFunnels } : {}),
+		...(serializedJourneys ? { journeys: serializedJourneys } : {}),
 		settings: resolvedSettings,
 		configHash,
 	};

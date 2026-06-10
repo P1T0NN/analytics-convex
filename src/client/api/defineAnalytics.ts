@@ -10,6 +10,7 @@ import { internalCreateAnalyticsMetricBuilders } from "../builders/metric";
 
 // HELPERS
 import { internalCreateAnalyticsServerHelpers } from "../helpers/createAnalyticsServerHelpers";
+import { createAnalyticsTracker } from "../helpers/createAnalyticsTracker";
 
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
@@ -21,11 +22,16 @@ import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsCo
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
-	typesAnalyticsOperation,
-	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../../shared/types/index.js";
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfig,
+} from "../../shared/types/config.js";
+import type {
+	typesAnalyticsOperation,
+} from "../../shared/types/operations.js";
+import type {
+	typesAnalyticsSettings,
+} from "../../shared/types/settings.js";
 import type {
 	typesAnalyticsMetricBuilder,
 	typesAnalyticsMetricBuilders,
@@ -71,6 +77,7 @@ export function defineAnalytics<
 		events: Events;
 		metrics: typesAnalyticsMetricsInput<Events, Metrics>;
 		funnels?: typesAnalyticsFunnelsConfig;
+		journeys?: typesAnalyticsJourneysConfig;
 		settings?: Partial<typesAnalyticsSettings>;
 		authorize?: (
 			ctx: { auth: Auth },
@@ -92,6 +99,7 @@ export function defineAnalytics<
 		metrics,
 		options.settings,
 		options.funnels,
+		options.journeys,
 	);
 
 	return {
@@ -101,11 +109,16 @@ export function defineAnalytics<
 			metrics,
 			options.settings,
 			options.funnels,
+			options.journeys,
 		),
+		/** Typed `track(ctx, "event.name", {...})` helper for server code. */
+		...createAnalyticsTracker(component, events, config),
+		/** Registered Convex functions — re-export these from a convex module. */
 		client: createAnalyticsApi(component, {
 			events,
 			metrics,
 			...(options.funnels ? { funnels: options.funnels } : {}),
+			...(options.journeys ? { journeys: options.journeys } : {}),
 			...(options.settings ? { settings: options.settings } : {}),
 			...(options.authorize ? { authorize: options.authorize } : {}),
 		}),
@@ -124,6 +137,12 @@ export function defineAnalytics<
 					unknown
 				>;
 				purgeStaleAnalyticsEvents: FunctionReference<
+					"mutation",
+					"internal",
+					{ configHash: string },
+					unknown
+				>;
+				purgeStaleAnalyticsRollups: FunctionReference<
 					"mutation",
 					"internal",
 					{ configHash: string },

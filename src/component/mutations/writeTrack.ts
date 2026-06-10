@@ -18,7 +18,9 @@ import {
 } from "../schemas/schemas";
 
 // TYPES
-import type { typesPreparedTrackEventInput } from "../../shared/types/index.js";
+import type {
+	typesPreparedTrackEventInput,
+} from "../../shared/types/tracking.js";
 
 /**
  * Validate and schedule one or more analytics events.
@@ -57,8 +59,8 @@ export const writeTrack = mutation({
 
 		internalValidateTrackBatchLimits(args.events.length);
 
-		const events = args.events.map((input) =>
-			internalPrepareTrackEvent(config, input),
+		const events = args.events.map((input, index) =>
+			internalPrepareTrackEvent(config, input, index),
 		);
 
 		const seenUniqueKeys = new Set<string>();

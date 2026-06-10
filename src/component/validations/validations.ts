@@ -3,8 +3,11 @@ import { ANALYTICS_LIMITS } from "../../shared/constants.js";
 import { DAY_MS } from "../../shared/constants.js";
 
 // UTILS
-import { internalStartOfUtcDay } from "../utils/common/dateUtils.js";
+import {
+	startOfUtcDay,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
 import { internalBadRequest } from "../errors/errors.js";
+import { internalAssertValidTimeZone } from "../../shared/utils/analyticsTimezoneUtils.js";
 
 // VALIDATIONS
 import { internalValidateConfigurationLimits } from "./configurationLimits.js";
@@ -13,13 +16,20 @@ import { internalAssertNumberAtMost } from "./limitUtils.js";
 // TYPES
 import type {
 	typesAnalyticsConfigState,
+} from "../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneysConfig,
 	typesAnalyticsMetricConfigRuntime,
+} from "../../shared/types/config.js";
+import type {
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
+} from "../../shared/types/primitives.js";
+import type {
 	typesAnalyticsSettings,
-	typesAnalyticsFunnelsConfig,
-} from "../../shared/types/index.js";
+} from "../../shared/types/settings.js";
 
 export function internalAssertNonEmptyString(value: string, field: string) {
 	if (value.trim().length === 0) {
@@ -120,6 +130,34 @@ export function internalValidateSettings(settings: typesAnalyticsSettings) {
 		ANALYTICS_LIMITS.maxRawEventDeletesPerRun,
 		"settings.maxRawEventDeletesPerRun",
 	);
+	internalAssertNonNegativeInteger(
+		settings.rollupRetentionDays,
+		"rollupRetentionDays",
+	);
+	internalAssertPositiveInteger(
+		settings.maxRollupDeletesPerRun,
+		"maxRollupDeletesPerRun",
+	);
+	internalAssertNumberAtMost(
+		settings.rollupRetentionDays,
+		ANALYTICS_LIMITS.maxRollupRetentionDays,
+		"settings.rollupRetentionDays",
+	);
+	internalAssertNumberAtMost(
+		settings.maxRollupDeletesPerRun,
+		ANALYTICS_LIMITS.maxRollupDeletesPerRun,
+		"settings.maxRollupDeletesPerRun",
+	);
+
+	if (settings.defaultTimezone !== undefined) {
+		try {
+			internalAssertValidTimeZone(settings.defaultTimezone);
+		} catch {
+			internalBadRequest(
+				`settings.defaultTimezone must be a valid IANA timezone; received "${settings.defaultTimezone}".`,
+			);
+		}
+	}
 }
 
 export function internalValidateConfiguration(args: {
@@ -127,6 +165,7 @@ export function internalValidateConfiguration(args: {
 	metrics: typesAnalyticsMetricConfigRuntime[];
 	settings: typesAnalyticsSettings;
 	funnels?: typesAnalyticsFunnelsConfig;
+	journeys?: typesAnalyticsJourneysConfig;
 }) {
 	internalValidateConfigurationLimits(args);
 
@@ -188,8 +227,14 @@ export function internalValidateConfiguration(args: {
 			}
 		}
 
-		if (metric.aggregation === "sum" && !metric.valueProperty) {
-			internalBadRequest(`Sum metric "${metric.name}" requires valueProperty.`);
+		if (
+			metric.aggregation !== "count" &&
+			metric.aggregation !== "distinctActors" &&
+			!metric.valueProperty
+		) {
+			internalBadRequest(
+				`${metric.aggregation} metric "${metric.name}" requires valueProperty.`,
+			);
 		}
 
 		for (const dimension of metric.dimensions ?? []) {
@@ -265,8 +310,8 @@ export function internalAssertDateRange(
 	args: { from: number; to: number },
 	settings: typesAnalyticsSettings,
 ) {
-	const from = internalStartOfUtcDay(args.from);
-	const to = internalStartOfUtcDay(args.to);
+	const from = startOfUtcDay(args.from);
+	const to = startOfUtcDay(args.to);
 
 	if (from > to) {
 		internalBadRequest("`from` must be before or equal to `to`.");

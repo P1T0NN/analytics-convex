@@ -7,11 +7,14 @@ import { internalCreateConfigurationHash } from "../shared/utils/configurationHa
 
 // TYPES
 import type {
-	typesAnalyticsSettings,
 	typesAnalyticsPropertyType,
+} from "../shared/types/primitives.js";
+import type {
 	typesAnalyticsConfigState,
+} from "../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsRuntimeConfig,
-} from "../shared/types/index.js";
+} from "../shared/types/config.js";
 
 const normalizedConfigCache = new Map<string, typesAnalyticsConfigState>();
 
@@ -19,10 +22,6 @@ export function internalTryGetCachedConfiguration(
 	configHash: string,
 ): typesAnalyticsConfigState | undefined {
 	return normalizedConfigCache.get(configHash);
-}
-
-export function internalDefaultSettings(): typesAnalyticsSettings {
-	return internalDefaultAnalyticsSettings();
 }
 
 export function internalChartConfig(
@@ -50,8 +49,9 @@ export function internalNormalizeConfig(
 	}));
 	const metrics = config.metrics.map((metric) => ({ ...metric }));
 	const funnels = config.funnels ?? {};
+	const journeys = config.journeys ?? {};
 	const settings = {
-		...internalDefaultSettings(),
+		...internalDefaultAnalyticsSettings(),
 		...config.settings,
 	};
 
@@ -61,6 +61,7 @@ export function internalNormalizeConfig(
 			events,
 			metrics,
 			funnels,
+			journeys,
 			settings,
 		});
 
@@ -73,10 +74,14 @@ export function internalNormalizeConfig(
 		events,
 		metrics,
 		funnels,
+		journeys,
 		eventByName: new Map(events.map((event) => [event.name, event])),
 		metricByName: new Map(metrics.map((metric) => [metric.name, metric])),
 		funnelByName: new Map(
 			Object.entries(funnels).map(([name, funnel]) => [name, funnel]),
+		),
+		journeyByName: new Map(
+			Object.entries(journeys).map(([name, journey]) => [name, journey]),
 		),
 		settings,
 		configHash,

@@ -32,9 +32,26 @@ export const unitValidator = v.union(
 	v.literal("bytes"),
 );
 
+export const rollupGranularityValidator = v.union(
+	v.literal("day"),
+	v.literal("hour"),
+);
+
+export const bucketUnitValidator = v.union(
+	v.literal("day"),
+	v.literal("week"),
+	v.literal("month"),
+);
+
+export const timezoneValidator = v.string();
+
 export const aggregationValidator = v.union(
 	v.literal("count"),
 	v.literal("sum"),
+	v.literal("avg"),
+	v.literal("min"),
+	v.literal("max"),
+	v.literal("distinctActors"),
 );
 
 export const propertyTypeValidator = v.union(
@@ -57,6 +74,12 @@ export {
 } from "../../shared/schemas/funnelSchemas.js";
 
 export {
+	journeyConfigValidator,
+	journeysConfigValidator,
+	journeyConversionResponseValidator,
+} from "../../shared/schemas/journeySchemas.js";
+
+export {
 	dashboardMetricItemValidator,
 	dashboardMetricsResponseValidator,
 } from "../../shared/schemas/dashboardSchemas.js";
@@ -75,6 +98,7 @@ export {
 
 import { metricEvaluationConfigValidator } from "../../shared/schemas/evaluationSchemas.js";
 import { funnelsConfigValidator } from "../../shared/schemas/funnelSchemas.js";
+import { journeysConfigValidator } from "../../shared/schemas/journeySchemas.js";
 
 export const metricConfigValidator = v.object({
 	name: v.string(),
@@ -84,8 +108,10 @@ export const metricConfigValidator = v.object({
 	eventNames: v.array(v.string()),
 	aggregation: aggregationValidator,
 	valueProperty: v.optional(v.string()),
+	actorProperty: v.optional(v.string()),
 	dimensions: v.optional(v.array(v.string())),
 	trafficMode: v.optional(trafficModeValidator),
+	rollupGranularity: v.optional(rollupGranularityValidator),
 	adminOnly: v.optional(v.boolean()),
 	evaluation: v.optional(metricEvaluationConfigValidator),
 });
@@ -102,6 +128,9 @@ export const settingsValidator = v.object({
 	maxBreakdownItems: v.number(),
 	rawEventRetentionDays: v.number(),
 	maxRawEventDeletesPerRun: v.number(),
+	rollupRetentionDays: v.number(),
+	maxRollupDeletesPerRun: v.number(),
+	defaultTimezone: v.optional(v.string()),
 });
 
 export const settingsPatchValidator = v.object({
@@ -116,14 +145,27 @@ export const settingsPatchValidator = v.object({
 	maxBreakdownItems: v.optional(v.number()),
 	rawEventRetentionDays: v.optional(v.number()),
 	maxRawEventDeletesPerRun: v.optional(v.number()),
+	rollupRetentionDays: v.optional(v.number()),
+	maxRollupDeletesPerRun: v.optional(v.number()),
+	defaultTimezone: v.optional(v.string()),
 });
 
 export const analyticsRuntimeConfigValidator = v.object({
 	events: v.array(eventConfigValidator),
 	metrics: v.array(metricConfigValidator),
 	funnels: v.optional(funnelsConfigValidator),
+	journeys: v.optional(journeysConfigValidator),
 	settings: settingsValidator,
 	configHash: v.optional(v.string()),
+});
+
+/** Persisted configuration blob — no configHash field. */
+export const storedAnalyticsConfigValidator = v.object({
+	events: v.array(eventConfigValidator),
+	metrics: v.array(metricConfigValidator),
+	funnels: v.optional(funnelsConfigValidator),
+	journeys: v.optional(journeysConfigValidator),
+	settings: settingsValidator,
 });
 
 export const configReferenceFields = {

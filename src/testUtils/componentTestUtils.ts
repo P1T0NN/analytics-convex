@@ -11,13 +11,16 @@ import { internalCreateConfigurationHash } from "../shared/utils/configurationHa
 // TYPES
 import type {
 	typesAnalyticsEventConfigRuntime,
+	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneysConfig,
 	typesAnalyticsMetricConfigRuntime,
 	typesAnalyticsRuntimeConfig,
+} from "../shared/types/config.js";
+import type {
 	typesAnalyticsSettings,
-	typesAnalyticsFunnelsConfig,
-} from "../shared/types/index.js";
+} from "../shared/types/settings.js";
 
-export { DAY_MS } from "../shared/constants.js";
+export { DAY_MS, HOUR_MS } from "../shared/constants.js";
 
 export function internalCreateAnalyticsComponentTest(
 	modules: Record<string, () => Promise<unknown>>,
@@ -29,6 +32,7 @@ export function internalRuntimeConfiguration(config: {
 	events: typesAnalyticsEventConfigRuntime[];
 	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels?: typesAnalyticsFunnelsConfig;
+	journeys?: typesAnalyticsJourneysConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 }): typesAnalyticsRuntimeConfig {
 	const settings = {
@@ -36,10 +40,12 @@ export function internalRuntimeConfiguration(config: {
 		...(config.settings ?? {}),
 	};
 	const funnels = config.funnels ?? {};
+	const journeys = config.journeys ?? {};
 	const configHash = internalCreateConfigurationHash({
 		events: config.events,
 		metrics: config.metrics,
 		funnels,
+		journeys,
 		settings,
 	});
 
@@ -47,6 +53,7 @@ export function internalRuntimeConfiguration(config: {
 		events: config.events,
 		metrics: config.metrics,
 		...(config.funnels ? { funnels: config.funnels } : {}),
+		...(config.journeys ? { journeys: config.journeys } : {}),
 		settings,
 		configHash,
 	};

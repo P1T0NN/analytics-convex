@@ -2,8 +2,10 @@
 import { describe, expect, it } from "vitest";
 
 // UTILS
-import { compareScores } from "../../../component/utils/compareScores";
-import { getAnalyticsRanking } from "../../../component/utils/getAnalyticsRanking";
+import {
+	compareScores,
+} from "../../../shared/utils/analyticsRankingUtils.js";
+import { getAnalyticsRanking } from "../../../shared/utils/analyticsRankingUtils";
 
 describe("compareScores", () => {
 	it("returns negative when a < b in ascending", () => {

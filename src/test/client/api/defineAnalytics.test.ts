@@ -48,6 +48,7 @@ describe("defineAnalytics", () => {
 		};
 
 		// Server wrappers (top-level) - callable with ctx
+		expect(analytics.track).toBeDefined();
 		expect(analytics.writeTrack).toBeDefined();
 		expect(analytics.writeConfiguration).toBeDefined();
 		expect(analytics.fetchSummary).toBeDefined();
@@ -58,15 +59,21 @@ describe("defineAnalytics", () => {
 		expect(analytics.fetchTopDimensionValue).toBeDefined();
 		expect(validTotalsInput.dimensionKey).toBe("category");
 
-		// Client exports (under .client) - Convex function references
+		// Client exports (under .client) - registered Convex functions only
 		expect(analytics.client.writeTrack).toBeDefined();
 		expect(analytics.client.writeConfiguration).toBeDefined();
 		expect(analytics.client.breakdown).toBeDefined();
 		expect(analytics.client.summary).toBeDefined();
 		expect(analytics.client.timeSeries).toBeDefined();
 		expect(analytics.client.metricComparison).toBeDefined();
+		expect(analytics.client.journeyConversion).toBeDefined();
+		expect(analytics.client.metricTotalsByDimension).toBeDefined();
+		expect(analytics.client.topDimensionValue).toBeDefined();
+		expect(analytics.client).not.toHaveProperty("track");
+		expect(analytics.client).not.toHaveProperty("fetchSummary");
 		expect(analytics.crons.processPendingHighVolumeAnalyticsEvents).toBeDefined();
 		expect(analytics.crons.purgeStaleAnalyticsEvents).toBeDefined();
+		expect(analytics.crons.purgeStaleAnalyticsRollups).toBeDefined();
 		expect(analytics.registerCrons).toBeDefined();
 	});
 });

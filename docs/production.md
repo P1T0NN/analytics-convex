@@ -3,26 +3,27 @@
 Before release, run the local gates:
 
 ```bash
-bun run test
-bun run test:stress
+bun test
+bun run test:volume
 bun run typecheck
 bun run lint
 bun run build
 ```
 
-Then exercise staging with realistic event volume, event names, scopes,
-dimensions, and query ranges. During that run, inspect Convex Insights:
+Read [Scale and limits](./scale-and-limits.md) before tuning production settings.
+Run [Load testing](./load-testing.md) locally — it does not consume Convex cloud
+quota.
+
+Optional: exercise the [example app](../example/README.md) with `npm run dev` and
+inspect Convex Insights on your dev deployment:
 
 ```bash
-bun run insights
-bun run insights:prod
+npm run insights
 ```
 
 Watch for high documents read, high bytes read, slow functions, OCC conflicts,
 and pending high-volume events not being drained by the cron. Tune traffic mode,
 shard counts, batch size, retention, and query limits based on those signals.
-
----
 
 ---
 
@@ -55,3 +56,11 @@ shard counts, batch size, retention, and query limits based on those signals.
 
 7. **Don't skip the crons** — without `analytics.registerCrons()`, high-volume
    events never aggregate and raw events never expire.
+
+8. **Plan for rollup growth** — raw events expire (default 90 days) but daily
+   rollups are kept forever unless you set `rollupRetentionDays`. See
+   [Scale and limits — Rollup storage](./scale-and-limits.md#rollup-storage-grows-forever).
+
+9. **Retention keeps up automatically** — when a purge run deletes a full
+   batch, it immediately schedules another batch (up to 20 per cron tick), so
+   high-volume deployments don't fall behind their retention windows.

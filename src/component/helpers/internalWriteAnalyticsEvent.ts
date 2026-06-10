@@ -26,9 +26,13 @@ import type { MutationCtx } from "../_generated/server";
 import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
+} from "../../shared/types/componentInternal.js";
+import type {
 	typesHighVolumeStatus,
+} from "../../shared/types/primitives.js";
+import type {
 	typesPreparedTrackEventInput,
-} from "../../shared/types/index.js";
+} from "../../shared/types/tracking.js";
 
 async function internalLookupExistingIdempotencyKey(
 	ctx: MutationCtx,

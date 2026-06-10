@@ -11,7 +11,9 @@ import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import {
+	startOfUtcDay,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
 import { internalAssertDateRange } from "../validations/validations";
 import { computeConversionRatePercent } from "../../shared/utils/analyticsEvaluationUtils";
 
@@ -71,8 +73,8 @@ export const fetchMetricConversion = query({
 			ratePercent: computeConversionRatePercent({ numerator, denominator }),
 			scope,
 			range: {
-				from: internalStartOfUtcDay(args.from),
-				to: internalStartOfUtcDay(args.to),
+				from: startOfUtcDay(args.from),
+				to: startOfUtcDay(args.to),
 			},
 		};
 	},

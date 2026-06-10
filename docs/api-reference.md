@@ -9,10 +9,11 @@ runtime config. These are Convex functions, not TypeScript helpers.
 
 **Queries:** `fetchConfiguration`, `fetchTimeSeries`, `fetchSummary`, `fetchBreakdown`,
 `fetchMetricComparison`, `fetchMetricConversion`, `fetchMetricEvaluation`,
-`fetchDashboardMetrics`, `fetchFunnelConversion`, `fetchMetricTotalsByDimension`,
-`fetchTopDimensionValue`
+`fetchDashboardMetrics`, `fetchFunnelConversion`, `fetchJourneyConversion`,
+`fetchMetricTotalsByDimension`, `fetchTopDimensionValue`
 
-**Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`
+**Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`,
+`purgeStaleAnalyticsRollups`
 
 ### Package entry (`@piton-/analytics-convex`)
 
@@ -20,7 +21,8 @@ Everything below is safe to import in consumer apps.
 
 | Category | Exports |
 | -------- | ------- |
-| Setup | `defineAnalytics`, `event`, `property`, `count`, `sum` |
+| Setup | `defineAnalytics`, `event`, `property`, `count`, `sum`, `avg`, `min`, `max`, `distinctActors` |
+| Date ranges | `createAnalyticsCompletedDayRange`, `createAnalyticsTodayRange`, `createAnalyticsDayRange`, `previousAnalyticsDayRange`, `previousAnalyticsPeriodRange`, `analyticsDayRangeIncludesToday`, `getQueryBucketStart`, `listQueryBuckets`, `startOfUtcDay`, `startOfUtcWeek`, `startOfUtcMonth`, `normalizeAnalyticsDayRange`, `countUtcDaysInRange` |
 | Evaluation | `evaluateMetricLabel`, `computeConversionRatePercent`, `computePercentOfGoal`, `ANALYTICS_METRIC_LABELS` |
 | Ranking | `getAnalyticsRanking`, `compareScores` |
 | Scopes | `createAnalyticsScopeId`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeInput` |
@@ -30,6 +32,19 @@ Everything below is safe to import in consumer apps.
 
 `defineAnalytics()` also returns server helpers, optional `client` wrappers,
 `crons`, `registerCrons`, and `config` — see [Public API](./public-api.md).
+
+### Testing subpath (`@piton-/analytics-convex/testing`)
+
+| Export | Purpose |
+| ------ | ------- |
+| `createAnalyticsComponentTest` | `convex-test` harness with analytics schema |
+| `runtimeConfiguration` | Build test config + hash |
+| `analyticsConfigArgs` | `{ configHash, config }` for component calls |
+| `pageViewsConfiguration`, `revenueConfiguration` | Example configs |
+| `DAY_MS` | UTC day constant |
+| `buildVolumeEvents`, `volumeConfiguration`, `logVolumeTiming`, `VOLUME_EVENT_COUNTS` | Volume test helpers |
+
+See [Testing](./testing.md).
 
 **Not exported to apps:** any function whose name starts with `internal` (library
 implementation only).

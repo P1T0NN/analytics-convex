@@ -11,7 +11,9 @@ import { internalBuildDashboardMetricsForRange } from "../helpers/evaluateMetric
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import {
+	startOfUtcDay,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
 import { internalAssertDateRange } from "../validations/validations";
 import { internalBadRequest } from "../errors/errors";
 
@@ -82,8 +84,8 @@ export const fetchDashboardMetrics = query({
 		return {
 			scope,
 			range: {
-				from: internalStartOfUtcDay(args.from),
-				to: internalStartOfUtcDay(args.to),
+				from: startOfUtcDay(args.from),
+				to: startOfUtcDay(args.to),
 			},
 			metrics,
 		};

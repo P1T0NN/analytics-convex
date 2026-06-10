@@ -14,7 +14,7 @@ Use the exports below for UI components, shared app utilities, and explicit anno
 | `src/shared/types/primitives.ts` | Units, aggregations, property types |
 | `src/shared/types/settings.ts` | `typesAnalyticsSettings` |
 | `src/shared/types/scopes.ts` | Scope input, resolved scope, metric scopes |
-| `src/shared/types/config.ts` | Event/metric/funnel config (builder + `*Runtime` variants) |
+| `src/shared/types/config.ts` | Event/metric/funnel/journey config (builder + `*Runtime` variants) |
 | `src/shared/types/evaluation.ts` | Evaluation config, labels, comparison/conversion inputs |
 | `src/shared/types/tracking.ts` | Track inputs, unique events, `typesWriteTrackResult` |
 | `src/shared/types/queries.ts` | Query response shapes |
@@ -42,6 +42,10 @@ import type {
   typesMetricEvaluationConfig,
   typesAnalyticsFunnelConfig,
   typesAnalyticsFunnelsConfig,
+  typesAnalyticsJourneyConfig,
+  typesAnalyticsJourneysConfig,
+  typesAnalyticsRollupGranularity,
+  typesAnalyticsBucketUnit,
   typesAnalyticsRuntimeConfig,
   typesAnalyticsScopeInput,
   typesAnalyticsResolvedScope,
@@ -53,6 +57,7 @@ import type {
   typesMetricEvaluationArgs,
   typesDashboardMetricsArgs,
   typesFunnelConversionArgs,
+  typesJourneyConversionArgs,
 
   // Query responses
   typesMetricSummaryResponse,
@@ -61,6 +66,7 @@ import type {
   typesMetricEvaluationResponse,
   typesDashboardMetricsResponse,
   typesFunnelConversionResponse,
+  typesJourneyConversionResponse,
 
   // Evaluation helpers
   typesMetricEvaluationResult,

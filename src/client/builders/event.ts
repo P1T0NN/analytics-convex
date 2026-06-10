@@ -1,8 +1,10 @@
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
+} from "../../shared/types/config.js";
+import type {
 	typesAnalyticsPropertyType,
-} from "../../shared/types/index.js";
+} from "../../shared/types/primitives.js";
 import type { typesAnalyticsPropertyDefinition } from "./property";
 
 type typesPropertyInput =

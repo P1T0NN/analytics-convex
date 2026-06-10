@@ -3,19 +3,40 @@ import type { ComponentApi } from "../../../component/_generated/component";
 
 // API
 import { createAnalyticsApi } from "../../../client/api/createAnalyticsApi";
+import { defineAnalytics } from "../../../client/api/defineAnalytics";
+
+// BUILDERS
+import { event } from "../../../client/builders/event";
+import { property } from "../../../client/builders/property";
+
+function buildAnalytics(component: ComponentApi) {
+	return defineAnalytics(component, {
+		events: {
+			productAdded: event("product.added", {
+				label: "Product added",
+				properties: {
+					category: property.string({ required: true }),
+					price: property.number(),
+				},
+			}),
+		},
+		metrics: ({ count }) => ({
+			productsAdded: count("Products added")
+				.from("product.added")
+				.by("category"),
+		}),
+	});
+}
 
 describe("createAnalyticsApi", () => {
-	it("returns typed server tracking helpers", () => {
+	it("returns only registered Convex functions", () => {
 		const component = {} as ComponentApi;
-		const analytics = createAnalyticsApi(component, {
+		const client = createAnalyticsApi(component, {
 			events: [
 				{
 					name: "product.added",
 					label: "Product added",
-					properties: {
-						category: "string",
-						price: "number",
-					},
+					properties: { category: "string", price: "number" },
 					requiredProperties: ["category"],
 				},
 			] as const,
@@ -30,6 +51,31 @@ describe("createAnalyticsApi", () => {
 				},
 			] as const,
 		});
+
+		// Registered functions safe to re-export from a convex module.
+		expect(client.writeConfiguration).toBeDefined();
+		expect(client.writeTrack).toBeDefined();
+		expect(client.timeSeries).toBeDefined();
+		expect(client.summary).toBeDefined();
+		expect(client.breakdown).toBeDefined();
+		expect(client.metricComparison).toBeDefined();
+		expect(client.metricConversion).toBeDefined();
+		expect(client.metricEvaluation).toBeDefined();
+		expect(client.dashboardMetrics).toBeDefined();
+		expect(client.funnelConversion).toBeDefined();
+		expect(client.journeyConversion).toBeDefined();
+		expect(client.metricTotalsByDimension).toBeDefined();
+		expect(client.topDimensionValue).toBeDefined();
+
+		// Plain helpers live on the defineAnalytics() result, not on .client.
+		expect(client).not.toHaveProperty("track");
+		expect(client).not.toHaveProperty("fetchSummary");
+		expect(client).not.toHaveProperty("configure");
+	});
+
+	it("exposes typed server helpers on the defineAnalytics result", () => {
+		const component = {} as ComponentApi;
+		const analytics = buildAnalytics(component);
 
 		type ProductAddedInput = Parameters<
 			typeof analytics.track<"product.added">
@@ -98,24 +144,7 @@ describe("createAnalyticsApi", () => {
 				fetchTopDimensionValue: "fetchTopDimensionValueRef",
 			},
 		} as unknown as ComponentApi;
-		const analytics = createAnalyticsApi(component, {
-			events: [
-				{
-					name: "product.added",
-					label: "Product added",
-				},
-			] as const,
-			metrics: [
-				{
-					name: "productsAdded",
-					label: "Products added",
-					unit: "count",
-					eventNames: ["product.added"],
-					aggregation: "count",
-					dimensions: ["category"],
-				},
-			] as const,
-		});
+		const analytics = buildAnalytics(component);
 		const runQuery = vi
 			.fn()
 			.mockResolvedValueOnce([{ key: "Shoes", value: 3 }])

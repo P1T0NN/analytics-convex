@@ -9,16 +9,22 @@ import { internalAnalyticsConfigReference } from "../utils/configReference";
 // TYPES
 import type {
 	typesAnalyticsEventConfig,
-	typesAnalyticsMetricConfig,
-	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfig,
+} from "../../shared/types/config.js";
+import type {
+	typesAnalyticsSettings,
+} from "../../shared/types/settings.js";
+import type {
 	typesTrackEventInput,
 	typesTrackEventsInput,
-} from "../../shared/types/index.js";
+} from "../../shared/types/tracking.js";
 import type {
 	typesBreakdownArgs,
 	typesDashboardMetricsArgs,
 	typesFunnelConversionArgs,
+	typesJourneyConversionArgs,
 	typesMetricConversionArgs,
 	typesMetricEvaluationArgs,
 	typesMetricName,
@@ -58,12 +64,14 @@ export function internalCreateAnalyticsServerHelpers<
 	metrics: Metrics,
 	settings?: Partial<typesAnalyticsSettings>,
 	funnels?: typesAnalyticsFunnelsConfig,
+	journeys?: typesAnalyticsJourneysConfig,
 ) {
 	const config = internalCreateAnalyticsConfiguration(
 		events,
 		metrics,
 		settings,
 		funnels,
+		journeys,
 	);
 	const configReference = internalAnalyticsConfigReference(config);
 
@@ -103,6 +111,7 @@ export function internalCreateAnalyticsServerHelpers<
 				events: config.events,
 				metrics: config.metrics,
 				...(config.funnels ? { funnels: config.funnels } : {}),
+				...(config.journeys ? { journeys: config.journeys } : {}),
 				settings: {
 					...config.settings,
 					...(settings ?? {}),
@@ -195,6 +204,16 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesFunnelConversionArgs,
 		) => {
 			return await ctx.runQuery(component.lib.fetchFunnelConversion, {
+				...configReference,
+				...args,
+			});
+		},
+
+		fetchJourneyConversion: async (
+			ctx: typesQueryCtx,
+			args: typesJourneyConversionArgs,
+		) => {
+			return await ctx.runQuery(component.lib.fetchJourneyConversion, {
 				...configReference,
 				...args,
 			});

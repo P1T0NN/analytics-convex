@@ -12,15 +12,22 @@ import {
 	computePercentOfGoal,
 	evaluateMetricLabel,
 } from "../../shared/utils/analyticsEvaluationUtils";
+import { previousAnalyticsDayRange } from "../../shared/utils/analyticsDateRangeUtils.js";
 
 // TYPES
 import type { QueryCtx } from "../_generated/server";
 import type {
 	typesAnalyticsConfigState,
+} from "../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsMetricConfigRuntime,
+} from "../../shared/types/config.js";
+import type {
 	typesAnalyticsScope,
+} from "../../shared/types/scopes.js";
+import type {
 	typesAnalyticsUnit,
-} from "../../shared/types/index.js";
+} from "../../shared/types/primitives.js";
 import type {
 	typesMetricEvaluationConfig,
 	typesMetricEvaluationResult,
@@ -96,13 +103,16 @@ export function internalBuildMetricEvaluationFromCache(
 	}
 
 	if (args.evaluation.kind === "comparison") {
-		const rangeMs = args.to - args.from;
-		const previous = internalReadMetricTotalFromCache(cache, args.scope, {
-			metric: args.metric,
-			from: args.from - rangeMs,
-			to: args.from,
+		const { previous } = previousAnalyticsDayRange({
+			from: args.from,
+			to: args.to,
 		});
-		const comparison = buildComparisonBlock({ value, previous });
+		const previousValue = internalReadMetricTotalFromCache(cache, args.scope, {
+			metric: args.metric,
+			from: previous.from,
+			to: previous.to,
+		});
+		const comparison = buildComparisonBlock({ value, previous: previousValue });
 
 		return {
 			value,
@@ -185,11 +195,14 @@ export async function internalBuildMetricEvaluationResult(
 	];
 
 	if (args.evaluation?.kind === "comparison") {
-		const rangeMs = args.to - args.from;
+		const { previous } = previousAnalyticsDayRange({
+			from: args.from,
+			to: args.to,
+		});
 		requests.push({
 			metric: args.metric,
-			from: args.from - rangeMs,
-			to: args.from,
+			from: previous.from,
+			to: previous.to,
 		});
 	}
 
@@ -215,20 +228,7 @@ export async function internalBuildMetricEvaluationResult(
 }
 
 export function internalBuildComparisonRange(args: { from: number; to: number }) {
-	const rangeMs = args.to - args.from;
-	const previousFrom = args.from - rangeMs;
-	const previousTo = args.from;
-
-	return {
-		current: {
-			from: args.from,
-			to: args.to,
-		},
-		previous: {
-			from: previousFrom,
-			to: previousTo,
-		},
-	};
+	return previousAnalyticsDayRange(args);
 }
 
 export async function internalBuildPeriodComparison(
@@ -241,13 +241,18 @@ export async function internalBuildPeriodComparison(
 		to: number;
 	},
 ) {
-	const rangeMs = args.to - args.from;
 	const totals = await internalGetMetricTotalsForRanges(ctx, config, {
 		metric: args.metric,
 		scope: args.scope,
 		ranges: [
 			{ key: "current", from: args.from, to: args.to },
-			{ key: "previous", from: args.from - rangeMs, to: args.from },
+			...((): Array<{ key: string; from: number; to: number }> => {
+				const { previous } = previousAnalyticsDayRange({
+					from: args.from,
+					to: args.to,
+				});
+				return [{ key: "previous", from: previous.from, to: previous.to }];
+			})(),
 		],
 	});
 
@@ -266,9 +271,10 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 	includeEvaluation: boolean;
 }) {
 	const requests: typesMetricTotalRequest[] = [];
-	const rangeMs = args.to - args.from;
-	const previousFrom = args.from - rangeMs;
-	const previousTo = args.from;
+	const comparisonRanges = previousAnalyticsDayRange({
+		from: args.from,
+		to: args.to,
+	});
 
 	for (const metric of args.metrics) {
 		const metricConfig = args.metricConfigs.get(metric);
@@ -288,8 +294,8 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 		if (needsPreviousPeriod) {
 			requests.push({
 				metric,
-				from: previousFrom,
-				to: previousTo,
+				from: comparisonRanges.previous.from,
+				to: comparisonRanges.previous.to,
 			});
 		}
 
@@ -340,6 +346,11 @@ export async function internalBuildDashboardMetricsForRange(
 		requests,
 	);
 
+	const comparisonRanges = previousAnalyticsDayRange({
+		from: args.from,
+		to: args.to,
+	});
+
 	const metrics: Record<
 		string,
 		{
@@ -379,11 +390,10 @@ export async function internalBuildDashboardMetricsForRange(
 		};
 
 		if (includeComparison) {
-			const rangeMs = args.to - args.from;
 			const previous = internalReadMetricTotalFromCache(cache, args.scope, {
 				metric,
-				from: args.from - rangeMs,
-				to: args.from,
+				from: comparisonRanges.previous.from,
+				to: comparisonRanges.previous.to,
 			});
 			item.comparison = buildComparisonBlock({ value, previous });
 		}

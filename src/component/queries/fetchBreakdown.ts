@@ -7,12 +7,22 @@ import { internalChartConfig } from "../analyticsConfig";
 import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
-import { internalCollectDailyMetricRows } from "../helpers/rollupReads";
-import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import {
+	internalCollectDailyActorClaims,
+	internalCollectDailyMetricRows,
+	internalCountDistinctActorsByDimensionFromClaims,
+} from "../helpers/rollupReads";
+import {
+	internalGetMetricConfigOrThrow,
+	internalGetMetricRollupGranularity,
+} from "../utils/shared/metricUtils";
 
 // UTILS
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import {
+	startOfUtcDay,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
+import { internalReduceMetricRollupTotalsByKey } from "../../shared/utils/metricAggregationUtils.js";
 import {
 	internalAssertDateRange,
 	internalAssertAllowedDimension,
@@ -82,22 +92,32 @@ export const fetchBreakdown = query({
 		internalAssertAllowedDimension(metricConfig, args.groupBy);
 
 		const scope = internalResolveScope(args.scope);
-		const rows = await internalCollectDailyMetricRows(ctx, {
-			metric: args.metric,
-			scope,
-			dimensionKey: args.groupBy,
-			from: args.from,
-			to: args.to,
-			settings: config.settings,
-		});
-		const totals = new Map<string, number>();
-
-		for (const row of rows) {
-			totals.set(
-				row.dimensionValue,
-				(totals.get(row.dimensionValue) ?? 0) + row.value,
-			);
-		}
+		const fromDay = startOfUtcDay(args.from);
+		const toDay = startOfUtcDay(args.to);
+		const totals =
+			metricConfig.aggregation === "distinctActors" && fromDay !== toDay
+				? internalCountDistinctActorsByDimensionFromClaims(
+						await internalCollectDailyActorClaims(ctx, {
+							metric: args.metric,
+							scope,
+							dimensionKey: args.groupBy,
+							from: args.from,
+							to: args.to,
+							settings: config.settings,
+						}),
+					)
+				: internalReduceMetricRollupTotalsByKey(
+						metricConfig.aggregation,
+						await internalCollectDailyMetricRows(ctx, {
+							metric: args.metric,
+							scope,
+							dimensionKey: args.groupBy,
+							from: args.from,
+							to: args.to,
+							settings: config.settings,
+							granularity: internalGetMetricRollupGranularity(metricConfig),
+						}),
+					);
 
 		const data = [...totals.entries()]
 			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
@@ -115,8 +135,8 @@ export const fetchBreakdown = query({
 				groupBy: args.groupBy,
 				omittedSeriesCount: Math.max(0, totals.size - data.length),
 				range: {
-					from: internalStartOfUtcDay(args.from),
-					to: internalStartOfUtcDay(args.to),
+					from: startOfUtcDay(args.from),
+					to: startOfUtcDay(args.to),
 				},
 			},
 		};

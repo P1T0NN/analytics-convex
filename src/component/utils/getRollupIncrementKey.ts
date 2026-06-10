@@ -4,6 +4,7 @@ import type { typesMetricRollupIncrement } from "../utils/getMetricRollupIncreme
 export function internalGetRollupIncrementKey(increment: typesMetricRollupIncrement) {
 	return JSON.stringify([
 		increment.metric,
+		increment.granularity,
 		increment.bucketStart,
 		increment.scope.scopeType,
 		increment.scope.scopeId,

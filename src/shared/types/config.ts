@@ -3,6 +3,7 @@ import type { typesMetricEvaluationConfig } from "./evaluation.js";
 import type {
 	typesAnalyticsAggregation,
 	typesAnalyticsPropertyType,
+	typesAnalyticsRollupGranularity,
 	typesAnalyticsTrafficMode,
 	typesAnalyticsUnit,
 } from "./primitives.js";
@@ -25,8 +26,10 @@ export type typesAnalyticsMetricConfig<Name extends string = string, EventName e
 	eventNames: readonly EventName[];
 	aggregation: typesAnalyticsAggregation;
 	valueProperty?: string;
+	actorProperty?: string;
 	dimensions?: readonly string[];
 	trafficMode?: typesAnalyticsTrafficMode;
+	rollupGranularity?: typesAnalyticsRollupGranularity;
 	adminOnly?: boolean;
 	evaluation?: typesMetricEvaluationConfig;
 };
@@ -48,11 +51,25 @@ export type typesAnalyticsMetricConfigRuntime = {
 	eventNames: string[];
 	aggregation: typesAnalyticsAggregation;
 	valueProperty?: string;
+	actorProperty?: string;
 	dimensions?: string[];
 	trafficMode?: typesAnalyticsTrafficMode;
+	rollupGranularity?: typesAnalyticsRollupGranularity;
 	adminOnly?: boolean;
 	evaluation?: typesMetricEvaluationConfig;
 };
+
+export type typesAnalyticsJourneyConfig = {
+	label: string;
+	steps: string[];
+	/** Event property used for journey breakdown (frozen from step 0). */
+	breakdownProperty?: string;
+};
+
+export type typesAnalyticsJourneysConfig = Record<
+	string,
+	typesAnalyticsJourneyConfig
+>;
 
 export type typesAnalyticsFunnelConfig = {
 	label: string;
@@ -68,6 +85,7 @@ export type typesAnalyticsRuntimeConfig = {
 	events: typesAnalyticsEventConfigRuntime[];
 	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels?: typesAnalyticsFunnelsConfig;
+	journeys?: typesAnalyticsJourneysConfig;
 	settings: typesAnalyticsSettings;
 	configHash?: string;
 };

@@ -3,6 +3,7 @@ import type { Auth } from "convex/server";
 import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsFunnelsConfig,
+	typesAnalyticsJourneysConfig,
 	typesAnalyticsMetricConfig,
 } from "./config.js";
 import type { typesAnalyticsScopeInput } from "./scopes.js";
@@ -21,10 +22,14 @@ export type typesAnalyticsOperation =
 				| "metricConversion"
 				| "metricEvaluation"
 				| "dashboardMetrics"
-				| "funnelConversion";
+				| "funnelConversion"
+				| "journeyConversion"
+				| "metricTotalsByDimension"
+				| "topDimensionValue";
 			metric?: string;
 			metrics?: string[];
 			funnel?: string;
+			journey?: string;
 			scope?: typesAnalyticsScopeInput;
 	  };
 
@@ -39,6 +44,7 @@ export type typesCreateAnalyticsApiOptionsForConfig<
 	events: Events;
 	metrics: Metrics;
 	funnels?: typesAnalyticsFunnelsConfig;
+	journeys?: typesAnalyticsJourneysConfig;
 	settings?: Partial<typesAnalyticsSettings>;
 	authorize?: (
 		ctx: { auth: Auth },

@@ -1,6 +1,8 @@
 // TYPES
 import type { MutationCtx } from "../_generated/server";
-import type { typesPreparedTrackEventInput } from "../../shared/types/index.js";
+import type {
+	typesPreparedTrackEventInput,
+} from "../../shared/types/tracking.js";
 
 export async function internalClaimUniqueEvent(
 	ctx: MutationCtx,

@@ -59,7 +59,7 @@ export const useFeature = mutation({
 	handler: async (ctx, args) => {
 		// ...your product logic...
 
-		await analytics.writeTrack(ctx, "feature.used", {
+		await analytics.track(ctx, "feature.used", {
 			actorId: ctx.auth.userId, // optional — who did this
 			organizationId: user.orgId, // optional — which org
 			properties: {
@@ -136,26 +136,30 @@ await analytics.track(ctx, {
 });
 ```
 
-If you do want client or route-callable wrappers, export the Convex functions
-explicitly from `convex/analytics.ts`:
+If you do want client or route-callable wrappers, export the registered Convex
+functions from `analytics.client` in `convex/analytics.ts`. Everything on
+`analytics.client` is a registered query or mutation — safe to re-export:
 
 ```ts
 export const {
 	writeTrack,
-	fetchTimeSeries,
-	fetchSummary,
-	fetchBreakdown,
-	fetchMetricComparison,
-	fetchMetricConversion,
-	fetchMetricEvaluation,
-	fetchDashboardMetrics,
-	fetchFunnelConversion,
+	timeSeries,
+	summary,
+	breakdown,
+	metricComparison,
+	metricConversion,
+	metricEvaluation,
+	dashboardMetrics,
+	funnelConversion,
+	journeyConversion,
+	metricTotalsByDimension,
+	topDimensionValue,
 } = analytics.client;
 ```
 
-The wrapped functions (`writeTrack`, `fetchTimeSeries`, etc.) include your
-`authorize` callback. The server-side helpers at the top level (`writeTrack`,
-`fetchSummary`, `fetchTimeSeries`, etc.) bypass that callback and are meant for
+The wrapped functions include your `authorize` callback. The server-side
+helpers at the top level (`analytics.track`, `analytics.fetchSummary`,
+`analytics.fetchTimeSeries`, etc.) bypass that callback and are meant for
 Convex functions that already have their own auth.
 
 ### 3. Register crons
@@ -167,6 +171,7 @@ Export the maintenance handlers from `convex/analytics.ts`, then register them:
 export const {
 	processPendingHighVolumeAnalyticsEvents,
 	purgeStaleAnalyticsEvents,
+	purgeStaleAnalyticsRollups,
 } = analytics.crons;
 ```
 
@@ -186,11 +191,11 @@ analytics.registerCrons(crons, internal.analytics, {
 export default crons;
 ```
 
-The crons run two jobs:
+The crons run maintenance jobs:
 
-- **High-volume batch processor** — aggregates pending high-volume events into
-  rollup rows
-- **Retention purger** — deletes raw events older than `rawEventRetentionDays`
+- **High-volume batch processor** — aggregates pending high-volume events into rollup rows
+- **Raw event retention** — deletes raw events older than `rawEventRetentionDays`
+- **Rollup retention** — deletes rollup, actor-claim, and journey-claim rows older than `rollupRetentionDays` (when `> 0`)
 
 Without crons, high-volume metrics will never aggregate and raw events will
 accumulate indefinitely.

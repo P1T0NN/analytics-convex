@@ -109,3 +109,13 @@ export type typesFunnelConversionResponse = {
 	scope: typesAnalyticsResolvedScope;
 	range: typesAnalyticsDateRange;
 };
+
+export type typesJourneyConversionResponse = {
+	journey: string;
+	label: string;
+	steps: string[];
+	stepCounts: number[];
+	ratePercents: Array<number | null>;
+	scope: typesAnalyticsResolvedScope;
+	range: typesAnalyticsDateRange;
+};

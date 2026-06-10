@@ -10,6 +10,7 @@ import {
 	configReferenceFields,
 	eventConfigValidator,
 	funnelsConfigValidator,
+	journeysConfigValidator,
 	metricConfigValidator,
 	settingsValidator,
 } from "../schemas/schemas";
@@ -25,6 +26,7 @@ export const fetchConfiguration = query({
 		events: v.array(eventConfigValidator),
 		metrics: v.array(metricConfigValidator),
 		funnels: v.optional(funnelsConfigValidator),
+		journeys: v.optional(journeysConfigValidator),
 		settings: settingsValidator,
 		configHash: v.optional(v.string()),
 	}),
@@ -39,6 +41,9 @@ export const fetchConfiguration = query({
 			metrics: config.metrics,
 			...(Object.keys(config.funnels).length > 0
 				? { funnels: config.funnels }
+				: {}),
+			...(Object.keys(config.journeys).length > 0
+				? { journeys: config.journeys }
 				: {}),
 			settings: config.settings,
 			configHash: config.configHash,

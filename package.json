@@ -27,6 +27,7 @@
 		"test:stress": "vitest run src/test/component/analytics.load.test.ts",
 		"test:volume": "vitest run src/test/component/analytics.volume.test.ts --reporter=verbose",
 		"test:watch": "vitest",
+		"pack:verify": "bun pm pack && node ./scripts/verify-pack.mjs",
 		"insights": "convex insights --details",
 		"insights:prod": "convex insights --details --prod",
 		"preversion": "bun install --frozen-lockfile && npm run build:clean && npm run lint && npm run typecheck",
@@ -57,10 +58,20 @@
 		"./convex.config": {
 			"types": "./dist/component/convex.config.d.ts",
 			"default": "./dist/component/convex.config.js"
+		},
+		"./testing": {
+			"types": "./dist/testing/index.d.ts",
+			"default": "./dist/testing/index.js"
 		}
 	},
 	"peerDependencies": {
-		"convex": "^1.36.1"
+		"convex": "^1.36.1",
+		"convex-test": "^0.0.49"
+	},
+	"peerDependenciesMeta": {
+		"convex-test": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@convex-dev/eslint-plugin": "^2.0.0",

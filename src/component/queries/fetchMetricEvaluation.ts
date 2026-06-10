@@ -11,7 +11,9 @@ import { internalBuildMetricEvaluationResult } from "../helpers/evaluateMetricFo
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
-import { internalStartOfUtcDay } from "../utils/common/dateUtils";
+import {
+	startOfUtcDay,
+} from "../../shared/utils/analyticsDateRangeUtils.js";
 import { internalAssertDateRange } from "../validations/validations";
 
 // SCHEMAS
@@ -63,8 +65,8 @@ export const fetchMetricEvaluation = query({
 			scope,
 			value: result.value,
 			range: {
-				from: internalStartOfUtcDay(args.from),
-				to: internalStartOfUtcDay(args.to),
+				from: startOfUtcDay(args.from),
+				to: startOfUtcDay(args.to),
 			},
 			evaluation: result.evaluation,
 			...(result.comparison ? { comparison: result.comparison } : {}),

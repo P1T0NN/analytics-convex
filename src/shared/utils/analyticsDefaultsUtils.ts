@@ -11,5 +11,8 @@ export function internalDefaultAnalyticsSettings() {
 		maxBreakdownItems: 12,
 		rawEventRetentionDays: 90,
 		maxRawEventDeletesPerRun: 5_000,
+		rollupRetentionDays: 0,
+		maxRollupDeletesPerRun: 5_000,
+		defaultTimezone: "UTC",
 	};
 }

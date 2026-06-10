@@ -1,5 +1,7 @@
 // TYPES
-import type { typesAnalyticsRuntimeConfig } from "../../shared/types/index.js";
+import type {
+	typesAnalyticsRuntimeConfig,
+} from "../../shared/types/config.js";
 
 export function internalAnalyticsConfigReference(
 	config: typesAnalyticsRuntimeConfig,

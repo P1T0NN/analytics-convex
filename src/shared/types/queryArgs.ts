@@ -32,6 +32,8 @@ export type typesMetricRangeArgs<
 	from: number;
 	to: number;
 	scope?: typesAnalyticsScopeInput;
+	bucketUnit?: import("./primitives.js").typesAnalyticsBucketUnit;
+	timezone?: string;
 };
 
 export type typesTimeSeriesArgs<
@@ -40,6 +42,8 @@ export type typesTimeSeriesArgs<
 > = typesMetricRangeArgs<Metrics, Name> & {
 	groupBy?: typesDimensionNameForMetric<Metrics, Name>;
 	fill?: boolean;
+	bucketUnit?: import("./primitives.js").typesAnalyticsBucketUnit;
+	timezone?: string;
 };
 
 export type typesBreakdownArgs<
@@ -93,6 +97,15 @@ export type typesFunnelConversionArgs = {
 	from: number;
 	to: number;
 	scope?: typesAnalyticsScopeInput;
+	groupBy?: string;
+};
+
+export type typesJourneyConversionArgs = {
+	journey: string;
+	from: number;
+	to: number;
+	scope?: typesAnalyticsScopeInput;
+	groupBy?: string;
 };
 
 /** Same fields as `typesMetricRangeArgs` — used by `fetchMetricComparison`. */

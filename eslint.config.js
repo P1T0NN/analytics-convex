@@ -19,6 +19,13 @@ export default [
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
+  // Build and release scripts - Node environment
+  {
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   // Convex code - Worker environment
   {
     files: ["src/**/*.{ts,tsx}"],

@@ -13,23 +13,23 @@ regardless of event volume.
 
 ---
 
----
-
 ### Tables
 
 | Table                   | Purpose                                                   | Retention                       |
 | ----------------------- | --------------------------------------------------------- | ------------------------------- |
 | `analyticsConfigurations` | Registered runtime config blobs keyed by hash          | Forever                         |
 | `analyticsEvents`       | Raw event log with idempotency keys                       | Configurable (default 90 days)  |
-| `analyticsDailyMetrics` | Pre-aggregated daily rollup rows, sharded by traffic mode | Forever (powers all dashboards) |
-| `analyticsUniqueEvents` | Product-level uniqueness claims by deterministic key      | Forever                         |
+| `analyticsDailyMetrics` | Pre-aggregated rollup rows (`granularity`: day or hour) | Configurable via `rollupRetentionDays` |
+| `analyticsDailyActorClaims` | Distinct-actor claims for `distinctActors` metrics | Purged with rollup retention |
+| `analyticsJourneyStepClaims` | Same-actor journey step claims | Purged with rollup retention |
+| `analyticsUniqueEvents` | Product-level uniqueness claims by deterministic key | Forever |
 
 ### Data flow
 
 ```
 writeTrack() mutation
   → validates input against registered event config
-  → builds idempotency key (event name + timestamp + actor + org + subject + scopes + properties + source)
+  → builds idempotency key (event name + timestamp + batch index + actor + org + subject + scopes + properties + source)
   → optionally claims unique.key (duplicate → no raw event, no rollup)
   → schedules `internalWriteAnalyticsEvent` via `ctx.scheduler.runAfter(0, ...)` with `configHash` only
   → returns `{ scheduled, scheduledCount, deduped?, dedupedCount? }` immediately
@@ -47,8 +47,8 @@ Events, metrics, and settings are runtime config defined in your app's
 `convex/analytics.ts`. The generated app-side helpers pass `configHash` (and `config` on
 first registration) into the component automatically. Access the resolved config via
 `analytics.config` — useful for inspecting settings, passing to crons, or logging at startup.
-Each config version gets a stable `configHash` derived from serialized events, metrics,
-funnels, and settings.
+Each config version gets a stable `configHash` derived from serialized events,
+metrics, funnels, journeys, and settings.
 
 ### Why scheduled writes?
 
@@ -68,6 +68,7 @@ to the user, analytics catches up in the background.
 | Path | Purpose |
 | ---- | ------- |
 | `src/client/index.ts` | Public package exports — the only surface consumer apps should use |
+| `src/testing/index.ts` | Public test helpers (`@piton-/analytics-convex/testing`) |
 | `src/component/lib.ts` | Component Convex exports (`components.analytics.lib.*`) |
 | `src/component/mutations/`, `queries/`, `crons/` | Component Convex functions |
 | `src/component/helpers/`, `validations/`, `utils/` | Component implementation (functions prefixed `internal*`) |

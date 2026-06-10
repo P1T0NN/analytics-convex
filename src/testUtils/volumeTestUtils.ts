@@ -1,7 +1,9 @@
 import { ANALYTICS_LIMITS } from "../shared/constants.js";
 import { internalRuntimeConfiguration } from "./componentTestUtils.js";
 
-import type { typesAnalyticsTrafficMode } from "../shared/types/index.js";
+import type {
+	typesAnalyticsTrafficMode,
+} from "../shared/types/primitives.js";
 
 export const VOLUME_EVENT_COUNTS = {
 	lowVolume: 50,

@@ -10,13 +10,16 @@ import { internalBadRequest } from "../errors/errors.js";
 // TYPES
 import type {
 	typesAnalyticsConfigState,
+} from "../../shared/types/componentInternal.js";
+import type {
 	typesPreparedTrackEventInput,
 	typesTrackEventInput,
-} from "../../shared/types/index.js";
+} from "../../shared/types/tracking.js";
 
 export function internalPrepareTrackEvent(
 	config: typesAnalyticsConfigState,
 	input: typesTrackEventInput,
+	batchIndex: number,
 ): typesPreparedTrackEventInput {
 	const occurredAt = input.occurredAt ?? Date.now();
 	const source = input.source ?? { type: "server" as const };
@@ -39,6 +42,7 @@ export function internalPrepareTrackEvent(
 	const idempotencyKey = internalBuildIdempotencyKey({
 		name: input.name,
 		occurredAt,
+		batchIndex,
 		...(input.actorId ? { actorId: input.actorId } : {}),
 		...(input.organizationId ? { organizationId: input.organizationId } : {}),
 		...(input.subject ? { subject: input.subject } : {}),

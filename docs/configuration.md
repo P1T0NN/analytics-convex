@@ -18,12 +18,42 @@
 | `description`   | `string`                                        | Optional — longer description                                                     |
 | `unit`          | `"count" \| "currency" \| "bytes"`              | Unit used in query responses                                                      |
 | `eventNames`    | `string[]`                                      | Which events feed this metric                                                     |
-| `aggregation`   | `"count" \| "sum"`                              | `count` = each event adds 1; `sum` = each event adds the value of `valueProperty` |
-| `valueProperty` | `string`                                        | Required when `aggregation` is `"sum"`                                            |
-| `dimensions`    | `string[]`                                      | Properties available for `groupBy` in queries                                     |
-| `trafficMode`   | `"lowVolume" \| "mediumVolume" \| "highVolume"` | Optional per-metric override                                                      |
-| `adminOnly`     | `boolean`                                       | If `true`, the `authorize` callback receives `adminOnly` info for access control  |
-| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules: `comparison`, `conversion`, `inverseRate`, or `goal` |
+| `aggregation`   | `"count" \| "sum" \| "avg" \| "min" \| "max" \| "distinctActors"` | How events combine into rollup values |
+| `valueProperty` | `string`                                        | Required for `sum`, `avg`, `min`, `max` — number property on events |
+| `actorProperty` | `string`                                        | Optional for `distinctActors` — string property instead of `actorId` |
+| `dimensions`    | `string[]`                                      | Properties available for `groupBy` in queries |
+| `rollupGranularity` | `"day" \| "hour"`                           | Optional — default `"day"`. Hourly: low-volume only, not with `distinctActors` |
+| `trafficMode`   | `"lowVolume" \| "mediumVolume" \| "highVolume"` | Optional per-metric override |
+| `adminOnly`     | `boolean`                                       | If `true`, the `authorize` callback receives `adminOnly` info for access control |
+| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules |
+
+Metric builder chain methods include `.from()`, `.by()`, `.value()`, `.actor()`,
+`.hourly()`, `.trafficMode()`, `.evaluation()`, `.build(name)`.
+
+### Journey config
+
+Separate from metric `funnels`. Steps are **event names** in order:
+
+| Field                | Type       | Description |
+| -------------------- | ---------- | ----------- |
+| `label`              | `string`   | Dashboard label |
+| `steps`              | `string[]` | At least two registered event names; ordered same-actor sequence (steps may span days) |
+| `breakdownProperty`  | `string`   | Optional — event property on the **first step** for journey breakdown queries (`groupBy`) |
+
+Pass as `journeys: { signup: { label, steps: [...] } }` to `defineAnalytics`.
+Query with `fetchJourneyConversion`. Requires `actorId` on tracked events. Pass
+`groupBy` matching `breakdownProperty` to get per-value conversion rows.
+
+### Metric funnel config
+
+Steps are **metric names** (volume ratios, not same-actor journeys):
+
+| Field   | Type       | Description |
+| ------- | ---------- | ----------- |
+| `label` | `string`   | Dashboard label |
+| `steps` | `string[]` | At least two metric names; conversion = last ÷ first |
+
+Pass as `funnels: { activation: { label, steps: [...] } }` to `defineAnalytics`.
 
 ### Settings
 
@@ -39,9 +69,12 @@ Pass a partial `settings` object to `defineAnalytics` to override defaults in co
 | `highVolumeMaxCatchupBatches`    | `4`              | Max consecutive catch-up batches per cron tick         |
 | `maxQueryRangeDays`              | `366`            | Max inclusive date range for queries                   |
 | `maxRollupRowsPerQuery`          | `20_000`         | Hard cap for rows read by a single query               |
-| `maxBreakdownItems`              | `12`             | Max dimension values returned by grouped queries       |
+| `maxBreakdownItems`              | `12`             | Max dimension values returned by grouped queries (breakdowns, time-series groupBy, funnel/journey breakdowns) |
 | `rawEventRetentionDays`          | `90`             | Days before raw events are purged (`0` = keep forever) |
 | `maxRawEventDeletesPerRun`       | `5_000`          | Max raw events deleted per retention cron run          |
+| `rollupRetentionDays`            | `0`              | Days before rollup rows are purged (`0` = keep forever) |
+| `maxRollupDeletesPerRun`         | `5_000`          | Max rollup rows deleted per retention cron run       |
+| `defaultTimezone`                | `"UTC"`          | Default IANA timezone for query bucket grouping      |
 
 ### Hard limits
 
@@ -75,8 +108,12 @@ or ingestion workers.
 | Breakdown items                          |                                100 max |
 | Raw event retention                      | 3,650 days max, or `0` to keep forever |
 | Raw event deletes per retention run      |                             10,000 max |
+| Rollup retention                         | 3,650 days max, or `0` to keep forever |
+| Rollup deletes per retention run         |                             10,000 max |
 | Funnels per configuration                |                                     50 |
 | Steps per funnel                         |                                     10 |
+| Journeys per configuration               |                                     50 |
+| Steps per journey                        |                                     10 |
 | Metrics per dashboard batch query        |                                     24 |
 
 ---

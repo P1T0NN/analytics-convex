@@ -17,6 +17,17 @@ export const funnelConversionResponseValidator = v.object({
 	numerator: v.number(),
 	denominator: v.number(),
 	ratePercent: v.optional(v.number()),
+	groupBy: v.optional(v.string()),
+	breakdown: v.optional(
+		v.array(
+			v.object({
+				dimensionValue: v.string(),
+				numerator: v.number(),
+				denominator: v.number(),
+				ratePercent: v.optional(v.number()),
+			}),
+		),
+	),
 	scope: v.any(),
 	range: v.object({
 		from: v.number(),

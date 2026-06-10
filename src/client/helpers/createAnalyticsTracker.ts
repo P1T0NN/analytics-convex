@@ -9,13 +9,17 @@ import { internalAnalyticsConfigReference } from "../utils/configReference";
 import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsRuntimeConfig,
+} from "../../shared/types/config.js";
+import type {
 	typesTrackEventInput,
 	typesTrackEventsInput,
+} from "../../shared/types/tracking.js";
+import type {
 	typesTypedTrackBatchInputForEvents,
 	typesTypedTrackEventInputForEvents,
 	typesTypedTrackEventOptions,
 	typesUnifiedTrackInputForEvents,
-} from "../../shared/types/index.js";
+} from "../../shared/types/typedTracking.js";
 
 type typesMutationCtx = Pick<
 	GenericMutationCtx<GenericDataModel>,

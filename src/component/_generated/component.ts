@@ -38,9 +38,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -77,11 +92,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -89,9 +106,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -116,9 +135,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -155,11 +189,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -167,15 +203,125 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
             configHash: string;
+            remainingBatches?: number;
           },
-          { cutoff?: number; deleted: number; skipped: boolean },
+          {
+            cutoff?: number;
+            deleted: number;
+            scheduledNextBatch: boolean;
+            skipped: boolean;
+          },
+          Name
+        >;
+      };
+      purgeStaleAnalyticsRollups: {
+        purgeStaleAnalyticsRollups: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+            remainingBatches?: number;
+          },
+          {
+            cutoff?: number;
+            deleted: number;
+            scheduledNextBatch: boolean;
+            skipped: boolean;
+          },
           Name
         >;
       };
@@ -194,9 +340,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -233,11 +394,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -245,9 +408,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -297,9 +462,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -336,11 +516,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -348,9 +530,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -365,9 +549,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             requiredProperties?: Array<string>;
           }>;
           funnels?: Record<string, { label: string; steps: Array<string> }>;
+          journeys?: Record<
+            string,
+            { breakdownProperty?: string; label: string; steps: Array<string> }
+          >;
           metrics: Array<{
+            actorProperty?: string;
             adminOnly?: boolean;
-            aggregation: "count" | "sum";
+            aggregation:
+              | "count"
+              | "sum"
+              | "avg"
+              | "min"
+              | "max"
+              | "distinctActors";
             description?: string;
             dimensions?: Array<string>;
             evaluation?:
@@ -404,11 +599,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             eventNames: Array<string>;
             label: string;
             name: string;
+            rollupGranularity?: "day" | "hour";
             trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
             unit: "count" | "currency" | "bytes";
             valueProperty?: string;
           }>;
           settings: {
+            defaultTimezone?: string;
             highVolumeBatchIntervalMinutes: number;
             highVolumeBatchSize: number;
             highVolumeMaxCatchupBatches: number;
@@ -416,9 +613,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxBreakdownItems: number;
             maxQueryRangeDays: number;
             maxRawEventDeletesPerRun: number;
+            maxRollupDeletesPerRun: number;
             maxRollupRowsPerQuery: number;
             mediumVolumeShardCount: number;
             rawEventRetentionDays: number;
+            rollupRetentionDays: number;
             trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
           };
         },
@@ -437,9 +636,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -476,11 +690,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -488,9 +704,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -572,9 +790,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -611,11 +844,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -623,15 +858,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
           configHash: string;
           from: number;
           funnel: string;
+          groupBy?: string;
           scope?:
             | { id?: string; type: "global" }
             | { id: string; type: "organization" }
@@ -639,9 +877,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           to: number;
         },
         {
+          breakdown?: Array<{
+            denominator: number;
+            dimensionValue: string;
+            numerator: number;
+            ratePercent?: number;
+          }>;
           denominator: number;
           denominatorMetric: string;
           funnel: string;
+          groupBy?: string;
           label: string;
           numerator: number;
           numeratorMetric: string;
@@ -652,7 +897,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
-      fetchMetricComparison: FunctionReference<
+      fetchJourneyConversion: FunctionReference<
         "query",
         "internal",
         {
@@ -665,9 +910,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -704,11 +964,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -716,9 +978,128 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+          from: number;
+          groupBy?: string;
+          journey: string;
+          scope?:
+            | { id?: string; type: "global" }
+            | { id: string; type: "organization" }
+            | { id: string; resourceType: string; type: "resource" };
+          to: number;
+        },
+        {
+          breakdown?: Array<{
+            dimensionValue: string;
+            ratePercents: Array<number | null>;
+            stepCounts: Array<number>;
+          }>;
+          breakdownProperty?: string;
+          journey: string;
+          label: string;
+          range: { from: number; to: number };
+          ratePercents: Array<number | null>;
+          scope: any;
+          stepCounts: Array<number>;
+          steps: Array<string>;
+        },
+        Name
+      >;
+      fetchMetricComparison: FunctionReference<
+        "query",
+        "internal",
+        {
+          bucketUnit?: "day" | "week" | "month";
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -729,9 +1110,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | { id?: string; type: "global" }
             | { id: string; type: "organization" }
             | { id: string; resourceType: string; type: "resource" };
+          timezone?: string;
           to: number;
         },
         {
+          bucketUnit: "day" | "week" | "month";
           current: number;
           delta: number;
           deltaPercent?: number;
@@ -751,6 +1134,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 resourceType: string;
                 type: "resource";
               };
+          timezone: string;
           unit: "count" | "currency" | "bytes";
         },
         Name
@@ -768,9 +1152,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -807,11 +1206,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -819,9 +1220,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -859,9 +1262,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -898,11 +1316,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -910,9 +1330,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -984,9 +1406,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1023,11 +1460,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1035,9 +1474,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1067,9 +1508,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1106,11 +1562,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1118,9 +1576,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1155,6 +1615,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {
+          bucketUnit?: "day" | "week" | "month";
           config?: {
             configHash?: string;
             events: Array<{
@@ -1164,9 +1625,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1203,11 +1679,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1215,9 +1693,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1230,12 +1710,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | { id?: string; type: "global" }
             | { id: string; type: "organization" }
             | { id: string; resourceType: string; type: "resource" };
+          timezone?: string;
           to: number;
         },
         {
           config: Record<string, { label: string }>;
           data: Array<Record<string, number>>;
           meta: {
+            bucketUnit: "day" | "week" | "month";
             groupBy?: string;
             label: string;
             metric: string;
@@ -1251,6 +1733,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   type: "resource";
                 };
             seriesKeys: Array<string>;
+            timezone: string;
             unit: "count" | "currency" | "bytes";
             xValueType: "timestamp";
           };
@@ -1271,9 +1754,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1310,11 +1808,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1322,9 +1822,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1353,9 +1855,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1392,11 +1909,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1404,9 +1923,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1429,9 +1950,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1468,11 +2004,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1480,15 +2018,123 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
           configHash: string;
+          remainingBatches?: number;
         },
-        { cutoff?: number; deleted: number; skipped: boolean },
+        {
+          cutoff?: number;
+          deleted: number;
+          scheduledNextBatch: boolean;
+          skipped: boolean;
+        },
+        Name
+      >;
+      purgeStaleAnalyticsRollups: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+          remainingBatches?: number;
+        },
+        {
+          cutoff?: number;
+          deleted: number;
+          scheduledNextBatch: boolean;
+          skipped: boolean;
+        },
         Name
       >;
       writeConfiguration: FunctionReference<
@@ -1502,9 +2148,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             requiredProperties?: Array<string>;
           }>;
           funnels?: Record<string, { label: string; steps: Array<string> }>;
+          journeys?: Record<
+            string,
+            { breakdownProperty?: string; label: string; steps: Array<string> }
+          >;
           metrics: Array<{
+            actorProperty?: string;
             adminOnly?: boolean;
-            aggregation: "count" | "sum";
+            aggregation:
+              | "count"
+              | "sum"
+              | "avg"
+              | "min"
+              | "max"
+              | "distinctActors";
             description?: string;
             dimensions?: Array<string>;
             evaluation?:
@@ -1541,11 +2198,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             eventNames: Array<string>;
             label: string;
             name: string;
+            rollupGranularity?: "day" | "hour";
             trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
             unit: "count" | "currency" | "bytes";
             valueProperty?: string;
           }>;
           settings?: {
+            defaultTimezone?: string;
             highVolumeBatchIntervalMinutes?: number;
             highVolumeBatchSize?: number;
             highVolumeMaxCatchupBatches?: number;
@@ -1553,9 +2212,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxBreakdownItems?: number;
             maxQueryRangeDays?: number;
             maxRawEventDeletesPerRun?: number;
+            maxRollupDeletesPerRun?: number;
             maxRollupRowsPerQuery?: number;
             mediumVolumeShardCount?: number;
             rawEventRetentionDays?: number;
+            rollupRetentionDays?: number;
             trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
           };
         },
@@ -1575,9 +2236,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1614,11 +2290,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -1626,9 +2304,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           };
@@ -1673,9 +2353,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -1712,11 +2407,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings?: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes?: number;
               highVolumeBatchSize?: number;
               highVolumeMaxCatchupBatches?: number;
@@ -1724,9 +2421,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems?: number;
               maxQueryRangeDays?: number;
               maxRawEventDeletesPerRun?: number;
+              maxRollupDeletesPerRun?: number;
               maxRollupRowsPerQuery?: number;
               mediumVolumeShardCount?: number;
               rawEventRetentionDays?: number;
+              rollupRetentionDays?: number;
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
             };
           },
@@ -1748,9 +2447,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -1787,11 +2501,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -1799,9 +2515,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -1849,9 +2567,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -1888,11 +2621,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -1900,9 +2635,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -1954,9 +2691,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -1993,11 +2745,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2005,9 +2759,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2022,9 +2778,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requiredProperties?: Array<string>;
             }>;
             funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
             metrics: Array<{
+              actorProperty?: string;
               adminOnly?: boolean;
-              aggregation: "count" | "sum";
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
               description?: string;
               dimensions?: Array<string>;
               evaluation?:
@@ -2061,11 +2832,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventNames: Array<string>;
               label: string;
               name: string;
+              rollupGranularity?: "day" | "hour";
               trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
               unit: "count" | "currency" | "bytes";
               valueProperty?: string;
             }>;
             settings: {
+              defaultTimezone?: string;
               highVolumeBatchIntervalMinutes: number;
               highVolumeBatchSize: number;
               highVolumeMaxCatchupBatches: number;
@@ -2073,9 +2846,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxBreakdownItems: number;
               maxQueryRangeDays: number;
               maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
               maxRollupRowsPerQuery: number;
               mediumVolumeShardCount: number;
               rawEventRetentionDays: number;
+              rollupRetentionDays: number;
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           },
@@ -2096,9 +2871,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2135,11 +2925,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2147,9 +2939,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2233,9 +3027,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2272,11 +3081,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2284,15 +3095,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
             configHash: string;
             from: number;
             funnel: string;
+            groupBy?: string;
             scope?:
               | { id?: string; type: "global" }
               | { id: string; type: "organization" }
@@ -2300,9 +3114,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             to: number;
           },
           {
+            breakdown?: Array<{
+              denominator: number;
+              dimensionValue: string;
+              numerator: number;
+              ratePercent?: number;
+            }>;
             denominator: number;
             denominatorMetric: string;
             funnel: string;
+            groupBy?: string;
             label: string;
             numerator: number;
             numeratorMetric: string;
@@ -2314,8 +3135,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
-      fetchMetricComparison: {
-        fetchMetricComparison: FunctionReference<
+      fetchJourneyConversion: {
+        fetchJourneyConversion: FunctionReference<
           "query",
           "internal",
           {
@@ -2328,9 +3149,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2367,11 +3203,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2379,9 +3217,130 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+            from: number;
+            groupBy?: string;
+            journey: string;
+            scope?:
+              | { id?: string; type: "global" }
+              | { id: string; type: "organization" }
+              | { id: string; resourceType: string; type: "resource" };
+            to: number;
+          },
+          {
+            breakdown?: Array<{
+              dimensionValue: string;
+              ratePercents: Array<number | null>;
+              stepCounts: Array<number>;
+            }>;
+            breakdownProperty?: string;
+            journey: string;
+            label: string;
+            range: { from: number; to: number };
+            ratePercents: Array<number | null>;
+            scope: any;
+            stepCounts: Array<number>;
+            steps: Array<string>;
+          },
+          Name
+        >;
+      };
+      fetchMetricComparison: {
+        fetchMetricComparison: FunctionReference<
+          "query",
+          "internal",
+          {
+            bucketUnit?: "day" | "week" | "month";
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2392,9 +3351,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | { id?: string; type: "global" }
               | { id: string; type: "organization" }
               | { id: string; resourceType: string; type: "resource" };
+            timezone?: string;
             to: number;
           },
           {
+            bucketUnit: "day" | "week" | "month";
             current: number;
             delta: number;
             deltaPercent?: number;
@@ -2414,6 +3375,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   resourceType: string;
                   type: "resource";
                 };
+            timezone: string;
             unit: "count" | "currency" | "bytes";
           },
           Name
@@ -2433,9 +3395,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2472,11 +3449,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2484,9 +3463,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2526,9 +3507,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2565,11 +3561,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2577,9 +3575,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2657,9 +3657,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2696,11 +3711,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2708,9 +3725,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2742,9 +3761,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2781,11 +3815,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2793,9 +3829,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2832,6 +3870,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            bucketUnit?: "day" | "week" | "month";
             config?: {
               configHash?: string;
               events: Array<{
@@ -2841,9 +3880,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2880,11 +3934,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -2892,9 +3948,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };
@@ -2907,12 +3965,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | { id?: string; type: "global" }
               | { id: string; type: "organization" }
               | { id: string; resourceType: string; type: "resource" };
+            timezone?: string;
             to: number;
           },
           {
             config: Record<string, { label: string }>;
             data: Array<Record<string, number>>;
             meta: {
+              bucketUnit: "day" | "week" | "month";
               groupBy?: string;
               label: string;
               metric: string;
@@ -2928,6 +3988,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     type: "resource";
                   };
               seriesKeys: Array<string>;
+              timezone: string;
               unit: "count" | "currency" | "bytes";
               xValueType: "timestamp";
             };
@@ -2950,9 +4011,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requiredProperties?: Array<string>;
               }>;
               funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
               metrics: Array<{
+                actorProperty?: string;
                 adminOnly?: boolean;
-                aggregation: "count" | "sum";
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
                 description?: string;
                 dimensions?: Array<string>;
                 evaluation?:
@@ -2989,11 +4065,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 eventNames: Array<string>;
                 label: string;
                 name: string;
+                rollupGranularity?: "day" | "hour";
                 trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
                 unit: "count" | "currency" | "bytes";
                 valueProperty?: string;
               }>;
               settings: {
+                defaultTimezone?: string;
                 highVolumeBatchIntervalMinutes: number;
                 highVolumeBatchSize: number;
                 highVolumeMaxCatchupBatches: number;
@@ -3001,9 +4079,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 maxBreakdownItems: number;
                 maxQueryRangeDays: number;
                 maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
                 maxRollupRowsPerQuery: number;
                 mediumVolumeShardCount: number;
                 rawEventRetentionDays: number;
+                rollupRetentionDays: number;
                 trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
               };
             };

@@ -1,22 +1,16 @@
 // LIBRARIES
-import {
-	mutationGeneric,
-	queryGeneric,
-	type GenericDataModel,
-	type GenericMutationCtx,
-} from "convex/server";
+import { mutationGeneric, queryGeneric } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
 // HELPERS
 import { internalAuthorize } from "../helpers/authorize";
-import { createAnalyticsReader } from "../helpers/createAnalyticsReader";
-import { createAnalyticsTracker } from "../helpers/createAnalyticsTracker";
 import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
 import { internalAnalyticsConfigReference } from "../utils/configReference";
 
 // SCHEMAS
 import {
 	breakdownResponseValidator,
+	bucketUnitValidator,
 	metricComparisonResponseValidator,
 	metricSummaryResponseValidator,
 	scopeInputValidator,
@@ -31,6 +25,9 @@ import {
 	funnelConversionResponseValidator,
 } from "../../shared/schemas/funnelSchemas";
 import {
+	journeyConversionResponseValidator,
+} from "../../shared/schemas/journeySchemas";
+import {
 	metricConversionResponseValidator,
 	metricEvaluationResponseValidator,
 } from "../../shared/schemas/evaluationSchemas";
@@ -39,20 +36,22 @@ import {
 import type {
 	typesAnalyticsEventConfig,
 	typesAnalyticsMetricConfig,
+} from "../../shared/types/config.js";
+import type {
 	typesAnalyticsScopeInput,
+} from "../../shared/types/scopes.js";
+import type {
 	typesCreateAnalyticsApiOptionsForConfig,
-} from "../../shared/types/index.js";
+} from "../../shared/types/operations.js";
 import type { ComponentApi } from "../../component/_generated/component.js";
-
-type typesMutationCtx = Pick<
-	GenericMutationCtx<GenericDataModel>,
-	"runMutation"
->;
 
 /**
  * @internal Used by `defineAnalytics()` — not part of the public package API.
  *
- * Build app-side Convex functions backed by the analytics component.
+ * Build the registered Convex functions exposed under `analytics.client`.
+ * Everything returned here is a `queryGeneric`/`mutationGeneric` that can be
+ * re-exported from a Convex module; plain server helpers live on the
+ * `defineAnalytics()` result itself.
  */
 export function createAnalyticsApi<
 	const Events extends readonly typesAnalyticsEventConfig[],
@@ -80,6 +79,7 @@ export function createAnalyticsApi<
 		options.metrics,
 		options.settings,
 		options.funnels,
+		options.journeys,
 	);
 	const configReference = internalAnalyticsConfigReference(configuration);
 
@@ -90,17 +90,12 @@ export function createAnalyticsApi<
 				)
 			: v.string();
 
-	const tracker = createAnalyticsTracker(
-		component,
-		options.events,
-		configuration,
-	);
-
-	const reader = createAnalyticsReader(
-		component,
-		options.metrics,
-		configuration,
-	);
+	const journeyNameValidator =
+		options.journeys && Object.keys(options.journeys).length > 0
+			? v.union(
+					...Object.keys(options.journeys).map((name) => v.literal(name)),
+				)
+			: v.string();
 
 	const singleTrackEventArgs = {
 		name: eventNameValidator,
@@ -117,16 +112,6 @@ export function createAnalyticsApi<
 		scope ? { scope: scope as typesAnalyticsScopeInput } : {};
 
 	return {
-		...tracker,
-		...reader,
-		configure: async (ctx: typesMutationCtx) => {
-			await ctx.runMutation(component.lib.writeConfiguration, {
-				events: configuration.events,
-				metrics: configuration.metrics,
-				...(configuration.funnels ? { funnels: configuration.funnels } : {}),
-				settings: configuration.settings,
-			});
-		},
 		writeConfiguration: mutationGeneric({
 			args: {},
 			returns: v.object({ configHash: v.string() }),
@@ -138,6 +123,7 @@ export function createAnalyticsApi<
 						events: configuration.events,
 						metrics: configuration.metrics,
 						...(configuration.funnels ? { funnels: configuration.funnels } : {}),
+						...(configuration.journeys ? { journeys: configuration.journeys } : {}),
 						settings: configuration.settings,
 					},
 				);
@@ -183,6 +169,8 @@ export function createAnalyticsApi<
 				from: v.number(),
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
+				bucketUnit: v.optional(bucketUnitValidator),
+				timezone: v.optional(v.string()),
 			},
 			returns: metricComparisonResponseValidator,
 			handler: async (ctx, args) => {
@@ -270,6 +258,7 @@ export function createAnalyticsApi<
 				from: v.number(),
 				to: v.number(),
 				scope: v.optional(scopeInputValidator),
+				groupBy: v.optional(v.string()),
 			},
 			returns: funnelConversionResponseValidator,
 			handler: async (ctx, args) => {
@@ -285,6 +274,71 @@ export function createAnalyticsApi<
 				});
 			},
 		}),
+		journeyConversion: queryGeneric({
+			args: {
+				journey: journeyNameValidator,
+				from: v.number(),
+				to: v.number(),
+				scope: v.optional(scopeInputValidator),
+				groupBy: v.optional(v.string()),
+			},
+			returns: journeyConversionResponseValidator,
+			handler: async (ctx, args) => {
+				await internalAuthorize(options, ctx, {
+					type: "read",
+					query: "journeyConversion",
+					journey: args.journey,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchJourneyConversion, {
+					...configReference,
+					...args,
+				});
+			},
+		}),
+		metricTotalsByDimension: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				dimensionKey: v.string(),
+				scope: v.optional(scopeInputValidator),
+				days: v.optional(v.number()),
+				maxRows: v.optional(v.number()),
+			},
+			returns: v.array(v.object({ key: v.string(), value: v.number() })),
+			handler: async (ctx, args) => {
+				await internalAuthorize(options, ctx, {
+					type: "read",
+					query: "metricTotalsByDimension",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchMetricTotalsByDimension, {
+					...configReference,
+					...args,
+				});
+			},
+		}),
+		topDimensionValue: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				dimensionKey: v.string(),
+				scope: v.optional(scopeInputValidator),
+				days: v.optional(v.number()),
+			},
+			returns: v.union(v.string(), v.null()),
+			handler: async (ctx, args) => {
+				await internalAuthorize(options, ctx, {
+					type: "read",
+					query: "topDimensionValue",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchTopDimensionValue, {
+					...configReference,
+					...args,
+				});
+			},
+		}),
 		timeSeries: queryGeneric({
 			args: {
 				metric: metricNameValidator,
@@ -293,6 +347,8 @@ export function createAnalyticsApi<
 				groupBy: v.optional(v.string()),
 				scope: v.optional(scopeInputValidator),
 				fill: v.optional(v.boolean()),
+				bucketUnit: v.optional(bucketUnitValidator),
+				timezone: v.optional(v.string()),
 			},
 			returns: timeSeriesResponseValidator,
 			handler: async (ctx, args) => {

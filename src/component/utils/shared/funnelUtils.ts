@@ -4,8 +4,10 @@ import { internalBadRequest } from "../../errors/errors";
 // TYPES
 import type {
 	typesAnalyticsConfigState,
+} from "../../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsFunnelConfig,
-} from "../../../shared/types/index.js";
+} from "../../../shared/types/config.js";
 
 export function internalGetFunnelConfigOrThrow(
 	config: typesAnalyticsConfigState,

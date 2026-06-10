@@ -1,6 +1,6 @@
 // MUTATIONS
 
-/** Legacy validation-only compatibility mutation. */
+/** Validate and register the analytics configuration by hash. */
 export { writeConfiguration } from "./mutations/writeConfiguration.js";
 
 /** Validate and schedule an analytics event or bounded event batch. */
@@ -35,6 +35,9 @@ export { fetchDashboardMetrics } from "./queries/fetchDashboardMetrics.js";
 /** Rollup-based conversion for a named funnel (first step → last step). */
 export { fetchFunnelConversion } from "./queries/fetchFunnelConversion.js";
 
+/** Rollup-based conversion for a named event-sequence journey. */
+export { fetchJourneyConversion } from "./queries/fetchJourneyConversion.js";
+
 /** Aggregated totals by dimension value. */
 export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimension.js";
 
@@ -48,3 +51,6 @@ export { processPendingHighVolumeAnalyticsEvents } from "./crons/processPendingH
 
 /** @internal - delete raw events past retention window. */
 export { purgeStaleAnalyticsEvents } from "./crons/purgeStaleAnalyticsEvents.js";
+
+/** @internal - delete rollup rows past retention window. */
+export { purgeStaleAnalyticsRollups } from "./crons/purgeStaleAnalyticsRollups.js";

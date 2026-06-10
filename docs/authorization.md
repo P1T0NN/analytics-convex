@@ -23,7 +23,8 @@ authorize: async (ctx, operation) => {
 Read query names on `operation.query`:
 
 `timeSeries`, `summary`, `breakdown`, `metricComparison`, `metricConversion`,
-`metricEvaluation`, `dashboardMetrics`, `funnelConversion`
+`metricEvaluation`, `dashboardMetrics`, `funnelConversion`, `journeyConversion`,
+`metricTotalsByDimension`, `topDimensionValue`
 
 The `adminOnly` flag on metric configs is informational — enforce it in `authorize`.
 

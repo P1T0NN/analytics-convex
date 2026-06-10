@@ -1,19 +1,23 @@
 // TYPES
 import type {
 	typesAnalyticsEventConfigRuntime,
-	typesAnalyticsMetricConfigRuntime,
-	typesAnalyticsSettings,
 	typesAnalyticsFunnelsConfig,
-} from "../types/index.js";
+	typesAnalyticsJourneysConfig,
+	typesAnalyticsMetricConfigRuntime,
+} from "../types/config.js";
+import type {
+	typesAnalyticsSettings,
+} from "../types/settings.js";
 
 type typesConfigurationHashInput = {
 	events: typesAnalyticsEventConfigRuntime[];
 	metrics: typesAnalyticsMetricConfigRuntime[];
 	funnels: typesAnalyticsFunnelsConfig;
+	journeys: typesAnalyticsJourneysConfig;
 	settings: typesAnalyticsSettings;
 };
 
-function internalHashString(value: string) {
+function internalHashMul31(value: string) {
 	let hash = 0;
 
 	for (let index = 0; index < value.length; index += 1) {
@@ -21,6 +25,17 @@ function internalHashString(value: string) {
 	}
 
 	return hash;
+}
+
+function internalHashFnv1a(value: string) {
+	let hash = 0x811c9dc5;
+
+	for (let index = 0; index < value.length; index += 1) {
+		hash ^= value.charCodeAt(index);
+		hash = Math.imul(hash, 0x01000193) >>> 0;
+	}
+
+	return hash >>> 0;
 }
 
 function normalizeForHash(value: unknown): unknown {
@@ -51,7 +66,17 @@ export function internalSerializeConfigurationForHash(
 	return JSON.stringify(normalizeForHash(input));
 }
 
+/**
+ * Deterministic identity hash for a serialized configuration.
+ *
+ * Combines two independent 32-bit hashes plus the serialized length, so a
+ * silent collision (which would make two different configs share stored
+ * state) requires all three to match — practically impossible for the
+ * small set of configs a deployment ever registers.
+ */
 export function internalCreateConfigurationHash(input: typesConfigurationHashInput) {
 	const serialized = internalSerializeConfigurationForHash(input);
-	return `v1:${serialized.length}:${internalHashString(serialized).toString(36)}`;
+	const h1 = internalHashMul31(serialized).toString(36);
+	const h2 = internalHashFnv1a(serialized).toString(36);
+	return `v2:${serialized.length}:${h1}${h2}`;
 }

@@ -1,27 +1,62 @@
 // UTILS
 import { internalBadRequest } from "../../errors/errors";
+import {
+	startOfUtcDay,
+	startOfUtcHour,
+} from "../../../shared/utils/analyticsDateRangeUtils.js";
 
 // TYPES
 import type {
 	typesAnalyticsAggregateEventInput,
 	typesAnalyticsConfigState,
+} from "../../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsMetricConfigRuntime,
+} from "../../../shared/types/config.js";
+import type {
 	typesAnalyticsProperties,
-	typesAnalyticsSettings,
 	typesRollupMode,
-} from "../../../shared/types/index.js";
+} from "../../../shared/types/primitives.js";
+import type {
+	typesAnalyticsSettings,
+} from "../../../shared/types/settings.js";
 
 export function internalGetMetricDelta(
 	metric: typesAnalyticsMetricConfigRuntime,
 	properties: typesAnalyticsProperties,
 ) {
 	if (metric.aggregation === "count") return 1;
+	if (metric.aggregation === "distinctActors") return null;
 
 	const value = metric.valueProperty
 		? properties[metric.valueProperty]
 		: undefined;
 
 	return typeof value === "number" ? value : null;
+}
+
+export function internalGetMetricActorKey(
+	metric: typesAnalyticsMetricConfigRuntime,
+	event: typesAnalyticsAggregateEventInput,
+) {
+	if (metric.aggregation !== "distinctActors") return null;
+
+	if (metric.actorProperty) {
+		const value = event.properties[metric.actorProperty];
+		if (value === undefined || value === null || typeof value === "boolean") {
+			return null;
+		}
+
+		return String(value);
+	}
+
+	return event.actorId ?? null;
+}
+
+export function internalIsDistinctActorsMetric(
+	metric: typesAnalyticsMetricConfigRuntime,
+) {
+	return metric.aggregation === "distinctActors";
 }
 
 export function internalGetTrafficMode(
@@ -36,18 +71,6 @@ export function internalIsHighVolumeMetric(
 	metric: typesAnalyticsMetricConfigRuntime,
 ) {
 	return internalGetTrafficMode(settings, metric) === "highVolume";
-}
-
-export function internalHasHighVolumeMetrics(
-	config: typesAnalyticsConfigState,
-	eventName: string,
-) {
-	return config.metrics.some((metric) => {
-		return (
-			metric.eventNames.includes(eventName) &&
-			internalIsHighVolumeMetric(config.settings, metric)
-		);
-	});
 }
 
 export function internalGetHighVolumeEventNames(config: typesAnalyticsConfigState) {
@@ -89,4 +112,19 @@ export function internalGetMetricConfigOrThrow(
 	if (!metricConfig) internalBadRequest(`Unknown analytics metric "${metric}".`);
 
 	return metricConfig;
+}
+
+export function internalGetMetricRollupGranularity(
+	metric: typesAnalyticsMetricConfigRuntime,
+) {
+	return metric.rollupGranularity ?? "day";
+}
+
+export function internalGetMetricBucketStart(
+	metric: typesAnalyticsMetricConfigRuntime,
+	occurredAt: number,
+) {
+	return internalGetMetricRollupGranularity(metric) === "hour"
+		? startOfUtcHour(occurredAt)
+		: startOfUtcDay(occurredAt);
 }

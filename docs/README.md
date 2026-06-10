@@ -13,6 +13,7 @@
 - [Tracking](./tracking.md)
 - [Querying](./querying.md)
 - [Traffic modes](./traffic-modes.md)
+- [Scale and limits](./scale-and-limits.md)
 - [Scopes](./scopes.md)
 - [Authorization](./authorization.md)
 - [Advanced helpers](./advanced-helpers.md)
@@ -23,10 +24,12 @@
 - [API reference](./api-reference.md)
 - [Production](./production.md)
 - [Load testing](./load-testing.md)
+- [Testing](./testing.md)
 
 ## Project
 
 - [Changelog](./changelog.md)
 - [Contributing](./contributing.md)
 - [Publishing](./publishing.md)
-- [Todo](./todo.md)
+- [1.0 roadmap](./1.0-roadmap.md)
+- [1.0.1 roadmap](./1.0.1-roadmap.md)

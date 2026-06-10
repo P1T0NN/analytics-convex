@@ -1,9 +1,13 @@
 // LIBRARIES
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
+import { api } from "../_generated/api";
 
 // CONSTANTS
-import { DAY_MS } from "../../shared/constants.js";
+import {
+	DAY_MS,
+	DEFAULT_PURGE_CATCHUP_BATCHES,
+} from "../../shared/constants.js";
 
 // HELPERS
 import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
@@ -29,11 +33,13 @@ const DELETABLE_HIGH_VOLUME_STATUSES = [
 export const purgeStaleAnalyticsEvents = mutation({
 	args: {
 		...configReferenceFields,
+		remainingBatches: v.optional(v.number()),
 	},
 	returns: v.object({
 		deleted: v.number(),
 		cutoff: v.optional(v.number()),
 		skipped: v.boolean(),
+		scheduledNextBatch: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
 		const config = await internalResolveConfiguration(ctx, {
@@ -42,9 +48,11 @@ export const purgeStaleAnalyticsEvents = mutation({
 		});
 
 		if (config.settings.rawEventRetentionDays <= 0) {
-			return { deleted: 0, skipped: true };
+			return { deleted: 0, skipped: true, scheduledNextBatch: false };
 		}
 
+		const remainingBatches =
+			args.remainingBatches ?? DEFAULT_PURGE_CATCHUP_BATCHES;
 		const cutoff = Date.now() - config.settings.rawEventRetentionDays * DAY_MS;
 		let deleted = 0;
 
@@ -63,14 +71,26 @@ export const purgeStaleAnalyticsEvents = mutation({
 				await ctx.db.delete("analyticsEvents", row._id);
 				deleted += 1;
 			}
+		}
 
-			if (rows.length < remaining) continue;
+		// A full batch means more stale rows likely remain — keep going now
+		// instead of waiting for the next cron tick, bounded by remainingBatches.
+		const scheduledNextBatch =
+			deleted >= config.settings.maxRawEventDeletesPerRun &&
+			remainingBatches > 0;
+
+		if (scheduledNextBatch) {
+			await ctx.scheduler.runAfter(0, api.lib.purgeStaleAnalyticsEvents, {
+				configHash: config.configHash!,
+				remainingBatches: remainingBatches - 1,
+			});
 		}
 
 		return {
 			deleted,
 			cutoff,
 			skipped: false,
+			scheduledNextBatch,
 		};
 	},
 });

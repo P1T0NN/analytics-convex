@@ -9,7 +9,10 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 import { internalGetAnalyticsTopDimensionValue } from "../helpers/rollupReads";
 
 // UTILS
-import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
+import {
+	internalGetMetricConfigOrThrow,
+	internalGetMetricRollupGranularity,
+} from "../utils/shared/metricUtils";
 import { internalResolveScope, internalToMetricScope } from "../utils/shared/scopeUtils";
 import { internalAssertAllowedDimension } from "../validations/validations";
 
@@ -51,6 +54,9 @@ export const fetchTopDimensionValue = query({
 			scopeType: scope.scopeType,
 			scopeId: scope.scopeId,
 			dimensionKey: args.dimensionKey,
+			aggregation: metricConfig.aggregation,
+			settings: config.settings,
+			granularity: internalGetMetricRollupGranularity(metricConfig),
 			...(args.days !== undefined ? { days: args.days } : {}),
 		});
 	},

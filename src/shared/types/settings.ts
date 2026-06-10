@@ -13,4 +13,8 @@ export type typesAnalyticsSettings = {
 	maxBreakdownItems: number;
 	rawEventRetentionDays: number;
 	maxRawEventDeletesPerRun: number;
+	rollupRetentionDays: number;
+	maxRollupDeletesPerRun: number;
+	/** IANA timezone for query-time calendar buckets. Writes stay UTC. Default UTC. */
+	defaultTimezone?: string;
 };

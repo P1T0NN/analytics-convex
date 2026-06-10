@@ -3,19 +3,22 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
 // CONFIG
-import { internalDefaultSettings } from "../analyticsConfig";
+import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDefaultsUtils.js";
 
 // HELPERS
 import { internalEnsureConfiguration } from "../helpers/resolveConfiguration";
 
 // UTILS
 import { internalValidateConfiguration } from "../validations/validations";
-import { internalCreateConfigurationHash } from "../utils/configurationHash.js";
+import {
+	internalCreateConfigurationHash,
+} from "../../shared/utils/configurationHashUtils.js";
 
 // SCHEMAS
 import {
 	eventConfigValidator,
 	funnelsConfigValidator,
+	journeysConfigValidator,
 	metricConfigValidator,
 	settingsPatchValidator,
 } from "../schemas/schemas";
@@ -32,6 +35,7 @@ export const writeConfiguration = mutation({
 		events: v.array(eventConfigValidator),
 		metrics: v.array(metricConfigValidator),
 		funnels: v.optional(funnelsConfigValidator),
+		journeys: v.optional(journeysConfigValidator),
 		settings: v.optional(settingsPatchValidator),
 	},
 	returns: v.object({
@@ -39,7 +43,7 @@ export const writeConfiguration = mutation({
 	}),
 	handler: async (ctx, args) => {
 		const settings = {
-			...internalDefaultSettings(),
+			...internalDefaultAnalyticsSettings(),
 			...(args.settings ?? {}),
 		};
 
@@ -47,6 +51,7 @@ export const writeConfiguration = mutation({
 			events: args.events,
 			metrics: args.metrics,
 			funnels: args.funnels,
+			journeys: args.journeys,
 			settings,
 		});
 
@@ -54,6 +59,7 @@ export const writeConfiguration = mutation({
 			events: args.events,
 			metrics: args.metrics,
 			funnels: args.funnels ?? {},
+			journeys: args.journeys ?? {},
 			settings,
 		});
 
@@ -63,6 +69,7 @@ export const writeConfiguration = mutation({
 				events: args.events,
 				metrics: args.metrics,
 				...(args.funnels ? { funnels: args.funnels } : {}),
+				...(args.journeys ? { journeys: args.journeys } : {}),
 				settings,
 				configHash,
 			},

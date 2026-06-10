@@ -2,11 +2,17 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type {
 	typesAnalyticsAggregateEventInput,
+} from "../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsMetricScope,
+} from "../../shared/types/scopes.js";
+import type {
 	typesAnalyticsProperties,
 	typesHighVolumeStatus,
+} from "../../shared/types/primitives.js";
+import type {
 	typesPreparedTrackEventInput,
-} from "../../shared/types/index.js";
+} from "../../shared/types/tracking.js";
 
 export function internalBuildAnalyticsEventInsert(
 	event: typesPreparedTrackEventInput,

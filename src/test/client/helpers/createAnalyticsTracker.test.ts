@@ -7,7 +7,7 @@ import { internalCreateAnalyticsConfiguration } from "../../../client/utils/crea
 import type {
 	typesTypedTrackBatchInputForEvents,
 	typesTypedTrackEventInputForEvents,
-} from "../../../shared/types/index.js";
+} from "../../../shared/types/typedTracking.js";
 
 describe("createAnalyticsTracker", () => {
 	it("infers event-specific property types", () => {

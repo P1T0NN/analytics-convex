@@ -1,9 +1,37 @@
 export const ANALYTICS_SCOPE_SEPARATOR = ":";
 export const ANALYTICS_RESOURCE_SCOPE_SEPARATOR = ANALYTICS_SCOPE_SEPARATOR;
 
-export const DAY_MS = 24 * 60 * 60 * 1000;
+export const HOUR_MS = 60 * 60 * 1000;
+export const DAY_MS = 24 * HOUR_MS;
 export const GLOBAL_SCOPE_ID = "__global";
 export const TOTAL_DIMENSION = "__total";
+
+/**
+ * How many extra purge batches a retention cron may chain per tick when a
+ * full batch was deleted, so retention keeps up with high write volume.
+ */
+export const DEFAULT_PURGE_CATCHUP_BATCHES = 20;
+
+/** Dimension property names that explode rollup storage — rejected at configure time. */
+export const ANALYTICS_HIGH_CARDINALITY_DIMENSIONS = [
+	"userId",
+	"user_id",
+	"userid",
+	"sessionId",
+	"session_id",
+	"sessionid",
+	"actorId",
+	"actor_id",
+	"actorid",
+	"email",
+	"requestId",
+	"request_id",
+	"traceId",
+	"trace_id",
+	"ip",
+	"ipAddress",
+	"ip_address",
+] as const;
 
 export const ANALYTICS_TRAFFIC_MODE = {
 	LOW_VOLUME: "lowVolume",
@@ -46,7 +74,11 @@ export const ANALYTICS_LIMITS = {
 	maxBreakdownItems: 100,
 	maxRawEventRetentionDays: 3_650,
 	maxRawEventDeletesPerRun: 10_000,
+	maxRollupRetentionDays: 3_650,
+	maxRollupDeletesPerRun: 10_000,
 	maxFunnelsPerConfiguration: 50,
 	maxFunnelSteps: 10,
+	maxJourneysPerConfiguration: 50,
+	maxJourneySteps: 10,
 	maxDashboardMetricsPerQuery: 24,
 } as const;

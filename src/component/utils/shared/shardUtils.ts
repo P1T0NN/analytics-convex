@@ -4,10 +4,16 @@ import { internalHashString } from "../hashString";
 // TYPES
 import type {
 	typesAnalyticsAggregateEventInput,
+} from "../../../shared/types/componentInternal.js";
+import type {
 	typesAnalyticsMetricScope,
+} from "../../../shared/types/scopes.js";
+import type {
 	typesAnalyticsSettings,
+} from "../../../shared/types/settings.js";
+import type {
 	typesAnalyticsTrafficMode,
-} from "../../../shared/types/index.js";
+} from "../../../shared/types/primitives.js";
 
 export function internalGetMetricShard(
 	event: typesAnalyticsAggregateEventInput,
