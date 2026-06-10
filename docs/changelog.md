@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0
 
 ### Added
 - **Week / month query buckets** — optional `bucketUnit: "week" | "month"` on `fetchTimeSeries` and `fetchMetricComparison` (query-time re-aggregation from daily/hourly rollups).
