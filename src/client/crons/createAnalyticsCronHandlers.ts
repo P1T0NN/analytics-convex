@@ -19,10 +19,9 @@ type typesMutationCtx = Pick<
 >;
 
 /**
- * Create app-side internal cron handler mutations for analytics maintenance.
+ * @internal Used by `defineAnalytics().crons` — not part of the public package API.
  *
- * Export these from `convex/analytics/crons.ts` and pass them to
- * `registerAnalyticsCrons()` or `defineAnalytics().registerCrons()`.
+ * Create app-side internal cron handler mutations for analytics maintenance.
  */
 export function createAnalyticsCronHandlers(
 	component: ComponentApi,

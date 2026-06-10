@@ -7,12 +7,16 @@ Import everything your app needs from `@piton-/analytics-convex`. Do not import 
 
 | Export | Use |
 | ------ | --- |
-| `defineAnalytics` | Create `convex/analytics.ts` — events, metrics, funnels, settings, `authorize` |
+| `defineAnalytics` | Create `convex/analytics.ts` — events, metrics, funnels, settings, `authorize`, crons, and `registerCrons` |
 | `event`, `property`, `count`, `sum` | Define events and metrics |
-| `registerAnalyticsCrons`, `createAnalyticsCronHandlers` | Cron wiring in `convex/crons.ts` |
 
-`defineAnalytics` returns an `analytics` object with typed server helpers, optional
-client wrappers, runtime `config`, and `registerCrons`.
+`defineAnalytics` returns one `analytics` object:
+
+- **Server helpers** — call from your Convex functions (`writeTrack`, `fetchSummary`, …)
+- **`analytics.client`** — optional Convex wrappers that run `authorize`
+- **`analytics.crons`** — internal maintenance mutations to export from `convex/analytics/crons.ts`
+- **`analytics.registerCrons(crons, internalApi)`** — register high-volume and retention jobs
+- **`analytics.config`** — runtime config (includes `configHash`)
 
 ### Server helpers (call inside Convex functions)
 
@@ -64,7 +68,5 @@ These wrapped functions **do** run your `authorize` callback.
 | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, scope separator constants | Limits and enums |
 | `types*` exports | TypeScript types — import from the package; do not copy into app code |
 | Validators (`propertyValueValidator`, `scopeInputValidator`, …) | App-side Convex arg validation when needed |
-
-Optional lower-level exports: `createAnalyticsApi`, `createAnalyticsReader`, and `createAnalyticsTracker` for custom wiring. Most apps only need `defineAnalytics`.
 
 ---

@@ -27,8 +27,7 @@
 
 ### Settings
 
-Pass a partial `settings` object to `defineAnalytics` or
-`createAnalyticsApi` to override defaults in code:
+Pass a partial `settings` object to `defineAnalytics` to override defaults in code:
 
 | Setting                          | Default          | Description                                            |
 | -------------------------------- | ---------------- | ------------------------------------------------------ |

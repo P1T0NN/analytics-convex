@@ -50,11 +50,9 @@ type typesMutationCtx = Pick<
 >;
 
 /**
- * Build app-side Convex functions backed by the analytics component.
+ * @internal Used by `defineAnalytics()` — not part of the public package API.
  *
- * Export these from your app's `convex/analytics.ts` when you want client or
- * route access. It also returns typed server-side helpers for product
- * mutations and app-specific analytics queries.
+ * Build app-side Convex functions backed by the analytics component.
  */
 export function createAnalyticsApi<
 	const Events extends readonly typesAnalyticsEventConfig[],

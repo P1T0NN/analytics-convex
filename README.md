@@ -30,7 +30,7 @@ Run `npx convex dev` to regenerate the component API, then follow the [Quick Sta
 - Server-side event ingestion with idempotency and optional `unique.key`
 - Daily rollup metrics with sharding for high-volume traffic
 - Dashboard queries: summaries, comparisons, evaluation labels, funnels, time series, breakdowns
-- Typed `defineAnalytics()` setup with optional client wrappers and cron helpers
+- Typed `defineAnalytics()` setup — one object for tracking, queries, client wrappers, and crons
 
 ## Docs map
 

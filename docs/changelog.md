@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Breaking
+- Removed public exports: `createAnalyticsApi`, `createAnalyticsReader`, `createAnalyticsTracker`, `registerAnalyticsCrons`, and `createAnalyticsCronHandlers`. Use `defineAnalytics()` only.
+- Removed public types: `typesCreateAnalyticsApiOptions`, `typesCreateAnalyticsApiOptionsForConfig`.
+
+### DX
+- `defineAnalytics()` now returns `crons` — export `analytics.crons` handlers and pass `internal.analytics` to `registerCrons()`.
+
 ## 0.1.26
 
 ### Performance

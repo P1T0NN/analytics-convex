@@ -5,10 +5,9 @@ import type { Crons } from "convex/server";
 import type { typesAnalyticsRuntimeConfig } from "../../shared/types/index.js";
 
 /**
- * Register maintenance cron jobs for analytics.
+ * @internal Used by `defineAnalytics().registerCrons()` — not part of the public package API.
  *
- * Pass thin wrapper mutations from `createAnalyticsCronHandlers()` as
- * `internalApi`, or define your own app wrappers that forward `configHash`.
+ * Register maintenance cron jobs for analytics.
  */
 export function registerAnalyticsCrons(
 	crons: Crons,

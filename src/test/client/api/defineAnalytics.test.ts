@@ -65,5 +65,8 @@ describe("defineAnalytics", () => {
 		expect(analytics.client.summary).toBeDefined();
 		expect(analytics.client.timeSeries).toBeDefined();
 		expect(analytics.client.metricComparison).toBeDefined();
+		expect(analytics.crons.processPendingHighVolumeAnalyticsEvents).toBeDefined();
+		expect(analytics.crons.purgeStaleAnalyticsEvents).toBeDefined();
+		expect(analytics.registerCrons).toBeDefined();
 	});
 });

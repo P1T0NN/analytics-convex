@@ -6,17 +6,12 @@ import type {
 } from "convex/server";
 
 // API
-export { createAnalyticsApi } from "./api/createAnalyticsApi";
 export { defineAnalytics } from "./api/defineAnalytics";
 
 // BUILDERS
 export { event } from "./builders/event";
 export { count, sum } from "./builders/metric";
 export { property } from "./builders/property";
-
-// HELPERS
-export { createAnalyticsReader } from "./helpers/createAnalyticsReader";
-export { createAnalyticsTracker } from "./helpers/createAnalyticsTracker";
 
 // PURE UTILS
 export {
@@ -46,10 +41,6 @@ export {
 	createAnalyticsScopeId,
 } from "../shared/utils/analyticsScopesUtils";
 
-// CRONS
-export { registerAnalyticsCrons } from "./crons/registerAnalyticsCrons";
-export { createAnalyticsCronHandlers } from "./crons/createAnalyticsCronHandlers";
-
 // TYPES
 export {
 	type typesAnalyticsAggregation,
@@ -77,8 +68,6 @@ export {
 	type typesAnalyticsUnique,
 	type typesAnalyticsFunnelConfig,
 	type typesAnalyticsFunnelsConfig,
-	type typesCreateAnalyticsApiOptions,
-	type typesCreateAnalyticsApiOptionsForConfig,
 	type typesDashboardMetricConversion,
 	type typesDashboardMetricGoal,
 	type typesDashboardMetricItem,

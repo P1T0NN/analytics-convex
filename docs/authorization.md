@@ -1,6 +1,6 @@
 # Authorization
 
-Pass an `authorize` callback to `defineAnalytics` (or `createAnalyticsApi`). It runs
+Pass an `authorize` callback to `defineAnalytics`. It runs
 only for **client wrappers** (`analytics.client.*`), not for server helpers.
 
 ```ts

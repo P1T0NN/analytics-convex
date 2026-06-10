@@ -53,5 +53,5 @@ shard counts, batch size, retention, and query limits based on those signals.
    `convex/analytics.ts`. The app-side helpers pass that runtime config into the
    component automatically, so no configure command is required after deploys.
 
-7. **Don't skip the crons** — without `registerAnalyticsCrons`, high-volume
+7. **Don't skip the crons** — without `analytics.registerCrons()`, high-volume
    events never aggregate and raw events never expire.

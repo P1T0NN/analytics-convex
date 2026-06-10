@@ -160,34 +160,15 @@ Convex functions that already have their own auth.
 
 ### 3. Register crons
 
-First, paste these thin wrapper mutations once — they let the Convex cron
-scheduler reference component functions through your app's internal API:
+Export the maintenance handlers from `convex/analytics.ts`, then register them:
 
 ```ts
-// convex/analytics/crons.ts
-import { internalMutation } from "../_generated/server";
-import { components } from "../_generated/api";
-
-export const processPendingHighVolumeAnalyticsEvents = internalMutation({
-    handler: async (ctx) => {
-        await ctx.runMutation(
-            components.analytics.lib.processPendingHighVolumeAnalyticsEvents,
-            {},
-        );
-    },
-});
-
-export const purgeStaleAnalyticsEvents = internalMutation({
-    handler: async (ctx) => {
-        await ctx.runMutation(
-            components.analytics.lib.purgeStaleAnalyticsEvents,
-            {},
-        );
-    },
-});
+// convex/analytics.ts — add after defineAnalytics(...)
+export const {
+	processPendingHighVolumeAnalyticsEvents,
+	purgeStaleAnalyticsEvents,
+} = analytics.crons;
 ```
-
-Then register the jobs from your `crons.ts`:
 
 ```ts
 // convex/crons.ts
@@ -197,9 +178,9 @@ import { analytics } from "./analytics";
 
 const crons = cronJobs();
 
-analytics.registerCrons(crons, internal.analytics.crons, {
-    highVolumeBatchIntervalMinutes: 1, // default: 1
-    retentionIntervalHours: 24, // default: 24
+analytics.registerCrons(crons, internal.analytics, {
+	highVolumeBatchIntervalMinutes: 1, // default: 1
+	retentionIntervalHours: 24, // default: 24
 });
 
 export default crons;

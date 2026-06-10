@@ -22,6 +22,7 @@
 - [Types](./types.md)
 - [API reference](./api-reference.md)
 - [Production](./production.md)
+- [Load testing](./load-testing.md)
 
 ## Project
 

@@ -47,9 +47,9 @@ function isBatchTrackInput<Events extends readonly typesAnalyticsEventConfig[]>(
 }
 
 /**
- * Create typed server-side tracking helpers from your event config.
+ * @internal Used by `defineAnalytics()` — not part of the public package API.
  *
- * Use from app mutations that already implement their own authorization.
+ * Create typed server-side tracking helpers from your event config.
  */
 export function createAnalyticsTracker<
 	const Events extends readonly typesAnalyticsEventConfig[],

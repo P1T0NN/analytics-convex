@@ -31,10 +31,16 @@ describe("package root exports", () => {
 		}
 	});
 
+	it("does not expose internal wiring helpers to app code", () => {
+		expect(analytics).not.toHaveProperty("createAnalyticsApi");
+		expect(analytics).not.toHaveProperty("createAnalyticsReader");
+		expect(analytics).not.toHaveProperty("createAnalyticsTracker");
+		expect(analytics).not.toHaveProperty("registerAnalyticsCrons");
+		expect(analytics).not.toHaveProperty("createAnalyticsCronHandlers");
+	});
+
 	it("keeps safe public utilities available", () => {
 		expect(analytics.defineAnalytics).toBeDefined();
-		expect(analytics.createAnalyticsApi).toBeDefined();
-		expect(analytics.createAnalyticsCronHandlers).toBeDefined();
 		expect(analytics.getAnalyticsRanking).toBeDefined();
 		expect(analytics.compareScores).toBeDefined();
 		expect(analytics.evaluateMetricLabel).toBeDefined();

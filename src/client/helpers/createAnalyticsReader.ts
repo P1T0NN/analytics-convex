@@ -24,9 +24,9 @@ import type {
 } from "../../shared/types/queryArgs.js";
 
 /**
- * Create typed server-side read helpers from your metric config.
+ * @internal Used by `defineAnalytics()` — not part of the public package API.
  *
- * Use from app queries that already implement their own authorization.
+ * Create typed server-side read helpers from your metric config.
  */
 export function createAnalyticsReader<
 	const Metrics extends readonly typesAnalyticsMetricConfig[],

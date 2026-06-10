@@ -13,6 +13,7 @@ import { internalCreateAnalyticsServerHelpers } from "../helpers/createAnalytics
 
 // CRONS
 import { registerAnalyticsCrons } from "../crons/registerAnalyticsCrons";
+import { createAnalyticsCronHandlers } from "../crons/createAnalyticsCronHandlers";
 
 // UTILS
 import { internalCreateAnalyticsConfiguration } from "../utils/createAnalyticsConfiguration";
@@ -108,6 +109,8 @@ export function defineAnalytics<
 			...(options.settings ? { settings: options.settings } : {}),
 			...(options.authorize ? { authorize: options.authorize } : {}),
 		}),
+		/** Internal cron handler mutations — export from `convex/analytics/crons.ts`. */
+		crons: createAnalyticsCronHandlers(component, config),
 		/** The runtime config object — inspect, override, or pass to crons. */
 		config,
 		/** Register maintenance cron jobs. Call from convex/crons.ts. */
