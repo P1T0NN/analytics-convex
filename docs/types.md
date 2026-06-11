@@ -10,7 +10,7 @@ Use the exports below for UI components, shared app utilities, and explicit anno
 
 | Location | Contents |
 | -------- | -------- |
-| `src/shared/constants.ts` | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_METRIC_LABELS`, scope separators, `DAY_MS`, … |
+| `src/shared/constants.ts` | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_METRIC_LABEL_KEYS`, `ANALYTICS_METRIC_LABEL_SENTIMENTS`, `ANALYTICS_METRIC_LABELS`, scope separators, `DAY_MS`, … |
 | `src/shared/types/primitives.ts` | Units, aggregations, property types |
 | `src/shared/types/settings.ts` | `typesAnalyticsSettings` |
 | `src/shared/types/scopes.ts` | Scope input, resolved scope, metric scopes |
@@ -64,6 +64,7 @@ import type {
   typesMetricComparisonResponse,
   typesMetricConversionResponse,
   typesMetricEvaluationResponse,
+  typesMetricEvaluationConfigResponse,
   typesDashboardMetricsResponse,
   typesFunnelConversionResponse,
   typesJourneyConversionResponse,
@@ -72,6 +73,9 @@ import type {
   typesMetricEvaluationResult,
   typesMetricComparisonInput,
   typesAnalyticsMetricLabel,
+  typesAnalyticsMetricSentiment,
+  typesSetMetricEvaluationArgs,
+  typesMetricEvaluationConfigArgs,
 } from "@piton-/analytics-convex";
 ```
 
@@ -165,8 +169,24 @@ type typesMetricEvaluationResult = {
     | "inverse_rate"
     | "goal_progress"
     | "zero_target";
+  sentiment: "positive" | "negative" | "neutral";
+};
+
+// Effective evaluation config for a metric in a scope
+// (`analytics.fetchMetricEvaluationConfig` / `analytics.client.metricEvaluationConfig`)
+type typesMetricEvaluationConfigResponse = {
+  metric: string;
+  scope: typesAnalyticsResolvedScope;
+  evaluation: typesMetricEvaluationConfig | null;
+  source: "override" | "config" | "none";
+  configEvaluation?: typesMetricEvaluationConfig;
 };
 ```
+
+Use `isGoalEvaluationConfig(evaluation)` to narrow
+`typesMetricEvaluationConfig | null | undefined` before reading
+`targetValue`, `excellentPercentOfGoal`, or other goal-only fields.
+See [Evaluation](./evaluation.md) for behavior and query examples.
 
 ### Funnel config
 
@@ -178,6 +198,8 @@ type typesAnalyticsFunnelConfig = {
 
 type typesAnalyticsFunnelsConfig = Record<string, typesAnalyticsFunnelConfig>;
 ```
+
+See [Funnels](./funnels.md) for metric funnel and journey semantics.
 
 ### Query args (common shapes)
 

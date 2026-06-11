@@ -24,6 +24,9 @@ import type {
 	typesAnalyticsMetricConfigRuntime,
 } from "../../shared/types/config.js";
 import type {
+	typesMetricEvaluationConfig,
+} from "../../shared/types/evaluation.js";
+import type {
 	typesAnalyticsProperties,
 	typesAnalyticsPropertyValue,
 } from "../../shared/types/primitives.js";
@@ -242,7 +245,53 @@ export function internalValidateConfiguration(args: {
 		}
 	}
 
+	for (const metric of args.metrics) {
+		if (metric.evaluation) {
+			internalValidateMetricEvaluationConfig({
+				metric: metric.name,
+				evaluation: metric.evaluation,
+				metricNames,
+			});
+		}
+	}
+
 	internalValidateSettings(args.settings);
+}
+
+export function internalValidateMetricEvaluationConfig(args: {
+	metric: string;
+	evaluation: typesMetricEvaluationConfig;
+	metricNames: Set<string>;
+}) {
+	const { metric, evaluation } = args;
+
+	for (const [field, value] of Object.entries(evaluation)) {
+		if (typeof value === "number" && !Number.isFinite(value)) {
+			internalBadRequest(
+				`Evaluation config for metric "${metric}": ${field} must be a finite number.`,
+			);
+		}
+	}
+
+	if (evaluation.kind === "conversion" || evaluation.kind === "inverseRate") {
+		if (!args.metricNames.has(evaluation.denominatorMetric)) {
+			internalBadRequest(
+				`Evaluation config for metric "${metric}" references unknown denominator metric "${evaluation.denominatorMetric}".`,
+			);
+		}
+
+		if (evaluation.denominatorMetric === metric) {
+			internalBadRequest(
+				`Evaluation config for metric "${metric}" cannot use itself as denominator.`,
+			);
+		}
+	}
+
+	if (evaluation.kind === "goal" && evaluation.targetValue < 0) {
+		internalBadRequest(
+			`Evaluation config for metric "${metric}": targetValue must not be negative.`,
+		);
+	}
 }
 
 export function internalSanitizeProperties(

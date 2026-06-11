@@ -141,6 +141,8 @@ tracked events.
 `fetchMetricConversion` is ad-hoc ratio math for two metrics without a named
 funnel config.
 
+See [Funnels](./funnels.md) for configuration and query examples.
+
 ---
 
 ## Hard limits

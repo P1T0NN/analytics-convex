@@ -39,6 +39,8 @@ already enforce auth.
 | `fetchMetricComparison` | Current vs previous period (non-overlapping UTC days) |
 | `fetchMetricConversion` | Conversion rate between two metrics |
 | `fetchMetricEvaluation` | One dashboard card with health label |
+| `fetchMetricEvaluationConfig` | Effective evaluation config for a metric in a scope |
+| `setMetricEvaluation` | Set/clear a per-scope evaluation override (`null` clears) |
 | `fetchDashboardMetrics` | Multiple dashboard cards in one query |
 | `fetchFunnelConversion` | Named **metric** funnel (first → last metric ratio) |
 | `fetchJourneyConversion` | Named **event** journey (same-actor step sequence) |
@@ -62,7 +64,8 @@ Exported from the main package for dashboard date pickers:
 | `getQueryBucketStart`, `listQueryBuckets` | Resolve and enumerate day/week/month buckets (timezone-aware) |
 | `startOfUtcDay`, `startOfUtcWeek`, `startOfUtcMonth`, `normalizeAnalyticsDayRange`, `countUtcDaysInRange` | Lower-level helpers |
 
-See [Querying — Date ranges](./querying.md#date-ranges-utc-days).
+See [Utilities - Date ranges](./utils.md#date-ranges) and
+[Querying - Date ranges](./querying.md#date-ranges-utc-days).
 
 ### Client wrappers (optional — run `authorize`)
 
@@ -79,6 +82,8 @@ export const {
 	metricComparison,
 	metricConversion,
 	metricEvaluation,
+	metricEvaluationConfig,
+	setMetricEvaluation,
 	dashboardMetrics,
 	funnelConversion,
 	journeyConversion,
@@ -96,12 +101,20 @@ they are not registered functions and cannot be exported as Convex endpoints.
 | Export | Use |
 | ------ | --- |
 | `evaluateMetricLabel`, `computeConversionRatePercent`, `computePercentOfGoal` | Label math in UI (same rules as `fetchMetricEvaluation`) |
-| `ANALYTICS_METRIC_LABELS` | Default display strings for labels |
+| `isGoalEvaluationConfig` | Narrow nullable/effective evaluation configs before reading goal fields |
+| `metricLabelSentiment` | Map a label to `positive` / `negative` / `neutral` for color tokens |
+| `ANALYTICS_METRIC_LABEL_KEYS` | All semantic label keys (legends, filters) |
+| `ANALYTICS_METRIC_LABEL_SENTIMENTS` | Label → sentiment map |
+| `ANALYTICS_METRIC_LABELS` | Default English display strings — localize in your UI |
 | `getAnalyticsRanking`, `compareScores` | Sort/rank by score with tie-breakers |
 | `createAnalyticsScopeId`, `createAnalyticsResourceScope`, … | Build consistent scope IDs |
 | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, scope separator constants | Limits and enums |
 | `types*` exports | TypeScript types — import from the package; do not copy into app code |
 | Validators (`propertyValueValidator`, `scopeInputValidator`, …) | App-side Convex arg validation when needed |
+
+See [Utilities](./utils.md) for examples of the pure helper exports.
+See [Evaluation](./evaluation.md) for labels, goals, and overrides. See
+[Funnels](./funnels.md) for metric funnels and journeys.
 
 ### Testing subpath
 

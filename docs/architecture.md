@@ -18,6 +18,7 @@ regardless of event volume.
 | Table                   | Purpose                                                   | Retention                       |
 | ----------------------- | --------------------------------------------------------- | ------------------------------- |
 | `analyticsConfigurations` | Registered runtime config blobs keyed by hash          | Forever                         |
+| `analyticsMetricEvaluationOverrides` | Per-scope evaluation config overrides (metric + scope) | Forever |
 | `analyticsEvents`       | Raw event log with idempotency keys                       | Configurable (default 90 days)  |
 | `analyticsDailyMetrics` | Pre-aggregated rollup rows (`granularity`: day or hour) | Configurable via `rollupRetentionDays` |
 | `analyticsDailyActorClaims` | Distinct-actor claims for `distinctActors` metrics | Purged with rollup retention |
@@ -97,6 +98,9 @@ Public API: import only from @piton-/analytics-convex. Use defineAnalytics with 
 property, count, sum, optional funnels and .evaluation() on metrics. Server helpers:
 writeTrack, fetchSummary, fetchDashboardMetrics, fetchMetricEvaluation,
 fetchFunnelConversion, etc. Import types from the package — do not re-declare them.
+
+Read docs by concept: Querying for read methods, Evaluation for labels/goals/overrides,
+Funnels for metric funnels and same-actor journeys, Utilities for pure helpers.
 
 Register the component in convex.config.ts. Define convex/analytics.ts with
 defineAnalytics. Register crons via analytics.registerCrons(crons, internal.analytics.crons).

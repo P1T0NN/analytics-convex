@@ -59,7 +59,7 @@ shard counts, batch size, retention, and query limits based on those signals.
 
 8. **Plan for rollup growth** — raw events expire (default 90 days) but daily
    rollups are kept forever unless you set `rollupRetentionDays`. See
-   [Scale and limits — Rollup storage](./scale-and-limits.md#rollup-storage-grows-forever).
+   [Scale and limits - Rollup storage](./scale-and-limits.md#rollup-storage).
 
 9. **Retention keeps up automatically** — when a purge run deletes a full
    batch, it immediately schedules another batch (up to 20 per cron tick), so

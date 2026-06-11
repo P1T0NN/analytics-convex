@@ -5,6 +5,7 @@ import {
 	type typesMetricTotalRequest,
 } from "./metricTotalCache";
 import { internalGetMetricTotalsForRanges } from "./rollupReads";
+import { internalResolveMetricEvaluations } from "./metricEvaluationOverrides";
 
 // SHARED
 import {
@@ -98,6 +99,7 @@ export function internalBuildMetricEvaluationFromCache(
 			evaluation: {
 				label: "neutral",
 				reason: "no_evaluation_config",
+				sentiment: "neutral",
 			},
 		};
 	}
@@ -262,6 +264,16 @@ export async function internalBuildPeriodComparison(
 	});
 }
 
+function internalEvaluationForMetric(
+	metric: string,
+	metricConfig: typesAnalyticsMetricConfigRuntime,
+	evaluations?: Map<string, typesMetricEvaluationConfig | undefined>,
+) {
+	return evaluations?.has(metric)
+		? evaluations.get(metric)
+		: metricConfig.evaluation;
+}
+
 export function internalCollectDashboardMetricTotalRequests(args: {
 	metrics: string[];
 	metricConfigs: Map<string, typesAnalyticsMetricConfigRuntime>;
@@ -269,6 +281,7 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 	to: number;
 	includeComparison: boolean;
 	includeEvaluation: boolean;
+	evaluations?: Map<string, typesMetricEvaluationConfig | undefined>;
 }) {
 	const requests: typesMetricTotalRequest[] = [];
 	const comparisonRanges = previousAnalyticsDayRange({
@@ -280,6 +293,12 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 		const metricConfig = args.metricConfigs.get(metric);
 		if (!metricConfig) continue;
 
+		const evaluation = internalEvaluationForMetric(
+			metric,
+			metricConfig,
+			args.evaluations,
+		);
+
 		requests.push({
 			metric,
 			from: args.from,
@@ -288,8 +307,7 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 
 		const needsPreviousPeriod =
 			args.includeComparison ||
-			(args.includeEvaluation &&
-				metricConfig.evaluation?.kind === "comparison");
+			(args.includeEvaluation && evaluation?.kind === "comparison");
 
 		if (needsPreviousPeriod) {
 			requests.push({
@@ -300,7 +318,6 @@ export function internalCollectDashboardMetricTotalRequests(args: {
 		}
 
 		if (args.includeEvaluation) {
-			const evaluation = metricConfig.evaluation;
 			if (
 				evaluation?.kind === "conversion" ||
 				evaluation?.kind === "inverseRate"
@@ -331,6 +348,12 @@ export async function internalBuildDashboardMetricsForRange(
 ) {
 	const includeComparison = args.includeComparison ?? false;
 	const includeEvaluation = args.includeEvaluation ?? false;
+	const evaluations = includeEvaluation
+		? await internalResolveMetricEvaluations(ctx, config, {
+				metrics: args.metrics,
+				scope: args.scope,
+			})
+		: undefined;
 	const requests = internalCollectDashboardMetricTotalRequests({
 		metrics: args.metrics,
 		metricConfigs: config.metricByName,
@@ -338,6 +361,7 @@ export async function internalBuildDashboardMetricsForRange(
 		to: args.to,
 		includeComparison,
 		includeEvaluation,
+		evaluations,
 	});
 	const cache = await internalFetchMetricTotalsBatch(
 		ctx,
@@ -402,7 +426,7 @@ export async function internalBuildDashboardMetricsForRange(
 			const evaluationResult = internalBuildMetricEvaluationFromCache(cache, {
 				metric,
 				metricConfig,
-				evaluation: metricConfig.evaluation,
+				evaluation: internalEvaluationForMetric(metric, metricConfig, evaluations),
 				scope: args.scope,
 				from: args.from,
 				to: args.to,

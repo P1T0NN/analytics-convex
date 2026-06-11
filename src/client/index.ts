@@ -33,6 +33,8 @@ export {
 	computeConversionRatePercent,
 	computePercentOfGoal,
 	evaluateMetricLabel,
+	isGoalEvaluationConfig,
+	metricLabelSentiment,
 } from "../shared/utils/analyticsEvaluationUtils";
 export {
 	compareScores,
@@ -42,6 +44,8 @@ export {
 // LIMITS
 export {
 	ANALYTICS_LIMITS,
+	ANALYTICS_METRIC_LABEL_KEYS,
+	ANALYTICS_METRIC_LABEL_SENTIMENTS,
 	ANALYTICS_METRIC_LABELS,
 	ANALYTICS_RESOURCE_SCOPE_SEPARATOR,
 	ANALYTICS_SCOPE_SEPARATOR,
@@ -76,6 +80,8 @@ export type {
 	typesJourneyConversionResponse,
 	typesMetricComparisonResponse,
 	typesMetricConversionResponse,
+	typesMetricEvaluationConfigResponse,
+	typesMetricEvaluationConfigSource,
 	typesMetricEvaluationConversion,
 	typesMetricEvaluationGoal,
 	typesMetricEvaluationResponse,
@@ -94,6 +100,7 @@ export type {
 } from "../shared/types/config.js";
 export type {
 	typesAnalyticsMetricLabel,
+	typesAnalyticsMetricSentiment,
 	typesMetricComparisonEvaluationConfig,
 	typesMetricComparisonInput,
 	typesMetricConversionEvaluationConfig,
@@ -147,10 +154,12 @@ export type {
 	typesMetricComparisonArgs,
 	typesMetricConversionArgs,
 	typesMetricEvaluationArgs,
+	typesMetricEvaluationConfigArgs,
 	typesMetricName,
 	typesMetricRangeArgs,
 	typesMetricTotalsByDimensionArgs,
 	typesQueryCtx,
+	typesSetMetricEvaluationArgs,
 	typesTimeSeriesArgs,
 	typesTopDimensionValueArgs,
 } from "../shared/types/queryArgs.js";

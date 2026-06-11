@@ -8,7 +8,7 @@
 - **Journey breakdown by dimension** — `journeys.*.breakdownProperty` plus `groupBy` on `fetchJourneyConversion` for conversion by plan, region, etc.
 - **Metric funnel breakdown by dimension** — optional `groupBy` on `fetchFunnelConversion`.
 - Date helpers: `startOfUtcWeek`, `startOfUtcMonth`, `getQueryBucketStart`, `listQueryBuckets`, `previousAnalyticsPeriodRange`.
-- Roadmap: `docs/1.0.1-roadmap.md` (dashboard features + export/backfill/journey-window infra).
+- Roadmap: `docs/1.0.2-roadmap.md` (dashboard features + export/backfill/journey-window infra).
 
 ### Fixed (timezone/bucket review pass)
 - **Rewrote timezone math on a correct offset-based algorithm.** The previous hourly-probe implementation threw for every timezone with a 30/45-minute offset (India, Nepal, Sri Lanka, Myanmar, parts of Australia) and on DST transitions that skip local midnight (Chile, Cuba); month starts and `addTimeZoneMonths` were off by one day/month for all UTC-negative zones (the entire Americas). Now covered by 12 dedicated tests plus a component regression test.

@@ -88,12 +88,15 @@ export {
 	metricComparisonEvaluationConfigValidator,
 	metricConversionEvaluationConfigValidator,
 	metricConversionResponseValidator,
+	metricEvaluationConfigResponseValidator,
+	metricEvaluationConfigSourceValidator,
 	metricEvaluationConfigValidator,
 	metricEvaluationReasonValidator,
 	metricEvaluationResponseValidator,
 	metricEvaluationResultValidator,
 	metricInverseRateEvaluationConfigValidator,
 	metricLabelValidator,
+	metricSentimentValidator,
 } from "../../shared/schemas/evaluationSchemas.js";
 
 import { metricEvaluationConfigValidator } from "../../shared/schemas/evaluationSchemas.js";

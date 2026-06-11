@@ -1,7 +1,14 @@
 // CONSTANTS
-import { ANALYTICS_METRIC_LABELS } from "../constants.js";
+import {
+	ANALYTICS_METRIC_LABEL_KEYS,
+	ANALYTICS_METRIC_LABEL_SENTIMENTS,
+} from "../constants.js";
 
-export type typesAnalyticsMetricLabel = keyof typeof ANALYTICS_METRIC_LABELS;
+export type typesAnalyticsMetricLabel =
+	(typeof ANALYTICS_METRIC_LABEL_KEYS)[number];
+
+export type typesAnalyticsMetricSentiment =
+	(typeof ANALYTICS_METRIC_LABEL_SENTIMENTS)[typesAnalyticsMetricLabel];
 
 export type typesMetricEvaluationReason =
 	| "no_evaluation_config"
@@ -80,6 +87,7 @@ export type typesMetricGoalInput = {
 export type typesMetricEvaluationResult = {
 	label: typesAnalyticsMetricLabel;
 	reason: typesMetricEvaluationReason;
+	sentiment: typesAnalyticsMetricSentiment;
 };
 
 export type typesMetricEvaluationInput =

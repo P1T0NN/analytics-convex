@@ -61,6 +61,8 @@ describe("createAnalyticsApi", () => {
 		expect(client.metricComparison).toBeDefined();
 		expect(client.metricConversion).toBeDefined();
 		expect(client.metricEvaluation).toBeDefined();
+		expect(client.metricEvaluationConfig).toBeDefined();
+		expect(client.setMetricEvaluation).toBeDefined();
 		expect(client.dashboardMetrics).toBeDefined();
 		expect(client.funnelConversion).toBeDefined();
 		expect(client.journeyConversion).toBeDefined();
@@ -131,6 +133,8 @@ describe("createAnalyticsApi", () => {
 		expect(analytics.fetchSummary).toBeDefined();
 		expect(analytics.fetchMetricTotalsByDimension).toBeDefined();
 		expect(analytics.fetchTopDimensionValue).toBeDefined();
+		expect(analytics.fetchMetricEvaluationConfig).toBeDefined();
+		expect(analytics.setMetricEvaluation).toBeDefined();
 		expect(validInput.properties.price).toBe(120);
 		expect(validInput.unique?.key).toBe("productAdded:user_1:category_shoes");
 		expect(validSummaryInput.metric).toBe("productsAdded");

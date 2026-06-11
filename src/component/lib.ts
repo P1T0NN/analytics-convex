@@ -6,6 +6,9 @@ export { writeConfiguration } from "./mutations/writeConfiguration.js";
 /** Validate and schedule an analytics event or bounded event batch. */
 export { writeTrack } from "./mutations/writeTrack.js";
 
+/** Set or clear a per-scope evaluation override for one metric. */
+export { writeMetricEvaluationOverride } from "./mutations/writeMetricEvaluationOverride.js";
+
 // QUERIES
 
 /** Read the current analytics config (events, metrics, settings). */
@@ -28,6 +31,9 @@ export { fetchMetricConversion } from "./queries/fetchMetricConversion.js";
 
 /** Query-time metric health label for dashboard cards. */
 export { fetchMetricEvaluation } from "./queries/fetchMetricEvaluation.js";
+
+/** Effective evaluation config for a metric in a scope (override or static). */
+export { fetchMetricEvaluationConfig } from "./queries/fetchMetricEvaluationConfig.js";
 
 /** Batch dashboard read for multiple metrics over one date range. */
 export { fetchDashboardMetrics } from "./queries/fetchDashboardMetrics.js";

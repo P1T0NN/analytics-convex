@@ -7,6 +7,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalBuildMetricEvaluationResult } from "../helpers/evaluateMetricForRange";
+import { internalFetchMetricEvaluationOverride } from "../helpers/metricEvaluationOverrides";
 
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
@@ -26,8 +27,9 @@ import {
 /**
  * Evaluate a metric's dashboard health label for a date range.
  *
- * Uses the metric's `.evaluation()` config when present. Labels are computed
- * at query time from rollup totals — never stored in rollup tables.
+ * Uses the per-scope evaluation override when one exists, otherwise the
+ * metric's `.evaluation()` config. Labels are computed at query time from
+ * rollup totals — never stored in rollup tables.
  */
 export const fetchMetricEvaluation = query({
 	args: {
@@ -49,10 +51,15 @@ export const fetchMetricEvaluation = query({
 		const metricConfig = internalGetMetricConfigOrThrow(config, args.metric);
 		const scope = internalResolveScope(args.scope);
 
+		const override = await internalFetchMetricEvaluationOverride(ctx, {
+			metric: args.metric,
+			scope,
+		});
+
 		const result = await internalBuildMetricEvaluationResult(ctx, config, {
 			metric: args.metric,
 			metricConfig,
-			evaluation: metricConfig.evaluation,
+			evaluation: override?.evaluation ?? metricConfig.evaluation,
 			scope,
 			from: args.from,
 			to: args.to,

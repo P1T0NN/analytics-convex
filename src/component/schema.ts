@@ -1,7 +1,10 @@
 // LIBRARIES
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { storedAnalyticsConfigValidator } from "./schemas/schemas";
+import {
+	metricEvaluationConfigValidator,
+	storedAnalyticsConfigValidator,
+} from "./schemas/schemas";
 
 export default defineSchema({
 	analyticsConfigurations: defineTable({
@@ -9,6 +12,18 @@ export default defineSchema({
 		config: storedAnalyticsConfigValidator,
 		createdAt: v.number(),
 	}).index("by_hash", ["hash"]),
+
+	analyticsMetricEvaluationOverrides: defineTable({
+		metric: v.string(),
+		scopeType: v.union(
+			v.literal("global"),
+			v.literal("organization"),
+			v.literal("resource"),
+		),
+		scopeId: v.string(),
+		evaluation: metricEvaluationConfigValidator,
+		updatedAt: v.number(),
+	}).index("by_metric_scope", ["metric", "scopeType", "scopeId"]),
 
 	analyticsEvents: defineTable({
 		name: v.string(),

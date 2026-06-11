@@ -29,6 +29,8 @@ import {
 } from "../../shared/schemas/journeySchemas";
 import {
 	metricConversionResponseValidator,
+	metricEvaluationConfigResponseValidator,
+	metricEvaluationConfigValidator,
 	metricEvaluationResponseValidator,
 } from "../../shared/schemas/evaluationSchemas";
 
@@ -227,6 +229,47 @@ export function createAnalyticsApi<
 					...configReference,
 					...args,
 				});
+			},
+		}),
+		metricEvaluationConfig: queryGeneric({
+			args: {
+				metric: metricNameValidator,
+				scope: v.optional(scopeInputValidator),
+			},
+			returns: metricEvaluationConfigResponseValidator,
+			handler: async (ctx, args) => {
+				await internalAuthorize(options, ctx, {
+					type: "read",
+					query: "metricEvaluationConfig",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runQuery(component.lib.fetchMetricEvaluationConfig, {
+					...configReference,
+					...args,
+				});
+			},
+		}),
+		setMetricEvaluation: mutationGeneric({
+			args: {
+				metric: metricNameValidator,
+				scope: v.optional(scopeInputValidator),
+				evaluation: v.union(metricEvaluationConfigValidator, v.null()),
+			},
+			returns: v.null(),
+			handler: async (ctx, args) => {
+				await internalAuthorize(options, ctx, {
+					type: "configureMetricEvaluation",
+					metric: args.metric,
+					...scopeArg(args.scope),
+				});
+				return await ctx.runMutation(
+					component.lib.writeMetricEvaluationOverride,
+					{
+						...configReference,
+						...args,
+					},
+				);
 			},
 		}),
 		dashboardMetrics: queryGeneric({

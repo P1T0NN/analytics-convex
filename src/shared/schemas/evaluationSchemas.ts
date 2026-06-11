@@ -67,6 +67,20 @@ export const metricEvaluationConfigValidator = v.union(
 	metricGoalEvaluationConfigValidator,
 );
 
+export const metricEvaluationConfigSourceValidator = v.union(
+	v.literal("override"),
+	v.literal("config"),
+	v.literal("none"),
+);
+
+export const metricEvaluationConfigResponseValidator = v.object({
+	metric: v.string(),
+	scope: v.any(),
+	evaluation: v.union(metricEvaluationConfigValidator, v.null()),
+	source: metricEvaluationConfigSourceValidator,
+	configEvaluation: v.optional(metricEvaluationConfigValidator),
+});
+
 export const metricComparisonInputValidator = v.object({
 	current: v.number(),
 	previous: v.number(),
@@ -86,9 +100,16 @@ export const metricGoalInputValidator = v.object({
 	percentOfGoal: v.optional(v.number()),
 });
 
+export const metricSentimentValidator = v.union(
+	v.literal("positive"),
+	v.literal("negative"),
+	v.literal("neutral"),
+);
+
 export const metricEvaluationResultValidator = v.object({
 	label: metricLabelValidator,
 	reason: metricEvaluationReasonValidator,
+	sentiment: metricSentimentValidator,
 });
 
 export const metricEvaluationResponseValidator = v.object({

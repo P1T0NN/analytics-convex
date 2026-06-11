@@ -149,6 +149,8 @@ export const {
 	metricComparison,
 	metricConversion,
 	metricEvaluation,
+	metricEvaluationConfig,
+	setMetricEvaluation,
 	dashboardMetrics,
 	funnelConversion,
 	journeyConversion,

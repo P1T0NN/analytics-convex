@@ -27,10 +27,12 @@ import type {
 	typesJourneyConversionArgs,
 	typesMetricConversionArgs,
 	typesMetricEvaluationArgs,
+	typesMetricEvaluationConfigArgs,
 	typesMetricName,
 	typesMetricRangeArgs,
 	typesMetricTotalsByDimensionArgs,
 	typesQueryCtx,
+	typesSetMetricEvaluationArgs,
 	typesTimeSeriesArgs,
 	typesTopDimensionValueArgs,
 } from "../../shared/types/queryArgs.js";
@@ -184,6 +186,26 @@ export function internalCreateAnalyticsServerHelpers<
 			args: typesMetricEvaluationArgs<Metrics, Name>,
 		) => {
 			return await ctx.runQuery(component.lib.fetchMetricEvaluation, {
+				...configReference,
+				...args,
+			});
+		},
+
+		fetchMetricEvaluationConfig: async <Name extends typesMetricName<Metrics>>(
+			ctx: typesQueryCtx,
+			args: typesMetricEvaluationConfigArgs<Metrics, Name>,
+		) => {
+			return await ctx.runQuery(component.lib.fetchMetricEvaluationConfig, {
+				...configReference,
+				...args,
+			});
+		},
+
+		setMetricEvaluation: async <Name extends typesMetricName<Metrics>>(
+			ctx: typesMutationCtx,
+			args: typesSetMetricEvaluationArgs<Metrics, Name>,
+		) => {
+			return await ctx.runMutation(component.lib.writeMetricEvaluationOverride, {
 				...configReference,
 				...args,
 			});

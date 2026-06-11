@@ -1,9 +1,15 @@
+// CONSTANTS
+import { ANALYTICS_METRIC_LABEL_SENTIMENTS } from "../constants.js";
+
 // TYPES
 import type {
+	typesAnalyticsMetricLabel,
+	typesAnalyticsMetricSentiment,
 	typesMetricComparisonEvaluationConfig,
 	typesMetricComparisonInput,
 	typesMetricConversionEvaluationConfig,
 	typesMetricConversionInput,
+	typesMetricEvaluationConfig,
 	typesMetricEvaluationInput,
 	typesMetricEvaluationResult,
 	typesMetricGoalEvaluationConfig,
@@ -11,10 +17,26 @@ import type {
 	typesMetricInverseRateEvaluationConfig,
 } from "../types/evaluation.js";
 
+type typesMetricLabelOutcome = Omit<typesMetricEvaluationResult, "sentiment">;
+
+/** Tone for a label — lets UIs map straight to success/danger/muted tokens. */
+export function metricLabelSentiment(
+	label: typesAnalyticsMetricLabel,
+): typesAnalyticsMetricSentiment {
+	return ANALYTICS_METRIC_LABEL_SENTIMENTS[label];
+}
+
+/** Narrow an effective evaluation config to the goal shape. */
+export function isGoalEvaluationConfig(
+	evaluation: typesMetricEvaluationConfig | null | undefined,
+): evaluation is typesMetricGoalEvaluationConfig {
+	return evaluation?.kind === "goal";
+}
+
 function evaluateComparisonLabel(
 	comparison: typesMetricComparisonInput,
 	config: typesMetricComparisonEvaluationConfig,
-): typesMetricEvaluationResult {
+): typesMetricLabelOutcome {
 	const minVolume = config.minVolumeForComparison ?? 0;
 	const totalVolume = comparison.current + comparison.previous;
 
@@ -58,7 +80,7 @@ function evaluateComparisonLabel(
 function evaluateConversionLabel(
 	conversion: typesMetricConversionInput,
 	config: typesMetricConversionEvaluationConfig,
-): typesMetricEvaluationResult {
+): typesMetricLabelOutcome {
 	const minDenominator = config.minDenominator ?? 0;
 
 	if (conversion.denominator < minDenominator) {
@@ -101,7 +123,7 @@ function evaluateConversionLabel(
 function evaluateInverseRateLabel(
 	conversion: typesMetricConversionInput,
 	config: typesMetricInverseRateEvaluationConfig,
-): typesMetricEvaluationResult {
+): typesMetricLabelOutcome {
 	const minDenominator = config.minDenominator ?? 0;
 
 	if (conversion.denominator < minDenominator) {
@@ -140,7 +162,7 @@ function evaluateInverseRateLabel(
 function evaluateGoalLabel(
 	goal: typesMetricGoalInput,
 	config: typesMetricGoalEvaluationConfig,
-): typesMetricEvaluationResult {
+): typesMetricLabelOutcome {
 	const minValue = config.minValueForEvaluation ?? 0;
 
 	if (goal.value < minValue) {
@@ -185,16 +207,23 @@ function evaluateGoalLabel(
 export function evaluateMetricLabel(
 	input: typesMetricEvaluationInput,
 ): typesMetricEvaluationResult {
-	switch (input.kind) {
-		case "comparison":
-			return evaluateComparisonLabel(input.comparison, input.config);
-		case "conversion":
-			return evaluateConversionLabel(input.conversion, input.config);
-		case "inverseRate":
-			return evaluateInverseRateLabel(input.conversion, input.config);
-		case "goal":
-			return evaluateGoalLabel(input.goal, input.config);
-	}
+	const outcome = ((): typesMetricLabelOutcome => {
+		switch (input.kind) {
+			case "comparison":
+				return evaluateComparisonLabel(input.comparison, input.config);
+			case "conversion":
+				return evaluateConversionLabel(input.conversion, input.config);
+			case "inverseRate":
+				return evaluateInverseRateLabel(input.conversion, input.config);
+			case "goal":
+				return evaluateGoalLabel(input.goal, input.config);
+		}
+	})();
+
+	return {
+		...outcome,
+		sentiment: metricLabelSentiment(outcome.label),
+	};
 }
 
 export function computePercentOfGoal(args: {

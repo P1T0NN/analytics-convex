@@ -25,7 +25,7 @@
 | `rollupGranularity` | `"day" \| "hour"`                           | Optional — default `"day"`. Hourly: low-volume only, not with `distinctActors` |
 | `trafficMode`   | `"lowVolume" \| "mediumVolume" \| "highVolume"` | Optional per-metric override |
 | `adminOnly`     | `boolean`                                       | If `true`, the `authorize` callback receives `adminOnly` info for access control |
-| `evaluation`    | `MetricEvaluationConfig`                        | Optional — dashboard label rules |
+| `evaluation`    | `MetricEvaluationConfig`                        | Optional dashboard label rules; see [Evaluation](./evaluation.md) |
 
 Metric builder chain methods include `.from()`, `.by()`, `.value()`, `.actor()`,
 `.hourly()`, `.trafficMode()`, `.evaluation()`, `.build(name)`.
@@ -42,7 +42,8 @@ Separate from metric `funnels`. Steps are **event names** in order:
 
 Pass as `journeys: { signup: { label, steps: [...] } }` to `defineAnalytics`.
 Query with `fetchJourneyConversion`. Requires `actorId` on tracked events. Pass
-`groupBy` matching `breakdownProperty` to get per-value conversion rows.
+`groupBy` matching `breakdownProperty` to get per-value conversion rows. See
+[Funnels - Journey funnels](./funnels.md#journey-funnels).
 
 ### Metric funnel config
 
@@ -54,6 +55,7 @@ Steps are **metric names** (volume ratios, not same-actor journeys):
 | `steps` | `string[]` | At least two metric names; conversion = last ÷ first |
 
 Pass as `funnels: { activation: { label, steps: [...] } }` to `defineAnalytics`.
+See [Funnels - Metric funnels](./funnels.md#metric-funnels).
 
 ### Settings
 

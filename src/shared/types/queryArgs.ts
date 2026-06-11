@@ -1,6 +1,7 @@
 // TYPES
 import type { GenericDataModel, GenericQueryCtx } from "convex/server";
 import type { typesAnalyticsMetricConfig } from "./config.js";
+import type { typesMetricEvaluationConfig } from "./evaluation.js";
 import type { typesAnalyticsScopeInput } from "./scopes.js";
 
 export type typesQueryCtx = Pick<GenericQueryCtx<GenericDataModel>, "runQuery">;
@@ -80,6 +81,24 @@ export type typesMetricEvaluationArgs<
 	Metrics extends readonly typesAnalyticsMetricConfig[],
 	Name extends typesMetricName<Metrics>,
 > = typesMetricRangeArgs<Metrics, Name>;
+
+export type typesMetricEvaluationConfigArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+	Name extends typesMetricName<Metrics>,
+> = {
+	metric: Name;
+	scope?: typesAnalyticsScopeInput;
+};
+
+export type typesSetMetricEvaluationArgs<
+	Metrics extends readonly typesAnalyticsMetricConfig[],
+	Name extends typesMetricName<Metrics>,
+> = {
+	metric: Name;
+	scope?: typesAnalyticsScopeInput;
+	/** `null` clears the override so the static `.evaluation()` config applies again. */
+	evaluation: typesMetricEvaluationConfig | null;
+};
 
 export type typesDashboardMetricsArgs<
 	Metrics extends readonly typesAnalyticsMetricConfig[],

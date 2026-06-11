@@ -5,12 +5,12 @@
 Call these through server helpers or `ctx.runQuery` / `ctx.runMutation` with your
 runtime config. These are Convex functions, not TypeScript helpers.
 
-**Mutations:** `writeConfiguration`, `writeTrack`
+**Mutations:** `writeConfiguration`, `writeTrack`, `writeMetricEvaluationOverride`
 
 **Queries:** `fetchConfiguration`, `fetchTimeSeries`, `fetchSummary`, `fetchBreakdown`,
 `fetchMetricComparison`, `fetchMetricConversion`, `fetchMetricEvaluation`,
-`fetchDashboardMetrics`, `fetchFunnelConversion`, `fetchJourneyConversion`,
-`fetchMetricTotalsByDimension`, `fetchTopDimensionValue`
+`fetchMetricEvaluationConfig`, `fetchDashboardMetrics`, `fetchFunnelConversion`,
+`fetchJourneyConversion`, `fetchMetricTotalsByDimension`, `fetchTopDimensionValue`
 
 **Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`,
 `purgeStaleAnalyticsRollups`
@@ -23,7 +23,7 @@ Everything below is safe to import in consumer apps.
 | -------- | ------- |
 | Setup | `defineAnalytics`, `event`, `property`, `count`, `sum`, `avg`, `min`, `max`, `distinctActors` |
 | Date ranges | `createAnalyticsCompletedDayRange`, `createAnalyticsTodayRange`, `createAnalyticsDayRange`, `previousAnalyticsDayRange`, `previousAnalyticsPeriodRange`, `analyticsDayRangeIncludesToday`, `getQueryBucketStart`, `listQueryBuckets`, `startOfUtcDay`, `startOfUtcWeek`, `startOfUtcMonth`, `normalizeAnalyticsDayRange`, `countUtcDaysInRange` |
-| Evaluation | `evaluateMetricLabel`, `computeConversionRatePercent`, `computePercentOfGoal`, `ANALYTICS_METRIC_LABELS` |
+| Evaluation | `evaluateMetricLabel`, `isGoalEvaluationConfig`, `metricLabelSentiment`, `computeConversionRatePercent`, `computePercentOfGoal`, `ANALYTICS_METRIC_LABEL_KEYS`, `ANALYTICS_METRIC_LABEL_SENTIMENTS`, `ANALYTICS_METRIC_LABELS` |
 | Ranking | `getAnalyticsRanking`, `compareScores` |
 | Scopes | `createAnalyticsScopeId`, `createAnalyticsResourceScopeId`, `createAnalyticsResourceScope`, `createAnalyticsResourceScopeInput` |
 | Constants | `ANALYTICS_LIMITS`, `ANALYTICS_TRAFFIC_MODE`, `ANALYTICS_SCOPE_SEPARATOR`, `ANALYTICS_RESOURCE_SCOPE_SEPARATOR` |
@@ -48,5 +48,9 @@ See [Testing](./testing.md).
 
 **Not exported to apps:** any function whose name starts with `internal` (library
 implementation only).
+
+See [Evaluation](./evaluation.md) for labels, goals, and overrides. See
+[Funnels](./funnels.md) for metric funnels and journeys. See
+[Utilities](./utils.md) for pure helper examples.
 
 ---

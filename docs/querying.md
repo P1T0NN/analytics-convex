@@ -1,28 +1,35 @@
 # Querying
 
-All queries hit pre-aggregated rollup rows in `analyticsDailyMetrics` — not the
-raw event log. This keeps reads fast regardless of how many raw events have been
-tracked. Metrics default to **daily** buckets; metrics configured with `.hourly()`
-use **hourly** buckets for time series and range totals.
+All queries hit pre-aggregated rollup rows in `analyticsDailyMetrics`, not the
+raw event log. This keeps reads fast regardless of how many raw events have
+been tracked. Metrics default to daily buckets; metrics configured with
+`.hourly()` use hourly buckets for time series and range totals.
+
 In app-specific Convex functions, import your `analytics` object and call the
-server helpers directly.
+server helpers directly. Export functions from `analytics.client` only when the
+browser or another public client should call them through Convex authorization.
+
+For dashboard labels, goals, and per-scope overrides, see
+[Evaluation](./evaluation.md). For metric funnels and same-actor journeys, see
+[Funnels](./funnels.md). For pure helpers used around query results, see
+[Utilities](./utils.md).
 
 ### Date ranges (UTC days)
 
-All dashboard queries bucket on **UTC calendar days**, not rolling 24-hour
-windows. Use the exported helpers instead of hand-rolling timestamps:
+All dashboard queries bucket on UTC calendar days, not rolling 24-hour windows.
+Use the exported helpers instead of hand-rolling timestamps:
 
 ```ts
 import {
+	analyticsDayRangeIncludesToday,
 	createAnalyticsCompletedDayRange,
 	createAnalyticsTodayRange,
-	analyticsDayRangeIncludesToday,
 } from "@piton-/analytics-convex";
 
-// Reporting dashboards: last 7 complete days, ending yesterday
+// Reporting dashboards: last 7 complete days, ending yesterday.
 const range = createAnalyticsCompletedDayRange(7);
 
-// Live monitoring: today so far
+// Live monitoring: today so far.
 const today = createAnalyticsTodayRange();
 
 await analytics.fetchDashboardMetrics(ctx, {
@@ -32,20 +39,20 @@ await analytics.fetchDashboardMetrics(ctx, {
 });
 
 if (analyticsDayRangeIncludesToday(today)) {
-	// show "Today (in progress)" in the UI
+	// Show "Today (in progress)" in the UI.
 }
 ```
 
 Comparison queries use the previous period with the same number of UTC days and
-**do not overlap** the current range. Prefer `createAnalyticsCompletedDayRange()`
-for period-over-period cards; use `createAnalyticsTodayRange()` when you
+do not overlap the current range. Prefer `createAnalyticsCompletedDayRange()`
+for period-over-period cards. Use `createAnalyticsTodayRange()` when you
 explicitly want a live partial day.
 
-Optional **`bucketUnit: "week" | "month"`** on `fetchTimeSeries` and
-`fetchMetricComparison` re-aggregates daily (or hourly) rollups into calendar
-weeks or months. Optional **`timezone`** (IANA name) groups buckets in a local
-calendar; set `settings.defaultTimezone` in config to avoid passing it on every
-query. Rollup **writes stay UTC** — timezone affects query grouping only.
+Optional `bucketUnit: "week" | "month"` on `fetchTimeSeries` and
+`fetchMetricComparison` re-aggregates daily or hourly rollups into calendar
+weeks or months. Optional `timezone` (IANA name) groups buckets in a local
+calendar. Set `settings.defaultTimezone` in config to avoid passing it on every
+query. Rollup writes stay UTC; timezone affects query grouping only.
 
 ```ts
 await analytics.fetchTimeSeries(ctx, {
@@ -57,21 +64,21 @@ await analytics.fetchTimeSeries(ctx, {
 });
 ```
 
-> **Timezone precision:** daily-rollup metrics are stored per **UTC day**, so a
-> timezone groups whole UTC days into local buckets — events within ±the zone
-> offset of local midnight may land in the neighboring bucket. For exact local
-> day boundaries, use `.hourly()` metrics (hour rollups re-bucket precisely).
-> Also note `from`/`to` are interpreted in the query timezone: `Date.UTC(2026, 0, 1)`
-> is still Dec 31 in `America/Los_Angeles` — pass instants inside the local
-> period you want (e.g. add 12 hours).
+Timezone precision: daily-rollup metrics are stored per UTC day, so a timezone
+groups whole UTC days into local buckets. Events within the zone offset of
+local midnight may land in the neighboring bucket. For exact local day
+boundaries, use `.hourly()` metrics because hour rollups re-bucket precisely.
+Also note `from` and `to` are interpreted in the query timezone:
+`Date.UTC(2026, 0, 1)` is still Dec 31 in `America/Los_Angeles`, so pass
+instants inside the local period you want.
 
 ### Time series
 
-Bucketed chart data — **one point per UTC day** by default, or **one point per
-UTC hour** when the metric uses `.hourly()`. Returns optional dimension grouping.
+Bucketed chart data: one point per UTC day by default, or one point per UTC
+hour when the metric uses `.hourly()`. Returns optional dimension grouping.
 
 ```ts
-// Daily metric (default)
+// Daily metric (default).
 const daily = await analytics.fetchTimeSeries(ctx, {
 	metric: "pageViews",
 	from: Date.UTC(2026, 0, 1),
@@ -79,7 +86,7 @@ const daily = await analytics.fetchTimeSeries(ctx, {
 	groupBy: "path",
 });
 
-// Hourly metric — use a short range (low-volume only)
+// Hourly metric: use a short range.
 const hourly = await analytics.fetchTimeSeries(ctx, {
 	metric: "featureUsesHourly",
 	from: Date.UTC(2026, 0, 15, 12),
@@ -96,7 +103,8 @@ featureUsesHourly: count("Feature uses (hourly)")
 	.build("featureUsesHourly"),
 ```
 
-Hourly rollups require `lowVolume` traffic mode and cannot use `distinctActors`.
+Hourly rollups require `lowVolume` traffic mode and cannot use
+`distinctActors`.
 
 ### Summary
 
@@ -146,28 +154,31 @@ const result = await analytics.fetchBreakdown(ctx, {
 	groupBy: "feature",
 });
 
-// result.data: [{ key: "search", value: 523 }, { key: "export", value: 412 }, ...]
-// result.meta.omittedSeriesCount: number of dimensions that didn't make the cut
+// result.data: [{ key: "search", value: 523 }, { key: "export", value: 412 }]
+// result.meta.omittedSeriesCount: number of dimensions that did not make the cut
 ```
+
+Use [Advanced helpers](./advanced-helpers.md) for dimension totals as a `Map`
+or the top dimension value.
 
 ### Metric comparison
 
 Compares a metric between two equal-length periods. The previous period uses
-`previousAnalyticsDayRange()` — same number of UTC days, **no overlap** with the
+`previousAnalyticsDayRange()`: same number of UTC days, no overlap with the
 current range.
 
 ```ts
 const result = await analytics.fetchMetricComparison(ctx, {
 	metric: "pageViews",
 	from: Date.UTC(2026, 5, 1), // June 1
-	to: Date.UTC(2026, 5, 7), // June 7  (7 days)
+	to: Date.UTC(2026, 5, 7), // June 7 (7 days)
 });
 
 // result: {
 //   current: 1420,
-//   previous: 1280,             // May 25 – May 31 automatically
-//   delta: 140,                 // current - previous
-//   deltaPercent: 10.94,        // undefined if previous is 0
+//   previous: 1280,
+//   delta: 140,
+//   deltaPercent: 10.94, // undefined if previous is 0
 //   range: { current: { from, to }, previous: { from, to } }
 // }
 ```
@@ -175,7 +186,8 @@ const result = await analytics.fetchMetricComparison(ctx, {
 ### Metric conversion
 
 Compute a rollup-based conversion rate between two metrics over the same range.
-Use this for funnel steps such as scan → activation or reservation → confirmation.
+Use this for ad-hoc funnel steps such as scan to activation or reservation to
+confirmation.
 
 ```ts
 const result = await analytics.fetchMetricConversion(ctx, {
@@ -183,7 +195,7 @@ const result = await analytics.fetchMetricConversion(ctx, {
 	denominatorMetric: "qrScans",
 	from,
 	to,
-	scope: { type: "organization", id: ownerScopeId },
+	scope: { type: "organization", id: organizationId },
 });
 
 // result: {
@@ -195,143 +207,25 @@ const result = await analytics.fetchMetricConversion(ctx, {
 // }
 ```
 
+For named metric funnels and same-actor event journeys, see
+[Funnels](./funnels.md).
+
 ### Metric evaluation
 
-Returns a dashboard health label for one metric. Labels are computed at query
-time from rollup totals and the metric's `.evaluation()` config — they are not
-stored in rollup tables.
-
-```ts
-guestActivations: count("Guest activations")
-	.from("guest.activated")
-	.evaluation({
-		kind: "conversion",
-		denominatorMetric: "qrScans",
-		excellentRatePercent: 50,
-		goodRatePercent: 20,
-		badRatePercent: 10,
-		minDenominator: 5,
-	}),
-
-newReservations: count("New reservations")
-	.from("reservation.created")
-	.evaluation({
-		kind: "comparison",
-		excellentGrowthPercent: 25,
-		goodGrowthPercent: 5,
-		badGrowthPercent: -5,
-		minVolumeForComparison: 10,
-	}),
-
-cancelledReservations: count("Cancelled reservations")
-	.from("reservation.cancelled")
-	.evaluation({
-		kind: "inverseRate",
-		denominatorMetric: "newReservations",
-		goodRatePercent: 10,
-		badRatePercent: 25,
-	}),
-
-qrScans: count("QR scans")
-	.from("qr.scanned")
-	.evaluation({
-		kind: "goal",
-		targetValue: 500,
-		excellentPercentOfGoal: 100,
-		goodPercentOfGoal: 75,
-		badPercentOfGoal: 50,
-		minValueForEvaluation: 0,
-	}),
-```
-
-**Evaluation kinds:**
-
-| Kind | Answers | Key fields |
-| ---- | ------- | ---------- |
-| `comparison` | Did we grow vs last period? | `excellentGrowthPercent`, `goodGrowthPercent`, `badGrowthPercent` |
-| `conversion` | What % converted? | `denominatorMetric`, rate percent thresholds |
-| `inverseRate` | Is the rate low enough? | `denominatorMetric`, lower is better |
-| `goal` | Did we hit the target for this range? | `targetValue`, percent-of-goal thresholds |
-
-`targetValue` is the absolute goal for the **queried date range** (`from`–`to`). It is
-not auto-prorated to calendar months in v1 — set the target for the window you query.
+Use `fetchMetricEvaluation` for one evaluated dashboard card:
 
 ```ts
 const result = await analytics.fetchMetricEvaluation(ctx, {
 	metric: "guestActivations",
 	from,
 	to,
-});
-
-// result: {
-//   value: 42,
-//   evaluation: { label: "excellent", reason: "conversion_rate" },
-//   conversion: {
-//     numerator: 42,
-//     denominator: 100,
-//     ratePercent: 42,
-//     denominatorMetric: "qrScans",
-//   },
-//   goal?: { targetValue, value, percentOfGoal? },
-// }
-```
-
-Supported labels: `neutral`, `activity`, `good`, `excellent`, `bad`, `clear`.
-(`activity` is not used for `goal` evaluation.)
-
-Standard edge-case behavior:
-
-| Case | Label |
-|------|-------|
-| `previous = 0`, `current > 0` | `activity` |
-| `previous = 0`, `current = 0` | `neutral` |
-| below `minVolumeForComparison` | `neutral` |
-| conversion denominator below `minDenominator` | `neutral` |
-| conversion denominator `0`, numerator `> 0` | `activity` |
-| inverse rate `0%` | `clear` |
-| goal `targetValue === 0` | `neutral` |
-| goal `value === 0`, `targetValue > 0` | `bad` (when `0 <= badPercentOfGoal`) |
-| goal below `minValueForEvaluation` | `neutral` |
-| no `.evaluation()` config on metric | `neutral` |
-
-For UI reuse outside Convex queries, import the pure helpers:
-
-```ts
-import {
-	ANALYTICS_METRIC_LABELS,
-	computePercentOfGoal,
-	evaluateMetricLabel,
-} from "@piton-/analytics-convex";
-
-const label = evaluateMetricLabel({
-	kind: "comparison",
-	comparison: { current, previous, delta, deltaPercent },
-	config: metric.evaluation,
+	scope: { type: "organization", id: organizationId },
 });
 ```
 
-### Migrating from app-side label logic
-
-If your app currently does this manually:
-
-- hardcoded growth thresholds on `fetchMetricComparison().deltaPercent`
-- hand-rolled `numerator / denominator` funnel math
-- badge labels like `Excellent` / `Bad` in frontend constants
-
-Move thresholds into `.evaluation()` on each metric in `convex/analytics.ts`,
-then replace custom logic with:
-
-- `analytics.fetchMetricEvaluation(ctx, { metric, from, to, scope? })` for card
-  labels
-- `analytics.fetchDashboardMetrics(ctx, { metrics, from, to, scope?, includeComparison?, includeEvaluation? })`
-  for full dashboard cards in one query
-- `analytics.fetchMetricConversion(ctx, { numeratorMetric, denominatorMetric, from, to, scope? })`
-  for funnel rates
-- `analytics.fetchFunnelConversion(ctx, { funnel, from, to, scope? })` when the
-  funnel is declared in `defineAnalytics({ funnels })`
-
-Keep product-specific display strings in your UI if you want. The library owns
-the math, guardrails, and label reasons via `evaluation.reason`.
+Use `fetchDashboardMetrics` with `includeEvaluation: true` for multiple cards.
+Evaluation config, labels, goal progress, sentiment, and overrides are covered
+in [Evaluation](./evaluation.md).
 
 ### Dashboard batch reads
 
@@ -343,7 +237,7 @@ const dashboard = await analytics.fetchDashboardMetrics(ctx, {
 	metrics: ["qrScans", "guestActivations", "newReservations"],
 	from,
 	to,
-	scope: { type: "organization", id: ownerScopeId },
+	scope: { type: "organization", id: organizationId },
 	includeComparison: true,
 	includeEvaluation: true,
 });
@@ -353,137 +247,39 @@ const dashboard = await analytics.fetchDashboardMetrics(ctx, {
 //   label: "Guest activations",
 //   unit: "count",
 //   comparison?: { current, previous, delta, deltaPercent? },
-//   evaluation?: { label, reason },
+//   evaluation?: { label, reason, sentiment },
 //   conversion?: { numerator, denominator, ratePercent, denominatorMetric },
 //   goal?: { targetValue, value, percentOfGoal? },
 // }
 ```
 
-Rollup reads are deduped across metrics, comparison periods, and evaluation
-denominators. Labels remain query-time only.
+Rollup reads are deduped across metrics, comparison periods, evaluation
+denominators, and per-scope overrides. Labels remain query-time only.
 
-### Metric funnels (metric ratios)
+### Client wrappers
 
-> **Important:** `funnels` in config and `fetchFunnelConversion` are **metric
-> ratios**, not user journeys. See [Journey funnels](#journey-funnels-event-sequences)
-> for same-actor event sequences.
-
-Define named metric funnels in `defineAnalytics`:
+Everything on `analytics.client` is a registered Convex query or mutation. Use
+these when the browser or public routes need direct access:
 
 ```ts
-const analytics = defineAnalytics(components.analytics, {
-	events,
-	metrics,
-	funnels: {
-		guestActivation: {
-			label: "Scan to activation",
-			steps: ["qrScans", "guestActivations"],
-		},
-	},
-});
+export const {
+	timeSeries,
+	summary,
+	breakdown,
+	metricComparison,
+	metricConversion,
+	metricEvaluation,
+	metricEvaluationConfig,
+	dashboardMetrics,
+	funnelConversion,
+	journeyConversion,
+	metricTotalsByDimension,
+	topDimensionValue,
+} = analytics.client;
 ```
 
-```ts
-const funnel = await analytics.fetchFunnelConversion(ctx, {
-	funnel: "guestActivation",
-	from,
-	to,
-});
-
-// funnel: {
-//   label: "Scan to activation",
-//   steps: ["qrScans", "guestActivations"],
-//   numeratorMetric: "guestActivations",
-//   denominatorMetric: "qrScans",
-//   numerator, denominator, ratePercent,
-// }
-```
-
-Funnel steps must reference configured **metrics**. Each funnel needs at least
-two unique steps. Conversion is always last step ÷ first step over the same range.
-Pass optional **`groupBy`** (a dimension allowed on both funnel metrics) for
-per-value conversion in `breakdown`.
-
-```ts
-const funnel = await analytics.fetchFunnelConversion(ctx, {
-	funnel: "guestActivation",
-	from,
-	to,
-	groupBy: "plan",
-});
-```
-
-### Journey funnels (event sequences)
-
-**User-journey funnels** track whether the **same actor** completed ordered
-**event** steps. Steps may span multiple days — an actor can start a signup on
-Monday and finish onboarding on Wednesday. Configure them separately from
-metric funnels:
-
-```ts
-const analytics = defineAnalytics(components.analytics, {
-	events,
-	metrics,
-	journeys: {
-		checkout: {
-			label: "Checkout journey",
-			steps: ["checkout.started", "checkout.completed"],
-			breakdownProperty: "plan",
-		},
-	},
-});
-```
-
-Requirements and semantics:
-
-- Each step is an **event name** (not a metric name)
-- Events must include `actorId` when tracked — journeys dedupe by actor
-- Steps must occur **in order**: step 2 only counts if the actor already
-  completed step 1 on the same UTC day or an earlier one
-- Step counts are distinct actors per step within the queried range. An actor
-  whose earlier steps happened **before** the queried range still counts for
-  later steps, so a step's rate can exceed 100% on narrow ranges — query a
-  range that covers the whole journey window for clean funnels
-
-```ts
-const journey = await analytics.fetchJourneyConversion(ctx, {
-	journey: "signup",
-	from: Date.UTC(2026, 0, 10),
-	to: Date.UTC(2026, 0, 10),
-});
-
-// journey: {
-//   label: "Signup journey",
-//   steps: ["signup.started", "signup.completed", "onboarding.finished"],
-//   stepCounts: [100, 72, 41],       // distinct actors at each step
-//   ratePercents: [null, 72, 41],   // step N ÷ step 1 (null for step 1)
-//   scope, range,
-// }
-```
-
-When the journey config sets `breakdownProperty`, pass `groupBy` (it must match
-that property) to get per-value conversion rows. Each actor's cohort comes from
-the property value on their **first step** event:
-
-```ts
-const journey = await analytics.fetchJourneyConversion(ctx, {
-	journey: "checkout",
-	from,
-	to,
-	groupBy: "plan",
-});
-
-// journey.breakdown: [
-//   { dimensionValue: "pro", stepCounts: [60, 45], ratePercents: [null, 75] },
-//   { dimensionValue: "free", stepCounts: [40, 12], ratePercents: [null, 30] },
-// ]
-```
-
-Funnel and journey `breakdown` arrays are capped at `settings.maxBreakdownItems`
-(largest first-step/denominator values first); top-level totals always cover the
-full set.
-
-Use metric funnels when you care about volume ratios. Use journey funnels when
-you care about **conversion through a sequence** for the same user.
+These wrappers run `authorize`. Plain helpers on the top-level `analytics`
+object do not, so only call them from Convex functions that already enforce
+auth.
 
 ---

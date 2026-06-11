@@ -1,5 +1,9 @@
 // TYPES
-import type { typesMetricComparisonInput, typesMetricEvaluationResult } from "./evaluation.js";
+import type {
+	typesMetricComparisonInput,
+	typesMetricEvaluationConfig,
+	typesMetricEvaluationResult,
+} from "./evaluation.js";
 import type { typesAnalyticsUnit } from "./primitives.js";
 import type { typesAnalyticsResolvedScope } from "./scopes.js";
 
@@ -66,6 +70,16 @@ export type typesMetricEvaluationResponse = {
 	comparison?: typesMetricComparisonInput;
 	conversion?: typesMetricEvaluationConversion;
 	goal?: typesMetricEvaluationGoal;
+};
+
+export type typesMetricEvaluationConfigSource = "override" | "config" | "none";
+
+export type typesMetricEvaluationConfigResponse = {
+	metric: string;
+	scope: typesAnalyticsResolvedScope;
+	evaluation: typesMetricEvaluationConfig | null;
+	source: typesMetricEvaluationConfigSource;
+	configEvaluation?: typesMetricEvaluationConfig;
 };
 
 export type typesDashboardMetricConversion = {

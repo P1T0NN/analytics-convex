@@ -44,8 +44,12 @@ describe("package root exports", () => {
 		expect(analytics.getAnalyticsRanking).toBeDefined();
 		expect(analytics.compareScores).toBeDefined();
 		expect(analytics.evaluateMetricLabel).toBeDefined();
+		expect(analytics.isGoalEvaluationConfig).toBeDefined();
+		expect(analytics.metricLabelSentiment).toBeDefined();
 		expect(analytics.computePercentOfGoal).toBeDefined();
 		expect(analytics.ANALYTICS_METRIC_LABELS).toBeDefined();
+		expect(analytics.ANALYTICS_METRIC_LABEL_KEYS).toBeDefined();
+		expect(analytics.ANALYTICS_METRIC_LABEL_SENTIMENTS).toBeDefined();
 		expect(analytics.uniqueEventValidator).toBeDefined();
 	});
 });

@@ -31,19 +31,7 @@ const top = await analytics.fetchTopDimensionValue(ctx, {
 // top: "search" (or null if no data)
 ```
 
-### Ranking utility
-
-Pure function for sorting items by score with optional tie-breakers:
-
-```ts
-import { getAnalyticsRanking } from "@piton-/analytics-convex";
-
-const top5 = getAnalyticsRanking({
-	items: [...totals.entries()],
-	getScore: ([, value]) => value,
-	limit: 5,
-	direction: "desc",
-});
-```
+For sorting totals or breakdown results in memory, see
+[Utilities - Ranking helpers](./utils.md#ranking-helpers).
 
 ---

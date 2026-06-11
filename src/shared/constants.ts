@@ -39,6 +39,17 @@ export const ANALYTICS_TRAFFIC_MODE = {
 	HIGH_VOLUME: "highVolume",
 } as const;
 
+/** Semantic metric health labels — the stable wire contract for evaluation results. */
+export const ANALYTICS_METRIC_LABEL_KEYS = [
+	"neutral",
+	"activity",
+	"good",
+	"excellent",
+	"bad",
+	"clear",
+] as const;
+
+/** Default English display strings — localize or rebrand these in your UI. */
 export const ANALYTICS_METRIC_LABELS = {
 	neutral: "Neutral",
 	activity: "Activity",
@@ -46,7 +57,23 @@ export const ANALYTICS_METRIC_LABELS = {
 	excellent: "Excellent",
 	bad: "Bad",
 	clear: "Clear",
-} as const;
+} as const satisfies Record<
+	(typeof ANALYTICS_METRIC_LABEL_KEYS)[number],
+	string
+>;
+
+/** Tone of each label for UI color mapping (positive → success, negative → danger). */
+export const ANALYTICS_METRIC_LABEL_SENTIMENTS = {
+	neutral: "neutral",
+	activity: "neutral",
+	good: "positive",
+	excellent: "positive",
+	bad: "negative",
+	clear: "positive",
+} as const satisfies Record<
+	(typeof ANALYTICS_METRIC_LABEL_KEYS)[number],
+	"positive" | "negative" | "neutral"
+>;
 
 export const ANALYTICS_LIMITS = {
 	maxEventsPerConfiguration: 200,

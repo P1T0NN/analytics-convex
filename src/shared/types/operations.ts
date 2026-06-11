@@ -11,6 +11,11 @@ import type { typesAnalyticsSettings } from "./settings.js";
 
 export type typesAnalyticsOperation =
 	| { type: "configure" }
+	| {
+			type: "configureMetricEvaluation";
+			metric: string;
+			scope?: typesAnalyticsScopeInput;
+	  }
 	| { type: "track"; name: string }
 	| {
 			type: "read";
@@ -21,6 +26,7 @@ export type typesAnalyticsOperation =
 				| "metricComparison"
 				| "metricConversion"
 				| "metricEvaluation"
+				| "metricEvaluationConfig"
 				| "dashboardMetrics"
 				| "funnelConversion"
 				| "journeyConversion"

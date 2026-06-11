@@ -134,6 +134,7 @@ describe("analytics metric evaluation queries", () => {
 		expect(activation.evaluation).toEqual({
 			label: "excellent",
 			reason: "conversion_rate",
+			sentiment: "positive",
 		});
 		expect(activation.conversion).toMatchObject({
 			numerator: 10,
@@ -149,6 +150,7 @@ describe("analytics metric evaluation queries", () => {
 		expect(cancellations.evaluation).toEqual({
 			label: "good",
 			reason: "inverse_rate",
+			sentiment: "positive",
 		});
 	});
 
@@ -171,6 +173,7 @@ describe("analytics metric evaluation queries", () => {
 		expect(result.evaluation).toEqual({
 			label: "neutral",
 			reason: "below_min_volume",
+			sentiment: "neutral",
 		});
 	});
 
@@ -210,11 +213,210 @@ describe("analytics metric evaluation queries", () => {
 		expect(result.evaluation).toEqual({
 			label: "good",
 			reason: "goal_progress",
+			sentiment: "positive",
 		});
 		expect(result.goal).toEqual({
 			targetValue: 500,
 			value: 375,
 			percentOfGoal: 75,
 		});
+	});
+});
+
+describe("per-scope metric evaluation overrides", () => {
+	function goalConfig() {
+		return internalRuntimeConfiguration({
+			events: [{ name: "qr.scanned", label: "QR scanned" }],
+			metrics: [
+				{
+					name: "qrScans",
+					label: "QR scans",
+					unit: "count",
+					eventNames: ["qr.scanned"],
+					aggregation: "count",
+					evaluation: {
+						kind: "goal",
+						targetValue: 500,
+						excellentPercentOfGoal: 100,
+						goodPercentOfGoal: 75,
+						badPercentOfGoal: 50,
+					},
+				},
+			],
+		});
+	}
+
+	async function writeOrgEvent(
+		t: ReturnType<typeof internalCreateAnalyticsComponentTest>,
+		config: ReturnType<typeof goalConfig>,
+		occurredAt: number,
+		organizationId: string,
+	) {
+		await t.mutation(internal.helpers.internalWriteAnalyticsEvent.internalWriteAnalyticsEvent, {
+			...internalAnalyticsConfigArgs(config),
+			events: [{
+				name: "qr.scanned",
+				occurredAt,
+				organizationId,
+				properties: {},
+				source: { type: "server" },
+				idempotencyKey: `qr.scanned:${organizationId}:${occurredAt}`,
+			}],
+		});
+	}
+
+	it("uses the scope override for evaluation and leaves other scopes on the static config", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = goalConfig();
+		const now = Date.now();
+		const orgScope = { type: "organization" as const, id: "org1" };
+		const range = { from: now - 86_400_000, to: now + 86_400_000 };
+
+		for (let index = 0; index < 100; index += 1) {
+			await writeOrgEvent(t, config, now + index, "org1");
+		}
+
+		await t.mutation(api.lib.writeMetricEvaluationOverride, {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			scope: orgScope,
+			evaluation: {
+				kind: "goal",
+				targetValue: 100,
+				excellentPercentOfGoal: 100,
+				goodPercentOfGoal: 75,
+				badPercentOfGoal: 50,
+			},
+		});
+
+		const orgResult = await t.query(api.lib.fetchMetricEvaluation, {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			scope: orgScope,
+			...range,
+		});
+		expect(orgResult.evaluation).toEqual({
+			label: "excellent",
+			reason: "goal_progress",
+			sentiment: "positive",
+		});
+		expect(orgResult.goal).toEqual({
+			targetValue: 100,
+			value: 100,
+			percentOfGoal: 100,
+		});
+
+		const globalResult = await t.query(api.lib.fetchMetricEvaluation, {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			...range,
+		});
+		expect(globalResult.evaluation).toEqual({
+			label: "bad",
+			reason: "goal_progress",
+			sentiment: "negative",
+		});
+		expect(globalResult.goal).toMatchObject({ targetValue: 500 });
+	});
+
+	it("applies overrides in dashboard metrics and exposes the effective config", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = goalConfig();
+		const now = Date.now();
+		const orgScope = { type: "organization" as const, id: "org1" };
+
+		for (let index = 0; index < 100; index += 1) {
+			await writeOrgEvent(t, config, now + index, "org1");
+		}
+
+		await t.mutation(api.lib.writeMetricEvaluationOverride, {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			scope: orgScope,
+			evaluation: {
+				kind: "goal",
+				targetValue: 100,
+				excellentPercentOfGoal: 100,
+				goodPercentOfGoal: 75,
+				badPercentOfGoal: 50,
+			},
+		});
+
+		const dashboard = await t.query(api.lib.fetchDashboardMetrics, {
+			...internalAnalyticsConfigArgs(config),
+			metrics: ["qrScans"],
+			scope: orgScope,
+			from: now - 86_400_000,
+			to: now + 86_400_000,
+			includeEvaluation: true,
+		});
+		expect(dashboard.metrics.qrScans.evaluation).toEqual({
+			label: "excellent",
+			reason: "goal_progress",
+			sentiment: "positive",
+		});
+		expect(dashboard.metrics.qrScans.goal).toMatchObject({ targetValue: 100 });
+
+		const effective = await t.query(api.lib.fetchMetricEvaluationConfig, {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			scope: orgScope,
+		});
+		expect(effective.source).toBe("override");
+		expect(effective.evaluation).toMatchObject({ kind: "goal", targetValue: 100 });
+		expect(effective.configEvaluation).toMatchObject({
+			kind: "goal",
+			targetValue: 500,
+		});
+	});
+
+	it("clears an override with null and falls back to the static config", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = goalConfig();
+		const orgScope = { type: "organization" as const, id: "org1" };
+		const overrideArgs = {
+			...internalAnalyticsConfigArgs(config),
+			metric: "qrScans",
+			scope: orgScope,
+		};
+
+		await t.mutation(api.lib.writeMetricEvaluationOverride, {
+			...overrideArgs,
+			evaluation: {
+				kind: "goal",
+				targetValue: 100,
+				excellentPercentOfGoal: 100,
+				goodPercentOfGoal: 75,
+				badPercentOfGoal: 50,
+			},
+		});
+		await t.mutation(api.lib.writeMetricEvaluationOverride, {
+			...overrideArgs,
+			evaluation: null,
+		});
+
+		const effective = await t.query(api.lib.fetchMetricEvaluationConfig, overrideArgs);
+		expect(effective.source).toBe("config");
+		expect(effective.evaluation).toMatchObject({ kind: "goal", targetValue: 500 });
+	});
+
+	it("rejects overrides that reference unknown denominator metrics", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = goalConfig();
+
+		await expect(
+			t.mutation(api.lib.writeMetricEvaluationOverride, {
+				...internalAnalyticsConfigArgs(config),
+				metric: "qrScans",
+				scope: { type: "organization" as const, id: "org1" },
+				evaluation: {
+					kind: "conversion",
+					denominatorMetric: "doesNotExist",
+					excellentRatePercent: 50,
+					goodRatePercent: 20,
+					badRatePercent: 10,
+				},
+			}),
+		).rejects.toThrow(/unknown denominator metric/);
 	});
 });

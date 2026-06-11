@@ -48,8 +48,8 @@ the `distinctActors()` metric builder. It deduplicates by `actorId` (or an
 optional `.actor("propertyName")`) within each UTC day and stores actor claims for
 accurate multi-day active-user totals.
 
-For **journey funnels**, always pass `actorId` on events — journeys track
-ordered steps per actor per UTC day. See [Querying — Journey funnels](./querying.md#journey-funnels-event-sequences).
+For **journey funnels**, always pass `actorId` on events. Journeys track ordered
+steps per actor across UTC days. See [Funnels - Journey funnels](./funnels.md#journey-funnels).
 
 Keep your own product ledger table when uniqueness is part of product state or
 business rules, for example issuing a coupon once, granting a reward once,
