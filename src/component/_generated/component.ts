@@ -623,6 +623,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      fetchCounter: FunctionReference<
+        "query",
+        "internal",
+        { key: string },
+        number,
+        Name
+      >;
+      fetchCounters: FunctionReference<
+        "query",
+        "internal",
+        { keys: Array<string> },
+        Record<string, number>,
+        Name
+      >;
       fetchDashboardMetrics: FunctionReference<
         "query",
         "internal",
@@ -2391,6 +2405,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { configHash: string },
         Name
       >;
+      writeCounterBump: FunctionReference<
+        "mutation",
+        "internal",
+        { delta: number; key: string; shards?: number },
+        null,
+        Name
+      >;
+      writeCounterSet: FunctionReference<
+        "mutation",
+        "internal",
+        { key: string; value: number },
+        null,
+        Name
+      >;
       writeMetricEvaluationOverride: FunctionReference<
         "mutation",
         "internal",
@@ -2729,6 +2757,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
           },
           { configHash: string },
+          Name
+        >;
+      };
+      writeCounterBump: {
+        writeCounterBump: FunctionReference<
+          "mutation",
+          "internal",
+          { delta: number; key: string; shards?: number },
+          null,
+          Name
+        >;
+      };
+      writeCounterSet: {
+        writeCounterSet: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; value: number },
+          null,
           Name
         >;
       };
@@ -3286,6 +3332,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
             };
           },
+          Name
+        >;
+      };
+      fetchCounter: {
+        fetchCounter: FunctionReference<
+          "query",
+          "internal",
+          { key: string },
+          number,
+          Name
+        >;
+      };
+      fetchCounters: {
+        fetchCounters: FunctionReference<
+          "query",
+          "internal",
+          { keys: Array<string> },
+          Record<string, number>,
           Name
         >;
       };

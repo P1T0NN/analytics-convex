@@ -165,6 +165,12 @@ export default defineSchema({
 		])
 		.index("by_bucket_start", ["bucketStart"]),
 
+	analyticsCounters: defineTable({
+		key: v.string(),
+		shard: v.number(),
+		value: v.number(),
+	}).index("by_key_and_shard", ["key", "shard"]),
+
 	analyticsUniqueEvents: defineTable({
 		key: v.string(),
 		eventName: v.string(),

@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+- **Exact transactional state counters.** New `analytics.counters` server helpers — `bump(ctx, key, delta, opts?)`, `get(ctx, key)`, `getMany(ctx, keys)`, `set(ctx, key, value)` — backed by the new `analyticsCounters` component table. Counters answer "how many rows exist right now" (total guests, reservations per status) with O(1) indexed reads instead of full-table `.collect()` scans in reactive queries.
+- **Exact by contract.** `bump`/`set` run inside the calling mutation's transaction, so counters never drift from table truth. Deltas may be negative; values are not clamped. Counters are deliberately never derived from tracked events — metrics stay approximate-by-contract, counters exact.
+- **Optional sharding for hot keys.** `bump(ctx, key, delta, { shards: n })` spreads writes across shard rows when a single key exceeds roughly tens of writes/sec; reads always sum all shards, so mixed shard configs stay correct and `shards` can change at any time without migration. `set` collapses a key back to one shard-0 row for backfill/repair.
+- Component functions `writeCounterBump`, `writeCounterSet`, `fetchCounter`, `fetchCounters` on `components.analytics.lib.*`.
+
+### Documentation
+- New `docs/counters.md`: state-vs-events distinction, transactionality guarantee, sharding ceiling and upgrade path, worked `guests` table example, and a counters-vs-metrics decision note.
+
+## 1.0.1
+
+### Added
+- **Per-scope metric evaluation overrides.** Added runtime overrides for a metric's evaluation config by exact scope (`global`, `organization`, or `resource`) via the new `analyticsMetricEvaluationOverrides` component table. Overrides are resolved at query time and never mutate stored rollups.
+- **Goal editing API.** Added `analytics.client.setMetricEvaluation` and `analytics.client.metricEvaluationConfig`, plus server helpers `analytics.setMetricEvaluation(ctx, ...)` and `analytics.fetchMetricEvaluationConfig(ctx, ...)`.
+- **Effective evaluation config reads.** `metricEvaluationConfig` returns `{ metric, scope, evaluation, source, configEvaluation? }`, where `source` is `"override"`, `"config"`, or `"none"`. This supports edit dialogs that can show the current effective config and reset to the static default.
+- **Evaluation authorization operation.** Client writes call `authorize` with `{ type: "configureMetricEvaluation", metric, scope }`, so apps can allow organization admins to edit only their own scoped goals.
+- **Label sentiment metadata.** Metric evaluation results now include `sentiment: "positive" | "negative" | "neutral"` alongside `label` and `reason`, so UIs can map badges directly to color tokens.
+- **Semantic label keys.** `ANALYTICS_METRIC_LABEL_KEYS` is now the source of truth for metric label keys, decoupled from default English display strings in `ANALYTICS_METRIC_LABELS`.
+- **Evaluation UI helpers.** Added `metricLabelSentiment`, `ANALYTICS_METRIC_LABEL_SENTIMENTS`, and `isGoalEvaluationConfig` exports for frontend code that renders labels or branches on effective goal configs.
+
+### Changed
+- `fetchMetricEvaluation` and `fetchDashboardMetrics` now resolve the scoped evaluation config automatically. Scope overrides take precedence over static `.evaluation()` config; other scopes keep their own config.
+- Static metric evaluation configs are now validated during `writeConfiguration`, not only when writing runtime overrides.
+- Runtime evaluation override validation rejects unknown denominator metrics, non-finite numeric thresholds, and invalid goal targets.
+- `analytics.client` now exposes `metricEvaluationConfig` and `setMetricEvaluation` as registered Convex functions safe to re-export from app Convex modules.
+
+### Documentation
+- Split the docs by concept for better human and LLM retrieval:
+  - `docs/querying.md` for read methods and dashboard batches
+  - `docs/evaluation.md` for labels, sentiments, goals, overrides, auth, and migration
+  - `docs/funnels.md` for metric funnels vs same-actor journeys
+  - `docs/utils.md` for pure helpers, labels, scopes, ranking, and date utilities
+- Updated `public-api.md`, `api-reference.md`, `types.md`, `authorization.md`, `configuration.md`, `tracking.md`, `scale-and-limits.md`, and the LLM integration prompt in `architecture.md` to point to the new concept docs.
+- Moved the deferred post-release roadmap from `docs/1.0.1-roadmap.md` to `docs/1.0.2-roadmap.md`.
+
+### Migration notes
+- Evaluation response objects now include the additive `sentiment` field. Consumers doing exact-object assertions on `evaluation` results must include the new field.
+- Apps that expose `setMetricEvaluation` to the browser should update `authorize` to handle `operation.type === "configureMetricEvaluation"`.
+- To clear an override, pass `evaluation: null`; this resets the scope to the static `.evaluation()` config if one exists. It does not necessarily mean "no evaluation".
+- For goal edit UIs, read `metricEvaluationConfig` first and use `source === "override"` to distinguish a stored override from the static default.
+
 ## 1.0.0
 
 ### Added

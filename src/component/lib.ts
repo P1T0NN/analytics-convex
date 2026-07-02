@@ -9,6 +9,12 @@ export { writeTrack } from "./mutations/writeTrack.js";
 /** Set or clear a per-scope evaluation override for one metric. */
 export { writeMetricEvaluationOverride } from "./mutations/writeMetricEvaluationOverride.js";
 
+/** Add a delta to an exact state counter (transactional with the caller). */
+export { writeCounterBump } from "./mutations/writeCounterBump.js";
+
+/** Overwrite a counter with an absolute value, collapsing shards (backfill/repair). */
+export { writeCounterSet } from "./mutations/writeCounterSet.js";
+
 // QUERIES
 
 /** Read the current analytics config (events, metrics, settings). */
@@ -49,6 +55,12 @@ export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimen
 
 /** Single highest-value dimension entry, or null. */
 export { fetchTopDimensionValue } from "./queries/fetchTopDimensionValue.js";
+
+/** Exact current value of one counter key (0 if absent). */
+export { fetchCounter } from "./queries/fetchCounter.js";
+
+/** Exact current values for multiple counter keys (0 for absent keys). */
+export { fetchCounters } from "./queries/fetchCounters.js";
 
 // CRONS
 

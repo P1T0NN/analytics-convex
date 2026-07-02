@@ -48,6 +48,13 @@ already enforce auth.
 | `fetchTopDimensionValue` | Top dimension value or `null` |
 | `fetchConfiguration` | Read resolved runtime config |
 | `config` | Same config object passed to crons and helpers |
+| `counters.bump(ctx, key, delta, opts?)` | Exact state counter — transactional with your mutation |
+| `counters.get(ctx, key)` / `counters.getMany(ctx, keys)` | Read exact counter values (indexed point reads, 0 if absent) |
+| `counters.set(ctx, key, value)` | Backfill/repair — overwrite and collapse shards |
+
+Counters are exact state counts (decrement on delete, never pruned) — the
+opposite contract from metrics. They are server-helper only, not on
+`analytics.client`. See [Counters](./counters.md).
 
 ### Date range helpers
 

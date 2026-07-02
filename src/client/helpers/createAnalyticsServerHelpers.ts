@@ -247,5 +247,45 @@ export function internalCreateAnalyticsServerHelpers<
 		fetchConfiguration: async (ctx: typesQueryCtx) => {
 			return await ctx.runQuery(component.lib.fetchConfiguration, configReference);
 		},
+
+		/**
+		 * Exact transactional state counters — deliberately separate from event
+		 * tracking. `bump`/`set` run inside the calling mutation's transaction, so
+		 * counters never drift from table truth. Never derive counters from
+		 * tracked events; metrics stay approximate-by-contract, counters exact.
+		 */
+		counters: {
+			bump: async (
+				ctx: typesMutationCtx,
+				key: string,
+				delta: number,
+				opts?: { shards?: number },
+			): Promise<void> => {
+				await ctx.runMutation(component.lib.writeCounterBump, {
+					key,
+					delta,
+					...(opts?.shards !== undefined ? { shards: opts.shards } : {}),
+				});
+			},
+
+			get: async (ctx: typesQueryCtx, key: string): Promise<number> => {
+				return await ctx.runQuery(component.lib.fetchCounter, { key });
+			},
+
+			getMany: async (
+				ctx: typesQueryCtx,
+				keys: string[],
+			): Promise<Record<string, number>> => {
+				return await ctx.runQuery(component.lib.fetchCounters, { keys });
+			},
+
+			set: async (
+				ctx: typesMutationCtx,
+				key: string,
+				value: number,
+			): Promise<void> => {
+				await ctx.runMutation(component.lib.writeCounterSet, { key, value });
+			},
+		},
 	};
 }

@@ -5,12 +5,14 @@
 Call these through server helpers or `ctx.runQuery` / `ctx.runMutation` with your
 runtime config. These are Convex functions, not TypeScript helpers.
 
-**Mutations:** `writeConfiguration`, `writeTrack`, `writeMetricEvaluationOverride`
+**Mutations:** `writeConfiguration`, `writeTrack`, `writeMetricEvaluationOverride`,
+`writeCounterBump`, `writeCounterSet`
 
 **Queries:** `fetchConfiguration`, `fetchTimeSeries`, `fetchSummary`, `fetchBreakdown`,
 `fetchMetricComparison`, `fetchMetricConversion`, `fetchMetricEvaluation`,
 `fetchMetricEvaluationConfig`, `fetchDashboardMetrics`, `fetchFunnelConversion`,
-`fetchJourneyConversion`, `fetchMetricTotalsByDimension`, `fetchTopDimensionValue`
+`fetchJourneyConversion`, `fetchMetricTotalsByDimension`, `fetchTopDimensionValue`,
+`fetchCounter`, `fetchCounters`
 
 **Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`,
 `purgeStaleAnalyticsRollups`
