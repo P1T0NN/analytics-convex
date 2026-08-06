@@ -15,6 +15,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 // UTILS
 import {
 	startOfUtcDay,
+	utcRollupBucketEnd,
 } from "../../shared/utils/analyticsDateRangeUtils.js";
 
 // SCHEMAS
@@ -56,41 +57,70 @@ export const purgeStaleAnalyticsRollups = mutation({
 		const cutoff = startOfUtcDay(
 			Date.now() - config.settings.rollupRetentionDays * DAY_MS,
 		);
+
+		// One delete budget shared across all three tables, so a single run's
+		// writes stay well under Convex's per-mutation write limit. Catch-up
+		// batches (below) preserve throughput.
+		let remaining = config.settings.maxRollupDeletesPerRun;
+		let deleted = 0;
+		let sawFullBatch = false;
+
 		const rows = await ctx.db
 			.query("analyticsDailyMetrics")
 			.withIndex("by_bucket_start", (q) => q.lt("bucketStart", cutoff))
-			.take(config.settings.maxRollupDeletesPerRun);
+			.take(remaining);
+		sawFullBatch ||= rows.length === remaining;
 
+		// A month row's bucketStart passes the cutoff while some of its days
+		// are still inside retention. Deleting it early would make decomposed
+		// reads lose the surviving days, so month rows wait until the whole
+		// month is stale.
 		for (const row of rows) {
+			if (utcRollupBucketEnd(row.granularity, row.bucketStart) > cutoff) {
+				continue;
+			}
 			await ctx.db.delete("analyticsDailyMetrics", row._id);
+			deleted += 1;
+			remaining -= 1;
 		}
 
-		const claimRows = await ctx.db
-			.query("analyticsDailyActorClaims")
-			.withIndex("by_bucket_start", (q) => q.lt("bucketStart", cutoff))
-			.take(config.settings.maxRollupDeletesPerRun);
+		if (remaining > 0) {
+			const claimRows = await ctx.db
+				.query("analyticsDailyActorClaims")
+				.withIndex("by_bucket_start", (q) => q.lt("bucketStart", cutoff))
+				.take(remaining);
+			sawFullBatch ||= claimRows.length === remaining;
 
-		for (const row of claimRows) {
-			await ctx.db.delete("analyticsDailyActorClaims", row._id);
+			for (const row of claimRows) {
+				// Month-tier claims wait until their whole month is stale, like
+				// month rollup rows.
+				if (
+					utcRollupBucketEnd(row.granularity ?? "day", row.bucketStart) >
+					cutoff
+				) {
+					continue;
+				}
+				await ctx.db.delete("analyticsDailyActorClaims", row._id);
+				deleted += 1;
+				remaining -= 1;
+			}
 		}
 
-		const journeyClaimRows = await ctx.db
-			.query("analyticsJourneyStepClaims")
-			.withIndex("by_bucket_start", (q) => q.lt("bucketStart", cutoff))
-			.take(config.settings.maxRollupDeletesPerRun);
+		if (remaining > 0) {
+			const journeyClaimRows = await ctx.db
+				.query("analyticsJourneyStepClaims")
+				.withIndex("by_bucket_start", (q) => q.lt("bucketStart", cutoff))
+				.take(remaining);
+			sawFullBatch ||= journeyClaimRows.length === remaining;
 
-		for (const row of journeyClaimRows) {
-			await ctx.db.delete("analyticsJourneyStepClaims", row._id);
+			for (const row of journeyClaimRows) {
+				await ctx.db.delete("analyticsJourneyStepClaims", row._id);
+				deleted += 1;
+				remaining -= 1;
+			}
 		}
 
-		// Any table hitting its per-run cap means more stale rows likely
-		// remain — keep going now instead of waiting for the next cron tick.
-		const limit = config.settings.maxRollupDeletesPerRun;
-		const scheduledNextBatch =
-			(rows.length >= limit ||
-				claimRows.length >= limit ||
-				journeyClaimRows.length >= limit) &&
-			remainingBatches > 0;
+		const scheduledNextBatch = sawFullBatch && remainingBatches > 0;
 
 		if (scheduledNextBatch) {
 			await ctx.scheduler.runAfter(0, api.lib.purgeStaleAnalyticsRollups, {
@@ -100,7 +130,7 @@ export const purgeStaleAnalyticsRollups = mutation({
 		}
 
 		return {
-			deleted: rows.length + claimRows.length + journeyClaimRows.length,
+			deleted,
 			cutoff,
 			skipped: false,
 			scheduledNextBatch,

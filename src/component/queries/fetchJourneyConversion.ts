@@ -1,6 +1,7 @@
 // LIBRARIES
 import { v } from "convex/values";
 import { query } from "../_generated/server";
+import type { Doc } from "../_generated/dataModel";
 
 // HELPERS
 import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
@@ -12,6 +13,11 @@ import { internalGetJourneyClaimDimension } from "../utils/buildJourneyStepClaim
 import { internalResolveScope } from "../utils/shared/scopeUtils";
 import { internalGetJourneyConfigOrThrow } from "../utils/shared/journeyUtils";
 import { internalBadRequest } from "../errors/errors";
+import {
+	internalCreateReadBudget,
+	internalDrawFromReadBudget,
+	internalReadBudgetLimit,
+} from "../helpers/readBudget";
 
 // VALIDATIONS
 import { internalAssertDateRange } from "../validations/validations";
@@ -111,31 +117,30 @@ export const fetchJourneyConversion = query({
 		const fromDay = startOfUtcDay(args.from);
 		const toDay = startOfUtcDay(args.to);
 
-		const claims = (
-			await Promise.all(
-				journeyConfig.steps.map(async (_step, stepIndex) => {
-					const stepClaims = await ctx.db
-						.query("analyticsJourneyStepClaims")
-						.withIndex("by_journey_scope_step_bucket", (q) =>
-							q
-								.eq("journey", args.journey)
-								.eq("scopeType", scope.type)
-								.eq("scopeId", scope.id)
-								.eq("stepIndex", stepIndex)
-								.gte("bucketStart", fromDay)
-								.lte("bucketStart", toDay),
-						)
-						.take(config.settings.maxRollupRowsPerQuery + 1);
+		// Steps read sequentially against the query's shared read budget, so a
+		// journey query can never scan past the per-query ceiling no matter how
+		// many steps it has.
+		const budget = internalCreateReadBudget(config.settings);
+		const claims: Doc<"analyticsJourneyStepClaims">[] = [];
 
-					return stepClaims;
-				}),
-			)
-		).flat();
+		for (let stepIndex = 0; stepIndex < journeyConfig.steps.length; stepIndex += 1) {
+			const limit = internalReadBudgetLimit(budget);
 
-		if (claims.length > config.settings.maxRollupRowsPerQuery) {
-			internalBadRequest(
-				`Journey query matched more than ${config.settings.maxRollupRowsPerQuery} step claims. Narrow the date range or scope.`,
-			);
+			const stepClaims = await ctx.db
+				.query("analyticsJourneyStepClaims")
+				.withIndex("by_journey_scope_step_bucket", (q) =>
+					q
+						.eq("journey", args.journey)
+						.eq("scopeType", scope.type)
+						.eq("scopeId", scope.id)
+						.eq("stepIndex", stepIndex)
+						.gte("bucketStart", fromDay)
+						.lte("bucketStart", toDay),
+				)
+				.take(limit + 1);
+
+			internalDrawFromReadBudget(budget, stepClaims.length);
+			claims.push(...stepClaims);
 		}
 
 		const stepCounts = internalCountJourneySteps(

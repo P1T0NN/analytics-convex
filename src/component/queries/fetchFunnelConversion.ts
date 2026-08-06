@@ -7,17 +7,14 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import {
-	internalCollectDailyActorClaims,
-	internalCollectDailyMetricRows,
+	internalCollectActorClaimsForRange,
+	internalCollectMetricTotalRows,
 	internalCountDistinctActorsByDimensionFromClaims,
 	internalGetMetricTotalForRange,
 } from "../helpers/rollupReads";
 
 // UTILS
-import {
-	internalGetMetricConfigOrThrow,
-	internalGetMetricRollupGranularity,
-} from "../utils/shared/metricUtils";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 import { internalGetFunnelConfigOrThrow } from "../utils/shared/funnelUtils";
 import { internalResolveScope } from "../utils/shared/scopeUtils";
 import { startOfUtcDay } from "../../shared/utils/analyticsDateRangeUtils.js";
@@ -27,6 +24,7 @@ import {
 	internalAssertDateRange,
 } from "../validations/validations";
 import { internalBadRequest } from "../errors/errors";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import { computeConversionRatePercent } from "../../shared/utils/analyticsEvaluationUtils";
 
 // SCHEMAS
@@ -81,22 +79,23 @@ export const fetchFunnelConversion = query({
 		}
 
 		const scope = internalResolveScope(args.scope);
+		const budget = internalCreateReadBudget(config.settings);
 
 		if (!args.groupBy) {
-			const [numerator, denominator] = await Promise.all([
-				internalGetMetricTotalForRange(ctx, config, {
-					metric: numeratorMetric,
-					scope,
-					from: args.from,
-					to: args.to,
-				}),
-				internalGetMetricTotalForRange(ctx, config, {
-					metric: denominatorMetric,
-					scope,
-					from: args.from,
-					to: args.to,
-				}),
-			]);
+			const numerator = await internalGetMetricTotalForRange(ctx, config, {
+				metric: numeratorMetric,
+				scope,
+				from: args.from,
+				to: args.to,
+				budget,
+			});
+			const denominator = await internalGetMetricTotalForRange(ctx, config, {
+				metric: denominatorMetric,
+				scope,
+				from: args.from,
+				to: args.to,
+				budget,
+			});
 
 			return {
 				funnel: args.funnel,
@@ -127,35 +126,43 @@ export const fetchFunnelConversion = query({
 				startOfUtcDay(args.from) !== startOfUtcDay(args.to)
 			) {
 				return internalCountDistinctActorsByDimensionFromClaims(
-					await internalCollectDailyActorClaims(ctx, {
+					await internalCollectActorClaimsForRange(ctx, {
 						metric,
 						scope,
 						dimensionKey: groupBy,
 						from: args.from,
 						to: args.to,
 						settings: config.settings,
+						budget,
 					}),
 				);
 			}
 
 			return internalReduceMetricRollupTotalsByKey(
 				metricConfig.aggregation,
-				await internalCollectDailyMetricRows(ctx, {
+				await internalCollectMetricTotalRows(ctx, {
 					metric,
+					metricConfig,
 					scope,
 					dimensionKey: groupBy,
 					from: args.from,
 					to: args.to,
 					settings: config.settings,
-					granularity: internalGetMetricRollupGranularity(metricConfig),
+					budget,
 				}),
 			);
 		};
 
-		const [numeratorTotals, denominatorTotals] = await Promise.all([
-			collectTotalsByDimension(numeratorMetric, numeratorConfig),
-			collectTotalsByDimension(denominatorMetric, denominatorConfig),
-		]);
+		// Sequential on the shared budget — two grouped reads together stay
+		// under the per-query ceiling.
+		const numeratorTotals = await collectTotalsByDimension(
+			numeratorMetric,
+			numeratorConfig,
+		);
+		const denominatorTotals = await collectTotalsByDimension(
+			denominatorMetric,
+			denominatorConfig,
+		);
 
 		const dimensionValues = [
 			...new Set([

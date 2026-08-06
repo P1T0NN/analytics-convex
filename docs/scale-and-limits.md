@@ -66,11 +66,11 @@ rollups for hot metrics.
 | Table | Retention |
 | --- | --- |
 | `analyticsEvents` (raw) | Configurable — default **90 days**, purged by cron |
-| `analyticsDailyMetrics` (rollups) | Daily or hourly buckets; configurable via `rollupRetentionDays` |
+| `analyticsDailyMetrics` (rollups) | Day/hour buckets plus automatic month buckets; configurable via `rollupRetentionDays` |
 | `analyticsDailyActorClaims` (DAU) | Purged with rollup retention when enabled |
 | `analyticsJourneyStepClaims` (journeys) | Purged with rollup retention when enabled |
-| `analyticsUniqueEvents` | **Forever** — one row per unique key |
-| `analyticsConfigurations` | **Forever** — one row per config hash |
+| `analyticsUniqueEvents` | **Kept by contract** — each row is a once-ever guarantee; growth = unique keys you chose to track |
+| `analyticsConfigurations` | Auto-pruned — stale rows (> 90 days, not active) deleted on `writeConfiguration` |
 
 Raw events expire by default. Rollups stay until you set `rollupRetentionDays`
 (for example `730` for two years). High-cardinality dimensions are **blocked at
@@ -82,16 +82,18 @@ configure time** (`userId`, `sessionId`, etc.) — see
 ## Dimension cardinality (the #1 footgun)
 
 Each distinct dimension value creates rollup rows per metric, per scope, per
-bucket (day or hour), times shard count.
+bucket (day/hour plus month), times shard count on recent buckets (the
+compaction cron collapses shards on cold buckets).
 
 **Good dimensions:** `plan`, `feature`, `path`, `status` (tens of values)
 
 **Bad dimensions:** `userId`, `sessionId`, `requestId` (unbounded)
 
-If a query matches more than `maxRollupRowsPerQuery` rollup rows (default
-20_000, max 100_000), it throws `QUERY_TOO_LARGE`. Fix by narrowing the date
-range, reducing dimensions, or fixing your metric config — not by raising the
-limit blindly.
+If a query would read more than its shared budget of rollup rows (default and
+max 12_288 — kept under Convex's own transaction scan limit), it throws
+`QUERY_TOO_LARGE` with guidance. Fix by narrowing the date range, reducing
+dimensions, or fixing your metric config — the ceiling cannot be raised, by
+design.
 
 ---
 
@@ -114,13 +116,27 @@ That is **three scope partitions** per event per metric. Prefer
 
 | Setting | Default | Max |
 | --- | ---: | ---: |
-| `maxQueryRangeDays` | 366 | 3_660 |
-| `maxRollupRowsPerQuery` | 20_000 | 100_000 |
+| `maxQueryRangeDays` | 366 | **366 (hard ceiling)** |
+| `maxRollupRowsPerQuery` | 12_288 | **12_288 (75% of Convex's scan limit)** |
 | `maxBreakdownItems` | 12 | 100 |
 | `maxDashboardMetricsPerQuery` | — | 24 |
 
-Wide date ranges + hourly granularity + many dimension values = expensive reads
-even when indexed. Design dashboards for the range users actually need.
+Every query shares one read budget across all of its index reads, so no
+analytics query can reach Convex's own transaction limits — the library's
+`QUERY_TOO_LARGE` always fires first, with guidance.
+
+The 366-day range ceiling cannot be raised by settings. There is no minimum
+range — today-only queries are valid and cheap.
+
+Within that ceiling, read cost is decoupled from range length: totals decompose
+into month rollup rows plus partial-edge day rows, and a compaction cron
+collapses shard rows on cold buckets. A 366-day summary reads on the order of
+a hundred rows, not thousands. Full cost model, formulas, and carve-outs:
+[Performance](./performance.md).
+
+Hourly granularity over long ranges and grouped queries over many dimension
+values remain the expensive shapes — see the carve-out table in
+[Performance](./performance.md).
 
 ---
 
@@ -164,7 +180,8 @@ Notable caps:
 | Signal | Action |
 | --- | --- |
 | OCC conflicts on rollup writes | Increase shard count or move metric to `highVolume` |
-| High-volume backlog (pending events) | Shorter cron interval, larger batch, more catch-up batches |
+| `fetchIngestionHealth` reports `backlogExceedsCycle` | Shorter cron interval, larger batch, more catch-up batches |
+| `fetchDataAudit` reports orphaned metrics/journeys | `analytics.pruneData(ctx, { metrics, journeys })` |
 | `QUERY_TOO_LARGE` | Narrow range, remove dimensions, avoid hourly over long ranges |
 | Rollup table size growing fast | Audit dimensions and scopes; set `rollupRetentionDays` |
 | Need ad-hoc SQL over all raw history | Export pipeline + warehouse (see below) |

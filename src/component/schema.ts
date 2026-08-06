@@ -74,7 +74,11 @@ export default defineSchema({
 
 	analyticsDailyMetrics: defineTable({
 		metric: v.string(),
-		granularity: v.union(v.literal("day"), v.literal("hour")),
+		granularity: v.union(
+			v.literal("day"),
+			v.literal("hour"),
+			v.literal("month"),
+		),
 		bucketStart: v.number(),
 		scopeType: v.union(
 			v.literal("global"),
@@ -106,7 +110,10 @@ export default defineSchema({
 			"bucketStart",
 			"shard",
 		])
-		.index("by_bucket_start", ["bucketStart"]),
+		.index("by_bucket_start", ["bucketStart"])
+		// Compaction discovery: uncompacted rows have shard > 0, so this index
+		// lets the cron find exactly them without rescanning compacted history.
+		.index("by_shard_bucket_start", ["shard", "bucketStart"]),
 
 	analyticsDailyActorClaims: defineTable({
 		claimKey: v.string(),
@@ -121,12 +128,24 @@ export default defineSchema({
 		dimensionKey: v.string(),
 		dimensionValue: v.string(),
 		actorKey: v.string(),
+		/** Absent on day claims; "month" on the month-tier claim rows. */
+		granularity: v.optional(v.literal("month")),
 	})
 		.index("by_claim_key", ["claimKey"])
 		.index("by_metric_scope_dimension_bucket", [
 			"metric",
 			"scopeType",
 			"scopeId",
+			"dimensionKey",
+			"bucketStart",
+		])
+		// Month-tier distinct reads: one row per actor per month instead of
+		// one per actor per day.
+		.index("by_metric_scope_granularity_dim_bucket", [
+			"metric",
+			"scopeType",
+			"scopeId",
+			"granularity",
 			"dimensionKey",
 			"bucketStart",
 		])
@@ -164,12 +183,6 @@ export default defineSchema({
 			"bucketStart",
 		])
 		.index("by_bucket_start", ["bucketStart"]),
-
-	analyticsCounters: defineTable({
-		key: v.string(),
-		shard: v.number(),
-		value: v.number(),
-	}).index("by_key_and_shard", ["key", "shard"]),
 
 	analyticsUniqueEvents: defineTable({
 		key: v.string(),

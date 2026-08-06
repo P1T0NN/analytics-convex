@@ -3,9 +3,15 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { api } from "../_generated/api";
 
+// CONSTANTS
+import { ANALYTICS_WRITE_BUDGET_CEILING } from "../../shared/constants.js";
+
 // HELPERS
 import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
-import { internalAggregateEvent } from "../helpers/aggregateEvent";
+import {
+	internalApplyAggregatePlan,
+	internalPlanAggregateEvent,
+} from "../helpers/aggregateEvent";
 
 // UTILS
 import { internalToAggregateInput } from "../utils/analyticsEventPayloads";
@@ -54,15 +60,34 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 			};
 		}
 
-		await internalAggregateEvent(
-			ctx,
+		// Adaptive batch sizing: plan the merged writes first (pure CPU) and
+		// halve the batch until planned writes plus status patches fit the
+		// write budget. Pathological configs (every event a unique dimension
+		// value across many scopes) shrink the batch instead of blowing past
+		// Convex's per-mutation write limit; leftovers stay pending for the
+		// next self-scheduled batch.
+		let batch = pendingEvents;
+		let plan = internalPlanAggregateEvent(
 			config,
-			pendingEvents.map((event) => internalToAggregateInput(event)),
+			batch.map((event) => internalToAggregateInput(event)),
 			"highVolume",
 		);
+		while (
+			batch.length > 1 &&
+			plan.plannedWrites + batch.length > ANALYTICS_WRITE_BUDGET_CEILING
+		) {
+			batch = batch.slice(0, Math.ceil(batch.length / 2));
+			plan = internalPlanAggregateEvent(
+				config,
+				batch.map((event) => internalToAggregateInput(event)),
+				"highVolume",
+			);
+		}
+
+		await internalApplyAggregatePlan(ctx, plan);
 
 		const now = Date.now();
-		for (const event of pendingEvents) {
+		for (const event of batch) {
 			await ctx.db.patch("analyticsEvents", event._id, {
 				highVolumeStatus: "processed",
 				highVolumeAggregatedAt: now,
@@ -70,7 +95,8 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 		}
 
 		const shouldContinue =
-			pendingEvents.length === config.settings.highVolumeBatchSize &&
+			(pendingEvents.length === config.settings.highVolumeBatchSize ||
+				batch.length < pendingEvents.length) &&
 			remainingCatchupBatches > 0;
 
 		if (shouldContinue) {
@@ -85,7 +111,7 @@ export const processPendingHighVolumeAnalyticsEvents = mutation({
 		}
 
 		return {
-			processed: pendingEvents.length,
+			processed: batch.length,
 			scheduledNextBatch: shouldContinue,
 		};
 	},

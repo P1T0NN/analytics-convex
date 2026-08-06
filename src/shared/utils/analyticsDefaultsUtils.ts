@@ -7,12 +7,12 @@ export function internalDefaultAnalyticsSettings() {
 		highVolumeBatchIntervalMinutes: 1,
 		highVolumeMaxCatchupBatches: 4,
 		maxQueryRangeDays: 366,
-		maxRollupRowsPerQuery: 20_000,
+		maxRollupRowsPerQuery: 12_288,
 		maxBreakdownItems: 12,
 		rawEventRetentionDays: 90,
-		maxRawEventDeletesPerRun: 5_000,
+		maxRawEventDeletesPerRun: 4_000,
 		rollupRetentionDays: 0,
-		maxRollupDeletesPerRun: 5_000,
+		maxRollupDeletesPerRun: 4_000,
 		defaultTimezone: "UTC",
 	};
 }

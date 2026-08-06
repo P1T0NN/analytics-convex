@@ -8,6 +8,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 // HELPERS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 
 // UTILS
 import { internalResolveScope } from "../utils/shared/scopeUtils";
@@ -69,6 +70,7 @@ export const fetchSummary = query({
 			scope,
 			from: args.from,
 			to: args.to,
+			budget: internalCreateReadBudget(config.settings),
 		});
 
 		return {

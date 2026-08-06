@@ -91,6 +91,21 @@ export function createAnalyticsCronHandlers(
 				);
 			},
 		}),
+		compactAnalyticsRollups: internalMutationGeneric({
+			args: {
+				configHash: v.string(),
+			},
+			returns: v.object({
+				compacted: v.number(),
+				deleted: v.number(),
+				scheduledNextBatch: v.boolean(),
+			}),
+			handler: async (ctx: typesMutationCtx, args) => {
+				return await ctx.runMutation(component.lib.compactAnalyticsRollups, {
+					configHash: args.configHash,
+				});
+			},
+		}),
 		/** Pass this hash to cron registrations when using custom wrappers. */
 		configHash: configReference.configHash,
 	};

@@ -13,6 +13,7 @@
 - [Tracking](./tracking.md)
 - [Querying](./querying.md)
 - [Counters](./counters.md)
+- [Performance](./performance.md)
 - [Evaluation](./evaluation.md)
 - [Funnels](./funnels.md)
 - [Utilities](./utils.md)

@@ -17,6 +17,7 @@ export function registerAnalyticsCrons(
 		processPendingHighVolumeAnalyticsEvents: Parameters<Crons["interval"]>[2];
 		purgeStaleAnalyticsEvents: Parameters<Crons["interval"]>[2];
 		purgeStaleAnalyticsRollups: Parameters<Crons["interval"]>[2];
+		compactAnalyticsRollups: Parameters<Crons["interval"]>[2];
 	},
 	config: typesAnalyticsRuntimeConfig,
 	options: {
@@ -48,6 +49,13 @@ export function registerAnalyticsCrons(
 		"purge stale analytics rollups",
 		{ hours: options.retentionIntervalHours ?? 24 },
 		internalApi.purgeStaleAnalyticsRollups,
+		{ configHash },
+	);
+
+	crons.interval(
+		"compact analytics rollup shards",
+		{ hours: options.retentionIntervalHours ?? 24 },
+		internalApi.compactAnalyticsRollups,
 		{ configHash },
 	);
 }

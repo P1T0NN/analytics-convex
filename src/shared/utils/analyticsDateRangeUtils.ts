@@ -107,6 +107,66 @@ export function previousAnalyticsDayRange(range: typesAnalyticsDateRange) {
 	};
 }
 
+/** Start of the UTC calendar month after the one containing `timestamp`. */
+export function nextUtcMonthStart(timestamp: number) {
+	const date = new Date(timestamp);
+	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
+}
+
+/** Exclusive UTC end of a rollup bucket, per stored granularity. */
+export function utcRollupBucketEnd(
+	granularity: "day" | "hour" | "month",
+	bucketStart: number,
+) {
+	if (granularity === "hour") return bucketStart + HOUR_MS;
+	if (granularity === "day") return bucketStart + DAY_MS;
+	return nextUtcMonthStart(bucketStart);
+}
+
+/**
+ * Split an inclusive UTC day range into edge day-ranges plus the run of full
+ * calendar months it contains, so long-range reads can hit month rollup rows
+ * instead of one row per day. `months` is null when no full month fits — the
+ * caller should read plain day rows.
+ */
+export function decomposeUtcRangeForRollups(
+	from: number,
+	to: number,
+): {
+	dayRanges: Array<{ from: number; to: number }>;
+	months: { from: number; to: number } | null;
+} {
+	const fromDay = startOfUtcDay(from);
+	const toDay = startOfUtcDay(to);
+
+	const firstCandidate =
+		fromDay === startOfUtcMonth(fromDay) ? fromDay : nextUtcMonthStart(fromDay);
+
+	let lastFullMonth: number | null = null;
+	for (
+		let month = firstCandidate;
+		nextUtcMonthStart(month) - DAY_MS <= toDay;
+		month = nextUtcMonthStart(month)
+	) {
+		lastFullMonth = month;
+	}
+
+	if (lastFullMonth === null) {
+		return { dayRanges: [{ from: fromDay, to: toDay }], months: null };
+	}
+
+	const dayRanges: Array<{ from: number; to: number }> = [];
+	if (fromDay < firstCandidate) {
+		dayRanges.push({ from: fromDay, to: firstCandidate - DAY_MS });
+	}
+	const afterMonths = nextUtcMonthStart(lastFullMonth);
+	if (afterMonths <= toDay) {
+		dayRanges.push({ from: afterMonths, to: toDay });
+	}
+
+	return { dayRanges, months: { from: firstCandidate, to: lastFullMonth } };
+}
+
 export function startOfUtcWeek(timestamp: number = Date.now()) {
 	return startOfTimeZoneWeek(timestamp, ANALYTICS_UTC_TIMEZONE);
 }

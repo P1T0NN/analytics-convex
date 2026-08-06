@@ -7,6 +7,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalBuildDashboardMetricsForRange } from "../helpers/evaluateMetricForRange";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
@@ -79,6 +80,7 @@ export const fetchDashboardMetrics = query({
 			to: args.to,
 			includeComparison: args.includeComparison,
 			includeEvaluation: args.includeEvaluation,
+			budget: internalCreateReadBudget(config.settings),
 		});
 
 		return {

@@ -6,16 +6,16 @@ Call these through server helpers or `ctx.runQuery` / `ctx.runMutation` with you
 runtime config. These are Convex functions, not TypeScript helpers.
 
 **Mutations:** `writeConfiguration`, `writeTrack`, `writeMetricEvaluationOverride`,
-`writeCounterBump`, `writeCounterSet`
+`pruneAnalyticsData`, `backfillMonthActorClaims`
 
 **Queries:** `fetchConfiguration`, `fetchTimeSeries`, `fetchSummary`, `fetchBreakdown`,
 `fetchMetricComparison`, `fetchMetricConversion`, `fetchMetricEvaluation`,
 `fetchMetricEvaluationConfig`, `fetchDashboardMetrics`, `fetchFunnelConversion`,
 `fetchJourneyConversion`, `fetchMetricTotalsByDimension`, `fetchTopDimensionValue`,
-`fetchCounter`, `fetchCounters`
+`fetchDataAudit`, `fetchIngestionHealth`
 
 **Crons:** `processPendingHighVolumeAnalyticsEvents`, `purgeStaleAnalyticsEvents`,
-`purgeStaleAnalyticsRollups`
+`purgeStaleAnalyticsRollups`, `compactAnalyticsRollups`
 
 ### Package entry (`@piton-/analytics-convex`)
 

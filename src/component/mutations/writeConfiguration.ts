@@ -5,6 +5,9 @@ import { mutation } from "../_generated/server";
 // CONFIG
 import { internalDefaultAnalyticsSettings } from "../../shared/utils/analyticsDefaultsUtils.js";
 
+// CONSTANTS
+import { CONFIGURATION_RETENTION_MS } from "../../shared/constants.js";
+
 // HELPERS
 import { internalEnsureConfiguration } from "../helpers/resolveConfiguration";
 
@@ -74,6 +77,20 @@ export const writeConfiguration = mutation({
 				configHash,
 			},
 		});
+
+		// Old config rows exist only so hash-only calls (crons, scheduled
+		// writes) can resolve them; after a deploy those switch to the new hash
+		// within minutes. Rows stale for the whole retention window are dead —
+		// prune them here so the table stays bounded.
+		const staleBefore = Date.now() - CONFIGURATION_RETENTION_MS;
+		const candidates = await ctx.db
+			.query("analyticsConfigurations")
+			.take(100);
+		for (const row of candidates) {
+			if (row.hash !== configHash && row.createdAt < staleBefore) {
+				await ctx.db.delete("analyticsConfigurations", row._id);
+			}
+		}
 
 		return { configHash };
 	},

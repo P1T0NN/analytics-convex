@@ -20,10 +20,15 @@ regardless of event volume.
 | `analyticsConfigurations` | Registered runtime config blobs keyed by hash          | Forever                         |
 | `analyticsMetricEvaluationOverrides` | Per-scope evaluation config overrides (metric + scope) | Forever |
 | `analyticsEvents`       | Raw event log with idempotency keys                       | Configurable (default 90 days)  |
-| `analyticsDailyMetrics` | Pre-aggregated rollup rows (`granularity`: day or hour) | Configurable via `rollupRetentionDays` |
+| `analyticsDailyMetrics` | Pre-aggregated rollup rows (`granularity`: day, hour, or month) | Configurable via `rollupRetentionDays`; month rows kept until their whole month is stale |
 | `analyticsDailyActorClaims` | Distinct-actor claims for `distinctActors` metrics | Purged with rollup retention |
 | `analyticsJourneyStepClaims` | Same-actor journey step claims | Purged with rollup retention |
 | `analyticsUniqueEvents` | Product-level uniqueness claims by deterministic key | Forever |
+
+Exact live counts ("how many rows exist right now") are **not** in this list.
+They live in `@convex-dev/aggregate` via the `@piton-/analytics-convex/counters`
+entry point, attached to your own app tables — a component cannot see them.
+See [Counters](./counters.md).
 
 ### Data flow
 
@@ -41,8 +46,17 @@ writeTrack() mutation
   → inserts raw event into analyticsEvents
   → for each matching metric:
       → low/medium volume: updates rollup rows inline (sharded writes)
+      → day metrics additionally update a month rollup row (long-range read tier)
       → high volume: marks event as pending, cron processes it in batches
+
+[cron] compactAnalyticsRollups
+  → collapses shard rows on buckets older than ~2 days into one shard-0 row
+  → historical reads cost one row per bucket; recent buckets keep their shards
 ```
+
+Reads decompose date ranges into month rows plus partial-edge day rows, so any
+range up to the 366-day cap stays a bounded indexed read — see
+[Performance](./performance.md).
 
 Events, metrics, and settings are runtime config defined in your app's
 `convex/analytics.ts`. The generated app-side helpers pass `configHash` (and `config` on
@@ -70,6 +84,7 @@ to the user, analytics catches up in the background.
 | ---- | ------- |
 | `src/client/index.ts` | Public package exports — the only surface consumer apps should use |
 | `src/testing/index.ts` | Public test helpers (`@piton-/analytics-convex/testing`) |
+| `src/counters/index.ts` | Public counters entry (`@piton-/analytics-convex/counters`) |
 | `src/component/lib.ts` | Component Convex exports (`components.analytics.lib.*`) |
 | `src/component/mutations/`, `queries/`, `crons/` | Component Convex functions |
 | `src/component/helpers/`, `validations/`, `utils/` | Component implementation (functions prefixed `internal*`) |

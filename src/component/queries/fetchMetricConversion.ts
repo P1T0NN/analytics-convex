@@ -7,6 +7,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalGetMetricTotalForRange } from "../helpers/rollupReads";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 
 // UTILS
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
@@ -50,20 +51,23 @@ export const fetchMetricConversion = query({
 
 		const scope = internalResolveScope(args.scope);
 
-		const [numerator, denominator] = await Promise.all([
-			internalGetMetricTotalForRange(ctx, config, {
-				metric: args.numeratorMetric,
-				scope,
-				from: args.from,
-				to: args.to,
-			}),
-			internalGetMetricTotalForRange(ctx, config, {
-				metric: args.denominatorMetric,
-				scope,
-				from: args.from,
-				to: args.to,
-			}),
-		]);
+		// Sequential on one shared budget — both reads together stay under the
+		// per-query ceiling.
+		const budget = internalCreateReadBudget(config.settings);
+		const numerator = await internalGetMetricTotalForRange(ctx, config, {
+			metric: args.numeratorMetric,
+			scope,
+			from: args.from,
+			to: args.to,
+			budget,
+		});
+		const denominator = await internalGetMetricTotalForRange(ctx, config, {
+			metric: args.denominatorMetric,
+			scope,
+			from: args.from,
+			to: args.to,
+			budget,
+		});
 
 		return {
 			numeratorMetric: args.numeratorMetric,

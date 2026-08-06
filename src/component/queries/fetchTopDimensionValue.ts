@@ -14,6 +14,7 @@ import {
 	internalGetMetricRollupGranularity,
 } from "../utils/shared/metricUtils";
 import { internalResolveScope, internalToMetricScope } from "../utils/shared/scopeUtils";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import { internalAssertAllowedDimension } from "../validations/validations";
 
 // SCHEMAS
@@ -57,6 +58,7 @@ export const fetchTopDimensionValue = query({
 			aggregation: metricConfig.aggregation,
 			settings: config.settings,
 			granularity: internalGetMetricRollupGranularity(metricConfig),
+			budget: internalCreateReadBudget(config.settings),
 			...(args.days !== undefined ? { days: args.days } : {}),
 		});
 	},

@@ -148,6 +148,12 @@ export function defineAnalytics<
 					{ configHash: string },
 					unknown
 				>;
+				compactAnalyticsRollups: FunctionReference<
+					"mutation",
+					"internal",
+					{ configHash: string },
+					unknown
+				>;
 			},
 			cronOptions?: {
 				highVolumeBatchIntervalMinutes?: number;

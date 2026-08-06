@@ -1,123 +1,227 @@
 # Counters
 
-Exact transactional state counters, separate from event tracking. Use them to
-answer "how many rows exist right now" (total guests, reservations per status)
-in O(1) instead of scanning a table with `.collect()` inside a reactive query.
+Exact live counters, separate from event tracking. Use them to answer "how many
+rows exist **right now**" (bookings for an accommodation, members in an org) in
+O(log n) instead of scanning a table with `.collect()` inside a reactive query.
+
+Counters are backed by [`@convex-dev/aggregate`](https://github.com/get-convex/aggregate)
+and wired through database triggers, so they update in the same transaction as
+the row change and can never be forgotten at a call site.
+
+> **Changed in 2.0.** The `analytics.counters.bump/get/set` helpers were removed.
+> See [Migrating from 1.x](#migrating-from-1x) at the bottom.
 
 ## State vs events
 
 The rest of this library measures **activity**: tracked events roll up into
 daily/hourly metrics that are monotonic, retention-pruned, and
-approximate-by-contract. Counters measure **state**: they must decrement on
-deletes and status flips and stay exactly right forever. The two are
-deliberately not connected — there is no way to derive a counter from a tracked
-event, and no config option to wire a metric to one. Keep tracking your events
-for dashboards; keep counters for live row counts.
+approximate-by-contract. Counters measure **state**: they must go down on
+deletes and stay exactly right forever.
 
-**When to use counters vs metrics:** if the number can only go up and "roughly
-right over a date range" is fine (page views, signups this week), track an
-event and use a metric. If the number is the current size of something and must
-be exact — including going down — (guests in the system, pending reservations),
-use a counter. When in doubt: would deleting a row change the number? Then it's
-a counter.
+| Question | Tool |
+| --- | --- |
+| "How many bookings does this accommodation have?" | Counter |
+| "How many bookings were made last month?" | Metric (`fetchSummary`) |
+| "How many members are in this org?" | Counter |
+| "How did signups trend over 30 days?" | Metric (`fetchTimeSeries`) |
 
-## Transactionality guarantee
+The test: **would deleting a row change the number?** Then it's a counter.
 
-`bump` and `set` are called from your own Convex mutation and participate in
-**that mutation's transaction**. Bump in the same mutation that inserts,
-deletes, or patches the rows you are counting and the counter can never drift
-from table truth — either both commit or neither does.
+One consequence worth stating plainly — a counter reflects rows that *exist*.
+If you hard-delete bookings and still want "bookings ever made", that is a
+lifetime total: track a `booking.created` event and use a `count` metric. Do
+not try to make a counter answer it.
 
-Keys are plain strings your app owns and namespaces (e.g. `guests.total`,
-`reservations.pending`). Deltas may be negative and values may go negative;
-the library does not clamp — a negative count means an app bug, and `set`
-exists to repair it.
+## Install
 
-## API (server helpers only)
+Counters live behind their own entry point, so the package root stays
+dependency-free. Only apps that use counters need these:
 
-Counters are not exposed on `analytics.client` — call them from your own
-Convex functions, which already enforce your auth.
-
-```ts
-analytics.counters.bump(ctx, key, delta, opts?)  // mutation ctx; opts.shards defaults to 1
-analytics.counters.get(ctx, key)                 // query or mutation ctx; 0 if absent
-analytics.counters.getMany(ctx, keys)            // Record<string, number>; 0 for absent keys
-analytics.counters.set(ctx, key, value)          // mutation ctx; backfill/repair
+```bash
+npm install @convex-dev/aggregate convex-helpers
 ```
 
-## Worked example: counting a `guests` table
+Register one aggregate instance per counter. Each instance is an independent
+B-tree, so give each a distinct name:
 
 ```ts
-export const createGuest = mutation({
-	args: { name: v.string() },
+// convex/convex.config.ts
+import { defineApp } from "convex/server";
+import analytics from "@piton-/analytics-convex/convex.config.js";
+import aggregate from "@convex-dev/aggregate/convex.config.js";
+
+const app = defineApp();
+app.use(analytics);
+app.use(aggregate, { name: "bookingsByAccommodation" });
+
+export default app;
+```
+
+## Declare your counters
+
+```ts
+// convex/counters.ts
+import { defineCounters } from "@piton-/analytics-convex/counters";
+import { components } from "./_generated/api";
+import type { DataModel } from "./_generated/dataModel";
+
+export const { counters, mutation, internalMutation } =
+	defineCounters<DataModel>()((counter) => ({
+		bookings: counter("bookings", {
+			component: components.bookingsByAccommodation,
+			namespace: (doc) => doc.accommodationId,
+			sumValue: (doc) => doc.totalPrice,
+		}),
+	}));
+```
+
+`defineCounters` is curried — `<DataModel>()` first, then a callback that
+receives a `counter` builder already bound to your data model. Naming the table
+first is what lets `doc` narrow to that table's document, so
+`doc.accommodationId` is typed and misspellings are caught. It mirrors the
+`metrics: ({ count, sum }) => ({ ... })` callback in `defineAnalytics`.
+
+| Field | Purpose |
+| --- | --- |
+| *(first argument)* | App table this counter follows |
+| `component` | The `components.<name>` handle from `app.use(aggregate, { name })` |
+| `namespace` | Partitions the tree. **This is the scaling lever** — see below |
+| `sortKey` | Order within a namespace. Defaults to `_creationTime` |
+| `sumValue` | Makes `sum()` meaningful. Omit and `sum()` returns 0 |
+
+## Use the wrapped mutation
+
+This is the part that matters. Triggers only fire through the wrapper:
+
+```ts
+// convex/bookings.ts
+import { mutation } from "./counters";   // NOT from ./_generated/server
+
+export const create = mutation({
+	args: { accommodationId: v.id("accommodations"), totalPrice: v.number() },
 	handler: async (ctx, args) => {
-		await ctx.db.insert("guests", { name: args.name });
-		await analytics.counters.bump(ctx, "guests.total", 1);
+		// No bump call. The trigger handles it.
+		await ctx.db.insert("bookings", args);
 	},
 });
 
-export const deleteGuest = mutation({
-	args: { guestId: v.id("guests") },
+export const cancel = mutation({
+	args: { bookingId: v.id("bookings") },
 	handler: async (ctx, args) => {
-		await ctx.db.delete(args.guestId);
-		await analytics.counters.bump(ctx, "guests.total", -1);
+		await ctx.db.delete("bookings", args.bookingId);
 	},
 });
 ```
 
-Status flips are two bumps in the same mutation:
+> **The one rule:** every mutation that writes a followed table must use this
+> `mutation` (or your own wrapper composed with `wrapDB`). A raw `mutation` from
+> `_generated/server` skips the trigger and the count drifts silently and
+> permanently. This is the single failure mode — it is worth a lint rule.
+
+Already have your own `customMutation` (auth, rate limiting)? Compose instead
+of replacing:
 
 ```ts
-export const confirmReservation = mutation({
-	args: { reservationId: v.id("reservations") },
+import { customCtx, customMutation } from "convex-helpers/server/customFunctions";
+import { mutation as rawMutation } from "./_generated/server";
+import { wrapDB } from "./counters";
+
+export const mutation = customMutation(rawMutation, customCtx(wrapDB));
+```
+
+## Read them
+
+```ts
+export const accommodationStats = query({
+	args: { accommodationId: v.id("accommodations") },
+	handler: async (ctx, args) => ({
+		bookings: await counters.bookings.count(ctx, args.accommodationId),
+		revenue: await counters.bookings.sum(ctx, args.accommodationId),
+	}),
+});
+```
+
+The namespace argument is required exactly when the definition declares a
+`namespace` function, and rejected when it doesn't — enforced at the type level.
+
+Need more than count and sum? The raw aggregate is exposed:
+
+```ts
+counters.bookings.aggregate.min(ctx, { namespace: accommodationId });
+counters.bookings.aggregate.at(ctx, 0, { namespace: accommodationId });
+counters.bookings.aggregate.paginate(ctx, { namespace: accommodationId });
+```
+
+## Namespaces are the scaling lever
+
+Each namespace is a **separate B-tree**. Writes to different namespaces never
+contend with each other, so choosing the right namespace is what makes counters
+scale with your row and user count.
+
+```ts
+namespace: (doc) => doc.accommodationId   // bookings for A never block bookings for B
+```
+
+Without a namespace, every write to the table touches one shared tree, and
+concurrent writes contend at its root. Namespace by the id you scope your reads
+by and the problem mostly disappears on its own.
+
+If a **single** namespace is still write-hot, the aggregate exposes two knobs
+(`rootLazy` defaults to `true` already, which avoids the worst of it):
+
+```ts
+// One-off internal mutation. Clears the tree, so backfill afterwards.
+await counters.bookings.aggregate.clear(ctx, {
+	namespace: accommodationId,
+	maxNodeSize: 32,   // wider tree, fewer shard collisions, slower reads
+	rootLazy: true,
+});
+```
+
+## Backfill existing rows
+
+An aggregate only sees writes that happen after the trigger is wired. A table
+with existing rows reads **0** until backfilled. Run this once per counter:
+
+```ts
+// convex/backfill.ts
+export const backfillBookings = internalMutation({
+	args: { cursor: v.optional(v.union(v.string(), v.null())) },
 	handler: async (ctx, args) => {
-		await ctx.db.patch(args.reservationId, { status: "confirmed" });
-		await analytics.counters.bump(ctx, "reservations.pending", -1);
-		await analytics.counters.bump(ctx, "reservations.confirmed", 1);
+		const result = await counters.bookings.backfill(ctx, {
+			cursor: args.cursor ?? null,
+			pageSize: 200,
+		});
+
+		if (!result.isDone) {
+			await ctx.scheduler.runAfter(0, internal.backfill.backfillBookings, {
+				cursor: result.cursor,
+			});
+		}
+
+		return result;
 	},
 });
 ```
 
-Reading in a dashboard query subscribes only to those keys' rows — writes to
-the `guests` table itself never invalidate it:
+`backfill` uses `insertIfDoesNotExist`, so re-running a page is safe and you can
+backfill while live writes continue.
 
-```ts
-export const dashboardCounts = query({
-	args: {},
-	handler: async (ctx) => {
-		return await analytics.counters.getMany(ctx, [
-			"guests.total",
-			"reservations.pending",
-			"reservations.confirmed",
-		]);
-	},
-});
-```
+## Migrating from 1.x
 
-## Sharding: the contention escape hatch
+The 1.1.0 counters (`analyticsCounters` table, `bump`/`get`/`getMany`/`set`)
+are gone. There is no compatibility shim — the data models are different.
 
-By default a key is one row. Every bump rewrites that row, so once a single
-key sustains roughly **tens of writes per second**, mutations start retrying on
-OCC conflicts. When that appears, raise `shards` at the hot call site:
+1. Install `@convex-dev/aggregate` and `convex-helpers`.
+2. `app.use(aggregate, { name })` per counter in `convex.config.ts`.
+3. Replace key strings with a `defineCounters` declaration. A key like
+   `` `accommodation:${id}:bookings` `` becomes
+   `counter("bookings", { namespace: (doc) => doc.accommodationId, ... })`.
+4. Delete every `analytics.counters.bump(...)` call. Switch those mutations to
+   the wrapped `mutation`.
+5. Replace `counters.get(ctx, key)` with `counters.<name>.count(ctx, namespace)`.
+6. Backfill (above), then verify against a `.collect().length` on a small table
+   before deleting the old counter rows.
 
-```ts
-await analytics.counters.bump(ctx, "guests.total", 1, { shards: 8 });
-```
-
-Each bump then lands on a uniform-random shard row, spreading contention.
-Reads always sum **all** rows for a key, so nothing else changes: `get` stays
-correct with any mix of shard configs across call sites, old rows keep
-counting, and you can raise or lower `shards` at any time without a migration.
-Don't shard preemptively — every shard adds a row to each read.
-
-## Backfill and repair
-
-`set` writes the value to shard 0 and deletes all other shard rows in one
-transaction. Use it to initialize a counter for an existing table or to repair
-drift caused by an app bug (e.g. a delete path that forgot to bump):
-
-```ts
-// One-off internal mutation; batch with .take() if the table is large.
-const guests = await ctx.db.query("guests").collect();
-await analytics.counters.set(ctx, "guests.total", guests.length);
-```
+The old `analyticsCounters` rows are orphaned once the component is upgraded;
+nothing reads them and they carry no cost beyond storage.

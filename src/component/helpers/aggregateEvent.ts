@@ -65,19 +65,27 @@ async function claimJourneyStepsInOrder(
 	);
 }
 
+export type typesAggregatePlan = {
+	increments: typesMetricRollupIncrement[];
+	distinctTargets: typesDistinctActorRollupTarget[];
+	journeyTargets: typesJourneyStepTarget[];
+	/** Upper bound on document writes applying this plan can perform. */
+	plannedWrites: number;
+};
+
 /**
- * Apply rollup writes for a batch of accepted events.
+ * Build the merged write plan for a batch without touching the database.
  *
- * Increments are merged per rollup row before writing, so a batch touching
- * the same metric/scope/dimension/bucket performs one read and one write
- * per row instead of one per event.
+ * Increments are merged per rollup row, so a batch touching the same
+ * metric/scope/dimension/bucket performs one read and one write per row
+ * instead of one per event. `plannedWrites` lets callers shrink a batch
+ * before applying so a single mutation never approaches Convex write limits.
  */
-export async function internalAggregateEvent(
-	ctx: MutationCtx,
+export function internalPlanAggregateEvent(
 	config: typesAnalyticsConfigState,
 	events: typesAnalyticsAggregateEventInput[],
 	mode: typesRollupMode,
-) {
+): typesAggregatePlan {
 	const incrementsByKey = new Map<string, typesMetricRollupIncrement>();
 	const distinctTargetsByKey = new Map<string, typesDistinctActorRollupTarget>();
 	const journeyTargetsByKey = new Map<string, typesJourneyStepTarget>();
@@ -128,15 +136,46 @@ export async function internalAggregateEvent(
 		}
 	}
 
+	const increments = [...incrementsByKey.values()];
+	const distinctTargets = [...distinctTargetsByKey.values()];
+	const journeyTargets = [...journeyTargetsByKey.values()];
+
+	return {
+		increments,
+		distinctTargets,
+		journeyTargets,
+		// Per distinct target: day claim + month claim + rollup increment.
+		plannedWrites:
+			increments.length + distinctTargets.length * 3 + journeyTargets.length,
+	};
+}
+
+export async function internalApplyAggregatePlan(
+	ctx: MutationCtx,
+	plan: typesAggregatePlan,
+) {
 	await Promise.all([
-		...[...incrementsByKey.values()].map((increment) =>
+		...plan.increments.map((increment) =>
 			internalIncrementDailyMetric(ctx, increment),
 		),
-		...[...distinctTargetsByKey.values()].map((target) =>
+		...plan.distinctTargets.map((target) =>
 			internalClaimDailyActorRollup(ctx, target),
 		),
-		claimJourneyStepsInOrder(ctx, [...journeyTargetsByKey.values()]),
+		claimJourneyStepsInOrder(ctx, plan.journeyTargets),
 	]);
+}
+
+/** Plan and apply in one step — the path for bounded (≤100 event) batches. */
+export async function internalAggregateEvent(
+	ctx: MutationCtx,
+	config: typesAnalyticsConfigState,
+	events: typesAnalyticsAggregateEventInput[],
+	mode: typesRollupMode,
+) {
+	await internalApplyAggregatePlan(
+		ctx,
+		internalPlanAggregateEvent(config, events, mode),
+	);
 }
 
 function internalBuildJourneyTargetDedupeKey(target: typesJourneyStepTarget) {

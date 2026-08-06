@@ -3,9 +3,14 @@
 import { describe, expect, it } from "vitest";
 import { api } from "../../component/_generated/api";
 import { ANALYTICS_LIMITS } from "../../shared/constants.js";
-import {internalCreateAnalyticsComponentTest,
+import {
+	DAY_MS,
+	internalAnalyticsConfigArgs,
+	internalCreateAnalyticsComponentTest,
 	internalPageViewsConfiguration,
-	internalRuntimeConfiguration, internalAnalyticsConfigArgs } from "../../testUtils/componentTestUtils";
+	internalRuntimeConfiguration,
+} from "../../testUtils/componentTestUtils";
+import { startOfUtcDay } from "../../shared/utils/analyticsDateRangeUtils.js";
 
 const modules = import.meta.glob("../../component/**/*.ts");
 
@@ -94,6 +99,62 @@ describe("analytics hard limits", () => {
 				},
 			}),
 		).rejects.toThrow(/maxBreakdownItems/);
+	});
+
+	it("caps the query range at one year and still allows a single day", async () => {
+		const t = internalCreateAnalyticsComponentTest(modules);
+		const config = internalPageViewsConfiguration();
+		const today = startOfUtcDay(Date.UTC(2026, 0, 10));
+
+		expect(ANALYTICS_LIMITS.maxQueryRangeDays).toBe(366);
+
+		// Settings cannot raise the ceiling.
+		await expect(
+			t.mutation(api.lib.writeConfiguration, {
+				events: [{ name: "page.viewed", label: "Page viewed" }],
+				metrics: [
+					{
+						name: "pageViews",
+						label: "Page views",
+						unit: "count",
+						eventNames: ["page.viewed"],
+						aggregation: "count",
+					},
+				],
+				settings: {
+					maxQueryRangeDays: ANALYTICS_LIMITS.maxQueryRangeDays + 1,
+				},
+			}),
+		).rejects.toThrow(/maxQueryRangeDays/);
+
+		// Today-only stays valid — there is no minimum range.
+		await expect(
+			t.query(api.lib.fetchSummary, {
+				...internalAnalyticsConfigArgs(config),
+				metric: "pageViews",
+				from: today,
+				to: today,
+			}),
+		).resolves.toMatchObject({ value: 0 });
+
+		// 366 days inclusive is allowed, 367 is not.
+		await expect(
+			t.query(api.lib.fetchSummary, {
+				...internalAnalyticsConfigArgs(config),
+				metric: "pageViews",
+				from: today - 365 * DAY_MS,
+				to: today,
+			}),
+		).resolves.toMatchObject({ value: 0 });
+
+		await expect(
+			t.query(api.lib.fetchSummary, {
+				...internalAnalyticsConfigArgs(config),
+				metric: "pageViews",
+				from: today - 366 * DAY_MS,
+				to: today,
+			}),
+		).rejects.toThrow(/limited to 366 days/);
 	});
 
 	it("rejects batches larger than the hard batch limit", async () => {

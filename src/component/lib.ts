@@ -9,16 +9,22 @@ export { writeTrack } from "./mutations/writeTrack.js";
 /** Set or clear a per-scope evaluation override for one metric. */
 export { writeMetricEvaluationOverride } from "./mutations/writeMetricEvaluationOverride.js";
 
-/** Add a delta to an exact state counter (transactional with the caller). */
-export { writeCounterBump } from "./mutations/writeCounterBump.js";
+/** Delete rollups/claims for metrics or journeys removed from the config. */
+export { pruneAnalyticsData } from "./mutations/pruneAnalyticsData.js";
 
-/** Overwrite a counter with an absolute value, collapsing shards (backfill/repair). */
-export { writeCounterSet } from "./mutations/writeCounterSet.js";
+/** One-time month-claim backfill for pre-2.0 distinctActors data. */
+export { backfillMonthActorClaims } from "./mutations/backfillMonthActorClaims.js";
 
 // QUERIES
 
 /** Read the current analytics config (events, metrics, settings). */
 export { fetchConfiguration } from "./queries/fetchConfiguration.js";
+
+/** Ghost-data audit: orphaned metrics/journeys and stale stored configs. */
+export { fetchDataAudit } from "./queries/fetchDataAudit.js";
+
+/** High-volume ingestion backlog visibility (pending count, oldest age). */
+export { fetchIngestionHealth } from "./queries/fetchIngestionHealth.js";
 
 /** Daily bucketed chart data with optional dimension grouping. */
 export { fetchTimeSeries } from "./queries/fetchTimeSeries.js";
@@ -56,12 +62,6 @@ export { fetchMetricTotalsByDimension } from "./queries/fetchMetricTotalsByDimen
 /** Single highest-value dimension entry, or null. */
 export { fetchTopDimensionValue } from "./queries/fetchTopDimensionValue.js";
 
-/** Exact current value of one counter key (0 if absent). */
-export { fetchCounter } from "./queries/fetchCounter.js";
-
-/** Exact current values for multiple counter keys (0 for absent keys). */
-export { fetchCounters } from "./queries/fetchCounters.js";
-
 // CRONS
 
 /** @internal - batch-aggregate pending high-volume events. */
@@ -72,3 +72,6 @@ export { purgeStaleAnalyticsEvents } from "./crons/purgeStaleAnalyticsEvents.js"
 
 /** @internal - delete rollup rows past retention window. */
 export { purgeStaleAnalyticsRollups } from "./crons/purgeStaleAnalyticsRollups.js";
+
+/** @internal - collapse shard rows on cold rollup buckets into shard 0. */
+export { compactAnalyticsRollups } from "./crons/compactAnalyticsRollups.js";

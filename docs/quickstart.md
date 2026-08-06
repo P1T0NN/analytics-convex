@@ -174,6 +174,7 @@ export const {
 	processPendingHighVolumeAnalyticsEvents,
 	purgeStaleAnalyticsEvents,
 	purgeStaleAnalyticsRollups,
+	compactAnalyticsRollups,
 } = analytics.crons;
 ```
 

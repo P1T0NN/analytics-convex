@@ -8,17 +8,15 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import {
-	internalCollectDailyActorClaims,
-	internalCollectDailyMetricRows,
+	internalCollectActorClaimsForRange,
+	internalCollectMetricTotalRows,
 	internalCountDistinctActorsByDimensionFromClaims,
 } from "../helpers/rollupReads";
-import {
-	internalGetMetricConfigOrThrow,
-	internalGetMetricRollupGranularity,
-} from "../utils/shared/metricUtils";
+import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
 import { internalResolveScope } from "../utils/shared/scopeUtils";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import {
 	startOfUtcDay,
 } from "../../shared/utils/analyticsDateRangeUtils.js";
@@ -94,28 +92,31 @@ export const fetchBreakdown = query({
 		const scope = internalResolveScope(args.scope);
 		const fromDay = startOfUtcDay(args.from);
 		const toDay = startOfUtcDay(args.to);
+		const budget = internalCreateReadBudget(config.settings);
 		const totals =
 			metricConfig.aggregation === "distinctActors" && fromDay !== toDay
 				? internalCountDistinctActorsByDimensionFromClaims(
-						await internalCollectDailyActorClaims(ctx, {
+						await internalCollectActorClaimsForRange(ctx, {
 							metric: args.metric,
 							scope,
 							dimensionKey: args.groupBy,
 							from: args.from,
 							to: args.to,
 							settings: config.settings,
+							budget,
 						}),
 					)
 				: internalReduceMetricRollupTotalsByKey(
 						metricConfig.aggregation,
-						await internalCollectDailyMetricRows(ctx, {
+						await internalCollectMetricTotalRows(ctx, {
 							metric: args.metric,
+							metricConfig,
 							scope,
 							dimensionKey: args.groupBy,
 							from: args.from,
 							to: args.to,
 							settings: config.settings,
-							granularity: internalGetMetricRollupGranularity(metricConfig),
+							budget,
 						}),
 					);
 

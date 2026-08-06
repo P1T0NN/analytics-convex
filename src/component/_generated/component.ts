@@ -24,6 +24,103 @@ import type { FunctionReference } from "convex/server";
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
     crons: {
+      compactAnalyticsRollups: {
+        compactAnalyticsRollups: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+            remainingBatches?: number;
+          },
+          { compacted: number; deleted: number; scheduledNextBatch: boolean },
+          Name
+        >;
+      };
       processPendingHighVolumeAnalyticsEvents: {
         processPendingHighVolumeAnalyticsEvents: FunctionReference<
           "mutation",
@@ -327,6 +424,108 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       };
     };
     lib: {
+      backfillMonthActorClaims: FunctionReference<
+        "mutation",
+        "internal",
+        { cursor?: string | null },
+        { ensured: number; isDone: boolean; processed: number },
+        Name
+      >;
+      compactAnalyticsRollups: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+          remainingBatches?: number;
+        },
+        { compacted: number; deleted: number; scheduledNextBatch: boolean },
+        Name
+      >;
       fetchBreakdown: FunctionReference<
         "query",
         "internal",
@@ -623,20 +822,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
-      fetchCounter: FunctionReference<
-        "query",
-        "internal",
-        { key: string },
-        number,
-        Name
-      >;
-      fetchCounters: FunctionReference<
-        "query",
-        "internal",
-        { keys: Array<string> },
-        Record<string, number>,
-        Name
-      >;
       fetchDashboardMetrics: FunctionReference<
         "query",
         "internal",
@@ -792,6 +977,104 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      fetchDataAudit: FunctionReference<
+        "query",
+        "internal",
+        {
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+        },
+        {
+          configurations: { count: number; prunableCount: number };
+          orphanedJourneys: Array<string>;
+          orphanedMetrics: Array<string>;
+        },
+        Name
+      >;
       fetchFunnelConversion: FunctionReference<
         "query",
         "internal",
@@ -909,6 +1192,105 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           ratePercent?: number;
           scope: any;
           steps: Array<string>;
+        },
+        Name
+      >;
+      fetchIngestionHealth: FunctionReference<
+        "query",
+        "internal",
+        {
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+        },
+        {
+          backlogExceedsCycle: boolean;
+          drainPerCycle: number;
+          oldestPendingAgeMs: number | null;
+          pendingAtLeast: number;
         },
         Name
       >;
@@ -2119,6 +2501,103 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { processed: number; scheduledNextBatch: boolean },
         Name
       >;
+      pruneAnalyticsData: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config?: {
+            configHash?: string;
+            events: Array<{
+              label: string;
+              name: string;
+              properties?: Record<string, "string" | "number" | "boolean">;
+              requiredProperties?: Array<string>;
+            }>;
+            funnels?: Record<string, { label: string; steps: Array<string> }>;
+            journeys?: Record<
+              string,
+              {
+                breakdownProperty?: string;
+                label: string;
+                steps: Array<string>;
+              }
+            >;
+            metrics: Array<{
+              actorProperty?: string;
+              adminOnly?: boolean;
+              aggregation:
+                | "count"
+                | "sum"
+                | "avg"
+                | "min"
+                | "max"
+                | "distinctActors";
+              description?: string;
+              dimensions?: Array<string>;
+              evaluation?:
+                | {
+                    badGrowthPercent: number;
+                    excellentGrowthPercent: number;
+                    goodGrowthPercent: number;
+                    kind: "comparison";
+                    minVolumeForComparison?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    excellentRatePercent: number;
+                    goodRatePercent: number;
+                    kind: "conversion";
+                    minDenominator?: number;
+                  }
+                | {
+                    badRatePercent: number;
+                    denominatorMetric: string;
+                    goodRatePercent: number;
+                    kind: "inverseRate";
+                    minDenominator?: number;
+                  }
+                | {
+                    badPercentOfGoal: number;
+                    excellentPercentOfGoal: number;
+                    goodPercentOfGoal: number;
+                    kind: "goal";
+                    minValueForEvaluation?: number;
+                    targetValue: number;
+                  };
+              eventNames: Array<string>;
+              label: string;
+              name: string;
+              rollupGranularity?: "day" | "hour";
+              trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+              unit: "count" | "currency" | "bytes";
+              valueProperty?: string;
+            }>;
+            settings: {
+              defaultTimezone?: string;
+              highVolumeBatchIntervalMinutes: number;
+              highVolumeBatchSize: number;
+              highVolumeMaxCatchupBatches: number;
+              highVolumeShardCount: number;
+              maxBreakdownItems: number;
+              maxQueryRangeDays: number;
+              maxRawEventDeletesPerRun: number;
+              maxRollupDeletesPerRun: number;
+              maxRollupRowsPerQuery: number;
+              mediumVolumeShardCount: number;
+              rawEventRetentionDays: number;
+              rollupRetentionDays: number;
+              trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+            };
+          };
+          configHash: string;
+          journeys?: Array<string>;
+          metrics?: Array<string>;
+          remainingBatches?: number;
+        },
+        { deleted: number; scheduledNextBatch: boolean },
+        Name
+      >;
       purgeStaleAnalyticsEvents: FunctionReference<
         "mutation",
         "internal",
@@ -2405,20 +2884,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { configHash: string },
         Name
       >;
-      writeCounterBump: FunctionReference<
-        "mutation",
-        "internal",
-        { delta: number; key: string; shards?: number },
-        null,
-        Name
-      >;
-      writeCounterSet: FunctionReference<
-        "mutation",
-        "internal",
-        { key: string; value: number },
-        null,
-        Name
-      >;
       writeMetricEvaluationOverride: FunctionReference<
         "mutation",
         "internal",
@@ -2668,6 +3133,114 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     mutations: {
+      backfillMonthActorClaims: {
+        backfillMonthActorClaims: FunctionReference<
+          "mutation",
+          "internal",
+          { cursor?: string | null },
+          { ensured: number; isDone: boolean; processed: number },
+          Name
+        >;
+      };
+      pruneAnalyticsData: {
+        pruneAnalyticsData: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+            journeys?: Array<string>;
+            metrics?: Array<string>;
+            remainingBatches?: number;
+          },
+          { deleted: number; scheduledNextBatch: boolean },
+          Name
+        >;
+      };
       writeConfiguration: {
         writeConfiguration: FunctionReference<
           "mutation",
@@ -2757,24 +3330,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
           },
           { configHash: string },
-          Name
-        >;
-      };
-      writeCounterBump: {
-        writeCounterBump: FunctionReference<
-          "mutation",
-          "internal",
-          { delta: number; key: string; shards?: number },
-          null,
-          Name
-        >;
-      };
-      writeCounterSet: {
-        writeCounterSet: FunctionReference<
-          "mutation",
-          "internal",
-          { key: string; value: number },
-          null,
           Name
         >;
       };
@@ -3335,24 +3890,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
-      fetchCounter: {
-        fetchCounter: FunctionReference<
-          "query",
-          "internal",
-          { key: string },
-          number,
-          Name
-        >;
-      };
-      fetchCounters: {
-        fetchCounters: FunctionReference<
-          "query",
-          "internal",
-          { keys: Array<string> },
-          Record<string, number>,
-          Name
-        >;
-      };
       fetchDashboardMetrics: {
         fetchDashboardMetrics: FunctionReference<
           "query",
@@ -3510,6 +4047,106 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+      fetchDataAudit: {
+        fetchDataAudit: FunctionReference<
+          "query",
+          "internal",
+          {
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+          },
+          {
+            configurations: { count: number; prunableCount: number };
+            orphanedJourneys: Array<string>;
+            orphanedMetrics: Array<string>;
+          },
+          Name
+        >;
+      };
       fetchFunnelConversion: {
         fetchFunnelConversion: FunctionReference<
           "query",
@@ -3628,6 +4265,107 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             ratePercent?: number;
             scope: any;
             steps: Array<string>;
+          },
+          Name
+        >;
+      };
+      fetchIngestionHealth: {
+        fetchIngestionHealth: FunctionReference<
+          "query",
+          "internal",
+          {
+            config?: {
+              configHash?: string;
+              events: Array<{
+                label: string;
+                name: string;
+                properties?: Record<string, "string" | "number" | "boolean">;
+                requiredProperties?: Array<string>;
+              }>;
+              funnels?: Record<string, { label: string; steps: Array<string> }>;
+              journeys?: Record<
+                string,
+                {
+                  breakdownProperty?: string;
+                  label: string;
+                  steps: Array<string>;
+                }
+              >;
+              metrics: Array<{
+                actorProperty?: string;
+                adminOnly?: boolean;
+                aggregation:
+                  | "count"
+                  | "sum"
+                  | "avg"
+                  | "min"
+                  | "max"
+                  | "distinctActors";
+                description?: string;
+                dimensions?: Array<string>;
+                evaluation?:
+                  | {
+                      badGrowthPercent: number;
+                      excellentGrowthPercent: number;
+                      goodGrowthPercent: number;
+                      kind: "comparison";
+                      minVolumeForComparison?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      excellentRatePercent: number;
+                      goodRatePercent: number;
+                      kind: "conversion";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badRatePercent: number;
+                      denominatorMetric: string;
+                      goodRatePercent: number;
+                      kind: "inverseRate";
+                      minDenominator?: number;
+                    }
+                  | {
+                      badPercentOfGoal: number;
+                      excellentPercentOfGoal: number;
+                      goodPercentOfGoal: number;
+                      kind: "goal";
+                      minValueForEvaluation?: number;
+                      targetValue: number;
+                    };
+                eventNames: Array<string>;
+                label: string;
+                name: string;
+                rollupGranularity?: "day" | "hour";
+                trafficMode?: "lowVolume" | "mediumVolume" | "highVolume";
+                unit: "count" | "currency" | "bytes";
+                valueProperty?: string;
+              }>;
+              settings: {
+                defaultTimezone?: string;
+                highVolumeBatchIntervalMinutes: number;
+                highVolumeBatchSize: number;
+                highVolumeMaxCatchupBatches: number;
+                highVolumeShardCount: number;
+                maxBreakdownItems: number;
+                maxQueryRangeDays: number;
+                maxRawEventDeletesPerRun: number;
+                maxRollupDeletesPerRun: number;
+                maxRollupRowsPerQuery: number;
+                mediumVolumeShardCount: number;
+                rawEventRetentionDays: number;
+                rollupRetentionDays: number;
+                trafficMode: "lowVolume" | "mediumVolume" | "highVolume";
+              };
+            };
+            configHash: string;
+          },
+          {
+            backlogExceedsCycle: boolean;
+            drainPerCycle: number;
+            oldestPendingAgeMs: number | null;
+            pendingAtLeast: number;
           },
           Name
         >;

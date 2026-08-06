@@ -7,6 +7,7 @@ import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 
 // HELPERS
 import { internalBuildMetricEvaluationResult } from "../helpers/evaluateMetricForRange";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import { internalFetchMetricEvaluationOverride } from "../helpers/metricEvaluationOverrides";
 
 // UTILS
@@ -63,6 +64,7 @@ export const fetchMetricEvaluation = query({
 			scope,
 			from: args.from,
 			to: args.to,
+			budget: internalCreateReadBudget(config.settings),
 		});
 
 		return {

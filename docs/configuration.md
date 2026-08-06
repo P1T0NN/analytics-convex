@@ -70,7 +70,7 @@ Pass a partial `settings` object to `defineAnalytics` to override defaults in co
 | `highVolumeBatchIntervalMinutes` | `1`              | Cron cadence for batch processing                      |
 | `highVolumeMaxCatchupBatches`    | `4`              | Max consecutive catch-up batches per cron tick         |
 | `maxQueryRangeDays`              | `366`            | Max inclusive date range for queries                   |
-| `maxRollupRowsPerQuery`          | `20_000`         | Hard cap for rows read by a single query               |
+| `maxRollupRowsPerQuery`          | `12_288`         | Per-query read budget shared across all index reads (max 12,288 — under Convex's scan limit) |
 | `maxBreakdownItems`              | `12`             | Max dimension values returned by grouped queries (breakdowns, time-series groupBy, funnel/journey breakdowns) |
 | `rawEventRetentionDays`          | `90`             | Days before raw events are purged (`0` = keep forever) |
 | `maxRawEventDeletesPerRun`       | `5_000`          | Max raw events deleted per retention cron run          |
@@ -105,8 +105,8 @@ or ingestion workers.
 | High-volume shards                       |                                256 max |
 | High-volume batch size                   |                              1,000 max |
 | High-volume catch-up batches             |                                 20 max |
-| Query range                              |                         3,660 days max |
-| Rollup rows per query                    |                            100,000 max |
+| Query range                              |      366 days max (hard ceiling; no minimum) |
+| Rollup rows per query                    | 12,288 max (per-query budget, under Convex's scan limit) |
 | Breakdown items                          |                                100 max |
 | Raw event retention                      | 3,650 days max, or `0` to keep forever |
 | Raw event deletes per retention run      |                             10,000 max |

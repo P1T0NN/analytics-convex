@@ -14,7 +14,9 @@ import { ANALYTICS_UTC_TIMEZONE } from "../../shared/utils/analyticsTimezoneUtil
 import {
 	internalCollectDailyActorClaims,
 	internalCollectDailyMetricRows,
+	internalCollectMetricTotalRows,
 } from "../helpers/rollupReads";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import {
 	internalGetMetricBucketStart,
 	internalGetMetricConfigOrThrow,
@@ -107,6 +109,7 @@ export const fetchTimeSeries = query({
 		const scope = internalResolveScope(args.scope);
 		const dimensionKey = args.groupBy ?? TOTAL_DIMENSION;
 		const shouldFill = args.fill ?? true;
+		const budget = internalCreateReadBudget(config.settings);
 
 		if (args.groupBy) {
 			internalAssertAllowedDimension(metricConfig, args.groupBy);
@@ -131,6 +134,7 @@ export const fetchTimeSeries = query({
 				from: args.from,
 				to: args.to,
 				settings: config.settings,
+				budget,
 			});
 
 			const allSeriesKeys = args.groupBy
@@ -166,15 +170,37 @@ export const fetchTimeSeries = query({
 			});
 		}
 
-		const rows = await internalCollectDailyMetricRows(ctx, {
-			metric: args.metric,
-			scope,
-			dimensionKey,
-			from: args.from,
-			to: args.to,
-			settings: config.settings,
-			granularity,
-		});
+		// Month charts in UTC re-bucket from the decomposed cover (month rows
+		// for full months, day rows for partial edge months) — same result as
+		// re-bucketing day rows, at a fraction of the rows read. Non-UTC month
+		// charts keep day rows: UTC month rows do not align with local months.
+		const useMonthTierRows =
+			bucketUnit === "month" &&
+			timeZone === ANALYTICS_UTC_TIMEZONE &&
+			granularity === "day" &&
+			metricConfig.aggregation !== "distinctActors";
+
+		const rows = useMonthTierRows
+			? await internalCollectMetricTotalRows(ctx, {
+					metric: args.metric,
+					metricConfig,
+					scope,
+					dimensionKey,
+					from: args.from,
+					to: args.to,
+					settings: config.settings,
+					budget,
+				})
+			: await internalCollectDailyMetricRows(ctx, {
+					metric: args.metric,
+					scope,
+					dimensionKey,
+					from: args.from,
+					to: args.to,
+					settings: config.settings,
+					granularity,
+					budget,
+				});
 
 		const allSeriesKeys = args.groupBy
 			? [...new Set(rows.map((row) => row.dimensionValue))]

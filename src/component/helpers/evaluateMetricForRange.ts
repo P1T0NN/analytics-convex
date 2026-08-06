@@ -5,6 +5,7 @@ import {
 	type typesMetricTotalRequest,
 } from "./metricTotalCache";
 import { internalGetMetricTotalsForRanges } from "./rollupReads";
+import type { typesReadBudget } from "./readBudget";
 import { internalResolveMetricEvaluations } from "./metricEvaluationOverrides";
 
 // SHARED
@@ -186,7 +187,7 @@ export function internalBuildMetricEvaluationFromCache(
 export async function internalBuildMetricEvaluationResult(
 	ctx: QueryCtx,
 	config: typesAnalyticsConfigState,
-	args: typesMetricEvaluationBuildArgs,
+	args: typesMetricEvaluationBuildArgs & { budget?: typesReadBudget },
 ): Promise<typesMetricEvaluationBuildResult> {
 	const requests: typesMetricTotalRequest[] = [
 		{
@@ -224,6 +225,7 @@ export async function internalBuildMetricEvaluationResult(
 		config,
 		args.scope,
 		requests,
+		args.budget,
 	);
 
 	return internalBuildMetricEvaluationFromCache(cache, args);
@@ -344,6 +346,7 @@ export async function internalBuildDashboardMetricsForRange(
 		to: number;
 		includeComparison?: boolean;
 		includeEvaluation?: boolean;
+		budget?: typesReadBudget;
 	},
 ) {
 	const includeComparison = args.includeComparison ?? false;
@@ -368,6 +371,7 @@ export async function internalBuildDashboardMetricsForRange(
 		config,
 		args.scope,
 		requests,
+		args.budget,
 	);
 
 	const comparisonRanges = previousAnalyticsDayRange({

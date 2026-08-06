@@ -13,6 +13,10 @@ export type typesAnalyticsAggregation =
 	| "max"
 	| "distinctActors";
 export type typesAnalyticsRollupGranularity = "day" | "hour";
+/** Granularities stored in rollup rows. `month` is written automatically for day metrics. */
+export type typesAnalyticsRollupBucketGranularity =
+	| typesAnalyticsRollupGranularity
+	| "month";
 /** Query-time chart bucket size (rollup storage stays day/hour). */
 export type typesAnalyticsBucketUnit = "day" | "week" | "month";
 export type typesRollupMode = "realtime" | "highVolume";

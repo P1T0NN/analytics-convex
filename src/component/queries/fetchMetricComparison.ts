@@ -5,6 +5,7 @@ import { query } from "../_generated/server";
 // HELPERS
 import { internalResolveConfiguration } from "../helpers/resolveConfiguration";
 import { internalGetMetricTotalsForRanges } from "../helpers/rollupReads";
+import { internalCreateReadBudget } from "../helpers/readBudget";
 import { internalGetMetricConfigOrThrow } from "../utils/shared/metricUtils";
 
 // UTILS
@@ -101,6 +102,7 @@ export const fetchMetricComparison = query({
 		const totals = await internalGetMetricTotalsForRanges(ctx, config, {
 			metric: args.metric,
 			scope,
+			budget: internalCreateReadBudget(config.settings),
 			ranges: [
 				{
 					key: "current",

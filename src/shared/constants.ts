@@ -3,6 +3,27 @@ export const ANALYTICS_RESOURCE_SCOPE_SEPARATOR = ANALYTICS_SCOPE_SEPARATOR;
 
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Rollup buckets whose end is older than this are cold — no live writes touch
+ * them — so the compaction cron may collapse their shard rows into one.
+ */
+export const ROLLUP_COMPACTION_LAG_MS = 2 * DAY_MS;
+
+/**
+ * Convex transaction limits (as of convex 1.36): a function may scan at most
+ * 16,384 documents, and a mutation may write at most 8,192. The library keeps
+ * every query and cron comfortably under them so its own descriptive errors
+ * always fire before a raw Convex transaction error can.
+ */
+export const ANALYTICS_READ_BUDGET_CEILING = 12_288; // 75% of 16,384 scanned
+export const ANALYTICS_WRITE_BUDGET_CEILING = 4_096; // 50% of 8,192 written
+
+/** Row budget per compaction run: deletes + shard-0 merges stay ≤ 6,000 writes. */
+export const ROLLUP_COMPACTION_MAX_ROWS_PER_RUN = 3_000;
+
+/** Stored configuration rows older than this (and not active) are auto-pruned. */
+export const CONFIGURATION_RETENTION_MS = 90 * DAY_MS;
 export const GLOBAL_SCOPE_ID = "__global";
 export const TOTAL_DIMENSION = "__total";
 
@@ -94,15 +115,16 @@ export const ANALYTICS_LIMITS = {
 	maxUniqueKeyLength: 512,
 	maxMediumVolumeShardCount: 64,
 	maxHighVolumeShardCount: 256,
-	maxHighVolumeBatchSize: 1_000,
+	maxHighVolumeBatchSize: 500,
 	maxHighVolumeMaxCatchupBatches: 20,
-	maxQueryRangeDays: 3_660,
-	maxRollupRowsPerQuery: 100_000,
+	/** One year plus a leap day. A hard ceiling — not raisable by settings. */
+	maxQueryRangeDays: 366,
+	maxRollupRowsPerQuery: 12_288,
 	maxBreakdownItems: 100,
 	maxRawEventRetentionDays: 3_650,
-	maxRawEventDeletesPerRun: 10_000,
+	maxRawEventDeletesPerRun: 4_096,
 	maxRollupRetentionDays: 3_650,
-	maxRollupDeletesPerRun: 10_000,
+	maxRollupDeletesPerRun: 4_096,
 	maxFunnelsPerConfiguration: 50,
 	maxFunnelSteps: 10,
 	maxJourneysPerConfiguration: 50,

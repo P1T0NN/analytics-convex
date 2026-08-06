@@ -1,6 +1,93 @@
 # Changelog
 
-## 1.1.0
+## 2.0.0
+
+### Breaking
+- **Counters moved to `@convex-dev/aggregate`.** The `analyticsCounters` table and
+  the `analytics.counters.bump/get/getMany/set` helpers are removed, along with the
+  component functions `writeCounterBump`, `writeCounterSet`, `fetchCounter`, and
+  `fetchCounters`. A Convex component cannot see your app's tables, so counting
+  rows had to be done by hand at every write site — one forgotten `bump` on a
+  delete path meant permanent, silent drift.
+
+  Replaced by a new entry point, `@piton-/analytics-convex/counters`, exporting
+  `defineCounters()`. Counts are now maintained by a database trigger on the table
+  itself, so no call site can forget them. See the migration steps in
+  [docs/counters.md](./counters.md).
+
+### Breaking (query ranges and crons)
+- **366-day hard query-range ceiling.** `maxQueryRangeDays` can no longer be
+  raised past 366 by settings; `fetchMetricTotalsByDimension` `days` is capped
+  at 366 too. There is no minimum range — today-only queries remain valid.
+- **`registerCrons` requires one more handler.** Re-export
+  `compactAnalyticsRollups` from `analytics.crons` alongside the existing three
+  (see Quick Start) — it powers shard compaction below.
+
+### Added (guardrails — no operation can hit Convex limits)
+- **Shared per-query read budget.** Every rollup/claim read in a query draws
+  from one budget capped at min(`maxRollupRowsPerQuery`, 12,288) rows — 75% of
+  Convex's 16,384 documents-scanned transaction limit. Multi-read queries
+  (dashboards, funnels, journeys, decomposed totals) sequence their reads
+  against it, so the library's `QUERY_TOO_LARGE` always fires before a raw
+  Convex error can. `maxRollupRowsPerQuery` max dropped from 100,000 to 12,288;
+  delete caps dropped to 4,096 with the purge cron sharing one budget across
+  its three tables; `maxHighVolumeBatchSize` max is now 500.
+- **Adaptive high-volume batching.** The aggregation cron plans its merged
+  writes first and halves the batch until the plan fits the write budget —
+  pathological configs shrink batches instead of hitting Convex write limits.
+- **Month-tier actor claims.** distinctActors metrics write one claim per
+  actor per month alongside the per-day claim; multi-day distinct reads union
+  month claims with edge-day claims — exact, and ~30x fewer rows at 366 days.
+  Pre-2.0 installs with distinctActors data run
+  `analytics.backfillMonthActorClaims(ctx)` once (paginated, idempotent).
+- **Ghost-data tooling.** `analytics.fetchDataAudit(ctx)` finds rows for
+  metrics/journeys removed from the config (O(distinct names) index seeks);
+  `analytics.pruneData(ctx, { metrics, journeys })` deletes them in budgeted
+  self-scheduling batches and refuses names still in the config. Stale stored
+  config rows (> 90 days, not active) auto-prune on `writeConfiguration`.
+- **Ingestion visibility.** `analytics.fetchIngestionHealth(ctx)` reports the
+  high-volume pending backlog, per-cycle drain capacity, and oldest pending
+  age — the backlog can no longer grow silently.
+
+### Added (performance)
+- **Month rollup tier.** Day metrics also write UTC month rollup rows; totals,
+  breakdowns, funnels, and UTC month charts decompose ranges into month rows
+  plus partial-edge day rows. A 366-day total reads ~12 month rows + ≤ ~62 edge
+  day rows instead of one row per day — exact for count/sum/avg/min/max.
+- **Shard compaction cron (`compactAnalyticsRollups`).** Collapses shard rows
+  on rollup buckets older than ~2 days into a single shard-0 row, removing the
+  8×/32× shard read multiplier from historical data. Idempotent and safe with
+  backdated writes; month rows compact once their month closes.
+- **`docs/performance.md`** — the complete read-cost model: formulas per query
+  type, the exact carve-outs (distinctActors, non-UTC, week buckets, hourly),
+  and the retention interplay.
+
+### Added
+- **`defineCounters<DataModel>()((counter) => ({...}))`** — declare counters once and get back
+  `{ counters, mutation, internalMutation, wrapDB, triggers }`. Each counter exposes
+  `count()`, `sum()`, `backfill()`, and the raw `aggregate` for min/max/at/paginate.
+- **Namespaced counters.** `namespace: (doc) => doc.accommodationId` puts each
+  accommodation in its own B-tree, so concurrent writes across namespaces never
+  contend — the scaling lever that replaces manual shard counts.
+- **`backfill()`** — paginated, idempotent insertion of pre-existing rows, since an
+  aggregate only sees writes made after its trigger is wired.
+- `@convex-dev/aggregate` and `convex-helpers` are **optional** peer dependencies.
+  Apps that don't use counters need neither, and the package root stays
+  dependency-free.
+
+### Changed
+- Default `maxRollupRowsPerQuery` 20,000 → 12,288; default
+  `maxRawEventDeletesPerRun` and `maxRollupDeletesPerRun` 5,000 → 4,000.
+  Throughput is unchanged — purge and compaction self-schedule up to 20
+  catch-up batches per tick (≈ 84k deletes/day/tick).
+
+### Fixed
+- `fetchJourneyConversion` read each step's claims with the full
+  `maxRollupRowsPerQuery` budget in parallel, so a 10-step journey could read up to
+  10x the configured cap before the overflow check rejected the query. Steps now
+  share one budget.
+
+## 1.1.1
 
 ### Added
 - **Exact transactional state counters.** New `analytics.counters` server helpers — `bump(ctx, key, delta, opts?)`, `get(ctx, key)`, `getMany(ctx, keys)`, `set(ctx, key, value)` — backed by the new `analyticsCounters` component table. Counters answer "how many rows exist right now" (total guests, reservations per status) with O(1) indexed reads instead of full-table `.collect()` scans in reactive queries.

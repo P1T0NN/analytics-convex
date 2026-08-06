@@ -249,43 +249,51 @@ export function internalCreateAnalyticsServerHelpers<
 		},
 
 		/**
-		 * Exact transactional state counters — deliberately separate from event
-		 * tracking. `bump`/`set` run inside the calling mutation's transaction, so
-		 * counters never drift from table truth. Never derive counters from
-		 * tracked events; metrics stay approximate-by-contract, counters exact.
+		 * Ghost-data audit: metrics/journeys with stored rows that the current
+		 * config no longer references, plus stale stored-config counts. Cheap —
+		 * O(distinct names) index seeks, never a table scan. Wrap in an
+		 * admin-guarded query.
 		 */
-		counters: {
-			bump: async (
-				ctx: typesMutationCtx,
-				key: string,
-				delta: number,
-				opts?: { shards?: number },
-			): Promise<void> => {
-				await ctx.runMutation(component.lib.writeCounterBump, {
-					key,
-					delta,
-					...(opts?.shards !== undefined ? { shards: opts.shards } : {}),
-				});
-			},
+		fetchDataAudit: async (ctx: typesQueryCtx) => {
+			return await ctx.runQuery(component.lib.fetchDataAudit, configReference);
+		},
 
-			get: async (ctx: typesQueryCtx, key: string): Promise<number> => {
-				return await ctx.runQuery(component.lib.fetchCounter, { key });
-			},
+		/**
+		 * High-volume ingestion backlog: pending count vs per-cycle drain
+		 * capacity and the oldest pending event's age. Poll from a dashboard or
+		 * alert cron.
+		 */
+		fetchIngestionHealth: async (ctx: typesQueryCtx) => {
+			return await ctx.runQuery(
+				component.lib.fetchIngestionHealth,
+				configReference,
+			);
+		},
 
-			getMany: async (
-				ctx: typesQueryCtx,
-				keys: string[],
-			): Promise<Record<string, number>> => {
-				return await ctx.runQuery(component.lib.fetchCounters, { keys });
-			},
+		/**
+		 * Delete stored rows for metrics/journeys the config has abandoned
+		 * (what `fetchDataAudit` reports). Refuses names still in the config.
+		 * Batched and self-scheduling — one call drains everything.
+		 */
+		pruneData: async (
+			ctx: typesMutationCtx,
+			args: { metrics?: string[]; journeys?: string[] },
+		) => {
+			return await ctx.runMutation(component.lib.pruneAnalyticsData, {
+				...configReference,
+				...(args.metrics ? { metrics: args.metrics } : {}),
+				...(args.journeys ? { journeys: args.journeys } : {}),
+			});
+		},
 
-			set: async (
-				ctx: typesMutationCtx,
-				key: string,
-				value: number,
-			): Promise<void> => {
-				await ctx.runMutation(component.lib.writeCounterSet, { key, value });
-			},
+		/**
+		 * One-time migration for pre-2.0 installs using distinctActors metrics:
+		 * builds month-tier actor claims from existing day claims so long-range
+		 * distinct counts stay exact over historical data. Self-scheduling;
+		 * idempotent. Fresh installs never need it.
+		 */
+		backfillMonthActorClaims: async (ctx: typesMutationCtx) => {
+			return await ctx.runMutation(component.lib.backfillMonthActorClaims, {});
 		},
 	};
 }

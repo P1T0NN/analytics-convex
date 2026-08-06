@@ -33,6 +33,9 @@ Run `npx convex dev` to regenerate the component API, then follow the [Quick Sta
 - Distinct-actor metrics (DAU-style) that stay accurate across multi-day ranges
 - Typed `defineAnalytics()` setup — one object for tracking, queries, client wrappers, and crons
 - Retention crons that purge raw events and rollups, and keep up with high write volume
+- Bounded reads at any range: month rollup tier + shard compaction make a 366-day query cost about the same as a 7-day one
+- Guardrails by construction: a shared per-query read budget and planned writes keep every operation under Convex transaction limits; audit/prune tools keep the data set free of ghosts
+- Exact live counters via `@convex-dev/aggregate` — "how many right now", separate from historical metrics
 
 ## Docs map
 
@@ -44,6 +47,8 @@ Run `npx convex dev` to regenerate the component API, then follow the [Quick Sta
 | Dashboard reads | [Querying](./docs/querying.md) |
 | Multi-tenant filtering | [Scopes](./docs/scopes.md) |
 | Limits and scale | [Scale and limits](./docs/scale-and-limits.md) |
+| Read cost model | [Performance](./docs/performance.md) |
+| Exact live counts | [Counters](./docs/counters.md) |
 
 ## Development
 

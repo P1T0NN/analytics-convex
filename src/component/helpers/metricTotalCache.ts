@@ -1,15 +1,9 @@
-// CONSTANTS
-import { TOTAL_DIMENSION } from "../../shared/constants.js";
-
 // HELPERS
+import { internalGetMetricTotalForRange } from "./rollupReads";
 import {
-	internalCollectDailyMetricRows,
-	internalGetMetricTotalForRange,
-	internalSumDailyMetricRowsForRange,
-} from "./rollupReads";
-
-// UTILS
-import { internalGetMetricRollupGranularity } from "../utils/shared/metricUtils";
+	internalCreateReadBudget,
+	type typesReadBudget,
+} from "./readBudget";
 
 // TYPES
 import type { QueryCtx } from "../_generated/server";
@@ -38,9 +32,11 @@ export async function internalFetchMetricTotalsBatch(
 	config: typesAnalyticsConfigState,
 	scope: typesAnalyticsScope,
 	requests: typesMetricTotalRequest[],
+	budget?: typesReadBudget,
 ) {
 	const cache = new Map<string, number>();
 	const unique = new Map<string, typesMetricTotalRequest>();
+	const sharedBudget = budget ?? internalCreateReadBudget(config.settings);
 
 	for (const request of requests) {
 		const key = internalMetricTotalCacheKey(scope, request);
@@ -49,65 +45,19 @@ export async function internalFetchMetricTotalsBatch(
 		}
 	}
 
-	const byMetric = new Map<string, typesMetricTotalRequest[]>();
+	// Sequential on the shared budget: total rows read across every request in
+	// this query stay under the per-query ceiling, no matter how many metrics
+	// a dashboard asks for.
 	for (const request of unique.values()) {
-		const metricRequests = byMetric.get(request.metric) ?? [];
-		metricRequests.push(request);
-		byMetric.set(request.metric, metricRequests);
+		const value = await internalGetMetricTotalForRange(ctx, config, {
+			metric: request.metric,
+			scope,
+			from: request.from,
+			to: request.to,
+			budget: sharedBudget,
+		});
+		cache.set(internalMetricTotalCacheKey(scope, request), value);
 	}
-
-	await Promise.all(
-		[...byMetric.entries()].map(async ([metric, metricRequests]) => {
-			const metricConfig = config.metricByName.get(metric);
-			const aggregation = metricConfig?.aggregation ?? "sum";
-
-			// Distinct actors cannot be summed across day buckets — an actor
-			// active on several days would be counted once per day. Delegate to
-			// the claims-aware total helper per requested range instead.
-			if (aggregation === "distinctActors") {
-				await Promise.all(
-					metricRequests.map(async (request) => {
-						const value = await internalGetMetricTotalForRange(ctx, config, {
-							metric,
-							scope,
-							from: request.from,
-							to: request.to,
-						});
-						cache.set(internalMetricTotalCacheKey(scope, request), value);
-					}),
-				);
-				return;
-			}
-
-			const granularity = metricConfig
-				? internalGetMetricRollupGranularity(metricConfig)
-				: "day";
-			const minFrom = Math.min(...metricRequests.map((request) => request.from));
-			const maxTo = Math.max(...metricRequests.map((request) => request.to));
-			const rows = await internalCollectDailyMetricRows(ctx, {
-				metric,
-				scope,
-				dimensionKey: TOTAL_DIMENSION,
-				from: minFrom,
-				to: maxTo,
-				settings: config.settings,
-				granularity,
-			});
-
-			for (const request of metricRequests) {
-				cache.set(
-					internalMetricTotalCacheKey(scope, request),
-					internalSumDailyMetricRowsForRange(
-						rows,
-						request.from,
-						request.to,
-						aggregation,
-						granularity,
-					),
-				);
-			}
-		}),
-	);
 
 	return cache;
 }

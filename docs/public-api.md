@@ -47,14 +47,27 @@ already enforce auth.
 | `fetchMetricTotalsByDimension` | Dimension totals as `Map` |
 | `fetchTopDimensionValue` | Top dimension value or `null` |
 | `fetchConfiguration` | Read resolved runtime config |
+| `fetchDataAudit` | Ghost-data audit: orphaned metrics/journeys, stale configs |
+| `fetchIngestionHealth` | High-volume backlog vs drain capacity, oldest pending age |
+| `pruneData` | Delete rows for metrics/journeys removed from the config |
+| `backfillMonthActorClaims` | One-time month-claim backfill for pre-2.0 distinct data |
 | `config` | Same config object passed to crons and helpers |
-| `counters.bump(ctx, key, delta, opts?)` | Exact state counter — transactional with your mutation |
-| `counters.get(ctx, key)` / `counters.getMany(ctx, keys)` | Read exact counter values (indexed point reads, 0 if absent) |
-| `counters.set(ctx, key, value)` | Backfill/repair — overwrite and collapse shards |
 
-Counters are exact state counts (decrement on delete, never pruned) — the
-opposite contract from metrics. They are server-helper only, not on
-`analytics.client`. See [Counters](./counters.md).
+### Counters entry (`@piton-/analytics-convex/counters`)
+
+Exact live counts ("how many rows exist right now") are a separate entry point
+backed by `@convex-dev/aggregate`, so the package root stays dependency-free.
+
+| Export | Purpose |
+| ------ | ------- |
+| `defineCounters<DataModel>()((counter) => ({...}))` | Declare counters; returns `{ counters, mutation, internalMutation, wrapDB, triggers }` |
+| `counters.<name>.count(ctx, namespace?)` | Rows that exist right now — exact, O(log n) |
+| `counters.<name>.sum(ctx, namespace?)` | Total of `sumValue` across those rows |
+| `counters.<name>.backfill(ctx, opts?)` | Insert one page of pre-existing rows |
+| `counters.<name>.aggregate` | Raw `TableAggregate` for min/max/at/paginate |
+
+Counters are exact state counts (they go down on delete) — the opposite
+contract from metrics. See [Counters](./counters.md).
 
 ### Date range helpers
 
